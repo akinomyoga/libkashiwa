@@ -117,24 +117,19 @@ struct cooper_verner8_integrator{
   template<typename F>
   void operator()(double& time,double* __restrict__ value,std::size_t size,F const& f,double h) const{
     buffer.ensure(13*size);
-    double* __restrict__ delta = buffer.ptr();
-    double* __restrict__ xnode = buffer.ptr()+size;
-    double* __restrict__  k1 = buffer.ptr()+size*2;
-    double* __restrict__  k2 = buffer.ptr()+size*3;
-    double* __restrict__  k3 = buffer.ptr()+size*4;
-    double* __restrict__& k4 = k2;
-    // double* __restrict__  k4 = buffer.ptr()+size*8;
-    double* __restrict__  k5 = buffer.ptr()+size*5;
-    double* __restrict__  k6 = buffer.ptr()+size*6;
-    double* __restrict__& k7 = k3;
-    double* __restrict__& k8 = k4;
-    // double* __restrict__  k7 = buffer.ptr()+size*9;
-    // double* __restrict__  k8 = buffer.ptr()+size*10;
-    double* __restrict__  k9 = buffer.ptr()+size*7;
-    double* __restrict__& kA = k1;
-    double* __restrict__& kB = k5;
-    // double* __restrict__  kA = buffer.ptr()+size*11;
-    // double* __restrict__  kB = buffer.ptr()+size*12;
+    double* __restrict__  delta = buffer.ptr();
+    double* __restrict__  xnode = buffer.ptr()+size;
+    double* __restrict__  k1    = buffer.ptr()+size*2;
+    double* __restrict__  k2    = buffer.ptr()+size*3;
+    double* __restrict__  k3    = buffer.ptr()+size*4;
+    double* __restrict__& k4    = k2;
+    double* __restrict__  k5    = buffer.ptr()+size*5;
+    double* __restrict__  k6    = buffer.ptr()+size*6;
+    double* __restrict__& k7    = k3;
+    double* __restrict__& k8    = k4;
+    double* __restrict__  k9    = buffer.ptr()+size*7;
+    double* __restrict__& kA    = k1;
+    double* __restrict__& kB    = k5;
 
     static constexpr double b1 =  1.0/ 20.0;
     static constexpr double b8 = 49.0/180.0;
