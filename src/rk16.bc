@@ -3,11 +3,11 @@
 
 sqrt21 = sqrt(21)
 
-b1= 1.0/ 20.0;
-b8=49.0/180.0;
-b9=16.0/ 45.0;
-ba=49.0/180.0;
-bb= 1.0/ 20.0;
+b1 =  1.0/ 20.0;
+b8 = 49.0/180.0;
+b9 = 16.0/ 45.0;
+ba = 49.0/180.0;
+bb =  1.0/ 20.0;
 print "static constexpr b1 = ", b1, ";\n"
 print "static constexpr b8 = ", b8, ";\n"
 print "static constexpr b9 = ", b9, ";\n"

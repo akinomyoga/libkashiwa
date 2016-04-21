@@ -24,6 +24,7 @@ public:
 
 struct euler_integrator{
   static const int stage = 1;
+  static const int order = 1;
 
   mutable working_buffer buffer;
 
@@ -41,6 +42,7 @@ struct euler_integrator{
 
 struct midpoint_integrator{
   static const int stage = 2;
+  static const int order = 2;
 
   mutable working_buffer buffer;
 
@@ -66,6 +68,7 @@ struct midpoint_integrator{
 
 struct rk4_integrator{
   static const int stage = 4;
+  static const int order = 4;
 
   mutable working_buffer buffer;
 
@@ -113,6 +116,7 @@ struct rk4_integrator{
 //   [cv8.2] http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
 struct cooper_verner8_integrator{
   static const int stage = 11;
+  static const int order = 8;
   mutable working_buffer buffer;
 
   static constexpr double sqrt21 = std::sqrt(21.0); // Ref [cv8.2] では -sqrt(21.0). どちらでも OK.

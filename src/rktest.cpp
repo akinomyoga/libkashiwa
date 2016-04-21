@@ -32,6 +32,12 @@ void test_method(std::FILE* file,Integrator const& integ){
   double const finalTime = 1.0;
   int const nstage = Integrator::stage;
 
+  int    previousNStep = 0;
+  double previousError = 0;
+  bool   roundingDominant = false;
+  double maxOrder = 0.0;
+  std::vector<double> orders;
+
   for(std::size_t nval=1;nval<0x100000;nval*=2){
     double time = 0.0;
     double value[1] = { initialCondition };
@@ -43,9 +49,40 @@ void test_method(std::FILE* file,Integrator const& integ){
     for(int i=0;i<nstep;i++)
       integ(time,value,1,f,h);
 
-    double const sol=exactSolution(time);
-    std::fprintf(file,"%zu %g %g %g %g\n",nstep*nstage,time,value[0],sol,sol-value[0]);
+    double const sol = exactSolution(time);
+    double const err = sol-value[0];
+    std::fprintf(file,"%zu %g %g %g %g\n",nstep*nstage,time,value[0],sol,err);
+
+    // check order
+    if(!roundingDominant){
+      if(previousNStep){
+        double const order = -std::log(std::abs(err/previousError))/std::log((double)nstep/(double)previousNStep);
+        if(order<0)
+          roundingDominant = true;
+        else{
+          orders.push_back(order);
+          if(order>maxOrder)
+            maxOrder = order;
+        }
+      }
+      previousNStep = nstep;
+      previousError = err;
+    }
   }
+
+  // check order
+  std::vector<double>::const_iterator b = orders.begin();
+  std::vector<double>::const_iterator e = orders.end();
+  while(e!=b&&e[-1]<maxOrder-1.0) e--;
+  while(b!=e&&*b<maxOrder-1.0) b++;
+  double const estimatedOrder = std::accumulate(b, e, 0.0)/(e - b);
+  mwg_assert(
+    std::round(estimatedOrder)==Integrator::order,
+    "RK order mismatch: expected = %g, estimated = %g (%d-%d), max = %g\n",
+    (double)Integrator::order,
+    estimatedOrder, b - orders.begin(), e - orders.begin(),
+    maxOrder);
+
 }
 
 int main(){
