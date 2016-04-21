@@ -28,12 +28,15 @@ double exactSolution(double t){
 //-----------------------------------------------------------------------------
 
 template<typename Integrator>
-void test_method(std::FILE* file,Integrator const& integ,int nstage){
+void test_method(std::FILE* file,Integrator const& integ){
   double const finalTime = 1.0;
+  int const nstage = Integrator::stage;
 
-  for(std::size_t nval=1;nval<0x10000;nval*=2){
+  for(std::size_t nval=1;nval<0x100000;nval*=2){
     double time = 0.0;
     double value[1] = { initialCondition };
+
+    if(nval*2 <= nstage) continue;
 
     int    const nstep = (nval+nstage-1)/nstage;
     double const h = (finalTime-time)/nstep;
@@ -41,7 +44,7 @@ void test_method(std::FILE* file,Integrator const& integ,int nstage){
       integ(time,value,1,f,h);
 
     double const sol=exactSolution(time);
-    std::fprintf(file,"%zu %g %g %g %g\n",nval,time,value[0],sol,sol-value[0]);
+    std::fprintf(file,"%zu %g %g %g %g\n",nstep*nstage,time,value[0],sol,sol-value[0]);
   }
 }
 
@@ -50,22 +53,22 @@ int main(){
 
   mwg_printd("euler");
   file = std::fopen("out/rk/rkeuler.txt","wb");
-  test_method(file,kashiwa::rk16::euler_integrator(), 1);
+  test_method(file,kashiwa::rk16::euler_integrator());
   std::fclose(file);
 
   mwg_printd("mid");
   file = std::fopen("out/rk/rkmid.txt","wb");
-  test_method(file,kashiwa::rk16::midpoint_integrator(), 2);
+  test_method(file,kashiwa::rk16::midpoint_integrator());
   std::fclose(file);
 
   mwg_printd("rk4");
   file = std::fopen("out/rk/rkrk4.txt","wb");
-  test_method(file,kashiwa::rk16::rk4_integrator(), 4);
+  test_method(file,kashiwa::rk16::rk4_integrator());
   std::fclose(file);
 
   mwg_printd("cv8");
   file = std::fopen("out/rk/rkcv8.txt","wb");
-  test_method(file,kashiwa::rk16::cooper_verner8_integrator(), 11);
+  test_method(file,kashiwa::rk16::cooper_verner8_integrator());
   std::fclose(file);
 
   return 0;
