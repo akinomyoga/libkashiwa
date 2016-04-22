@@ -77,7 +77,7 @@ void test_method(std::FILE* file,Integrator const& integ){
   while(b!=e&&*b<maxOrder-1.0) b++;
   double const estimatedOrder = std::accumulate(b, e, 0.0)/(e - b);
   mwg_assert(
-    std::round(estimatedOrder)==Integrator::order,
+    std::round(estimatedOrder)>=Integrator::order,
     "RK order mismatch: expected = %g, estimated = %g (%d-%d), max = %g\n",
     (double)Integrator::order,
     estimatedOrder, b - orders.begin(), e - orders.begin(),
@@ -98,9 +98,24 @@ int main(){
   test_method(file,kashiwa::rk16::midpoint_integrator());
   std::fclose(file);
 
+  mwg_printd("heun");
+  file = std::fopen("out/rk/rkheun.txt","wb");
+  test_method(file,kashiwa::rk16::heun_integrator());
+  std::fclose(file);
+
+  mwg_printd("ral");
+  file = std::fopen("out/rk/rkral.txt","wb");
+  test_method(file,kashiwa::rk16::ralston_integrator());
+  std::fclose(file);
+
   mwg_printd("rk4");
   file = std::fopen("out/rk/rkrk4.txt","wb");
   test_method(file,kashiwa::rk16::rk4_integrator());
+  std::fclose(file);
+
+  mwg_printd("k38");
+  file = std::fopen("out/rk/rkk38.txt","wb");
+  test_method(file,kashiwa::rk16::kutta_3_8_integrator());
   std::fclose(file);
 
   mwg_printd("cv8");
