@@ -15,6 +15,8 @@ plot \
   "out/rk/rkmid.txt"   u 1:(abs($5)) w lp ps 0.5 title 'midpoint', \
   "out/rk/rkheun.txt"  u 1:(abs($5)) w lp ps 0.5 title 'Heun', \
   "out/rk/rkral.txt"   u 1:(abs($5)) w lp ps 0.5 title 'Ralston', \
+  "out/rk/rkheun3.txt" u 1:(abs($5)) w lp ps 0.5 title 'Heun3', \
+  "out/rk/rkrk3.txt"   u 1:(abs($5)) w lp ps 0.5 title 'RK3', \
   "out/rk/rkrk4.txt"   u 1:(abs($5)) w lp ps 0.5 title 'RK4', \
   "out/rk/rkk38.txt"   u 1:(abs($5)) w lp ps 0.5 title 'Kutta 3/8', \
   "out/rk/rkgill.txt"  u 1:(abs($5)) w lp ps 0.5 title 'Gill', \

@@ -22,6 +22,7 @@ namespace rk16{
   };
 
 
+  // オイラー(1768) Institutiones Calculi Integralis
   struct euler_integrator{
     static const int stage = 1;
     static const int order = 1;
@@ -39,6 +40,7 @@ namespace rk16{
     }
   };
 
+  // 中点法、修正オイラー法、ルンゲ2次公式(1895)
   struct midpoint_integrator{
     static const int stage = 2;
     static const int order = 2;
@@ -107,6 +109,72 @@ namespace rk16{
       f(k,time+(2.0/3.0)*h,x);
       for(std::size_t i=0;i<size;i++)
         value[i] += (3.0/4.0)*h*k[i];
+
+      time+=h;
+    }
+  };
+
+  struct heun3_integrator{
+    static const int stage = 3;
+    static const int order = 3;
+    mutable working_buffer buffer;
+
+    template<typename F>
+    void operator()(double& time,double* value,std::size_t size,F const& f,double h) const{
+      buffer.ensure(2*size);
+      double* __restrict__ k = buffer.ptr();
+      double* __restrict__ x = buffer.ptr()+size;
+
+      f(k,time,value);
+      for(std::size_t i=0;i<size;i++){
+        x[i] = value[i] + (1.0/3.0)*h*k[i];
+        value[i] += (1.0/4.0)*h*k[i];
+      }
+
+      f(k,time+(1.0/3.0)*h,x);
+      for(std::size_t i=0;i<size;i++)
+        x[i] = 4.0*value[i] - 3.0*x[i] + (2.0/3.0)*h*k[i];
+
+      f(k,time+(2.0/3.0)*h,x);
+      for(std::size_t i=0;i<size;i++)
+        value[i] += (3.0/4.0)*h*k[i];
+
+      time+=h;
+    }
+  };
+
+  // RK3
+  // * http://www.mymathlib.com/diffeq/runge-kutta/runge_kutta_v1_3.html
+  //   によると単に "Third-order method v1" ということになっている。
+  // * https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods によると、
+  //   "Runge's third-order method" と書かれているが、ハイラーによると
+  //   "Runge's third order formula" は4段3次の方法である。
+  struct rk3_integrator{
+    static const int stage = 3;
+    static const int order = 3;
+    mutable working_buffer buffer;
+
+    template<typename F>
+    void operator()(double& time,double* value,std::size_t size,F const& f,double h) const{
+      buffer.ensure(2*size);
+      double* __restrict__ k = buffer.ptr();
+      double* __restrict__ x = buffer.ptr()+size;
+
+      f(k,time,value);
+      for(std::size_t i=0;i<size;i++){
+        x[i] = value[i] + (1.0/2.0)*h*k[i];
+        value[i] += (1.0/6.0)*h*k[i];
+      }
+
+      f(k,time+(1.0/2.0)*h,x);
+      for(std::size_t i=0;i<size;i++){
+        x[i] = (-7.0/2.0)*x[i] + (9.0/2.0)*value[i] + 2.0*h*k[i];
+        value[i] += (2.0/3.0)*h*k[i];
+      }
+
+      f(k,time+h,x);
+      for(std::size_t i=0;i<size;i++)
+        value[i] += (1.0/6.0)*h*k[i];
 
       time+=h;
     }
