@@ -14,7 +14,7 @@ namespace rk16{
   public:
     void ensure(std::size_t minimalSize){
       if(data.size()<minimalSize)
-        data.resize(minimalSize);
+        data.resize(minimalSize,0.0);
     }
 
     double      * ptr()      {return &data[0];}
@@ -25,7 +25,6 @@ namespace rk16{
   struct euler_integrator{
     static const int stage = 1;
     static const int order = 1;
-
     mutable working_buffer buffer;
 
     template<typename F>
@@ -80,7 +79,7 @@ namespace rk16{
         value[i] += (1.0/2.0)*h*k[i];
       }
 
-      f(k,time+0.5*h,x);
+      f(k,time+h,x);
       for(std::size_t i=0;i<size;i++)
         value[i] += (1.0/2.0)*h*k[i];
 
@@ -105,7 +104,7 @@ namespace rk16{
         value[i] += (1.0/4.0)*h*k[i];
       }
 
-      f(k,time+0.5*h,x);
+      f(k,time+(2.0/3.0)*h,x);
       for(std::size_t i=0;i<size;i++)
         value[i] += (3.0/4.0)*h*k[i];
 
@@ -114,11 +113,9 @@ namespace rk16{
   };
 
   // RK4 (classical Runge-Kutta method)
-
   struct rk4_integrator{
     static const int stage = 4;
     static const int order = 4;
-
     mutable working_buffer buffer;
 
     template<typename F>
@@ -182,7 +179,7 @@ namespace rk16{
       }
 
       // k2
-      f(k,time+0.5*h,xi);
+      f(k,time+(1.0/3.0)*h,xi);
       for(std::size_t i=0;i<size;i++){
         xi[i] = 2.0*xi[i] - x4[i] + h*k[i];
         x4[i] -= h*k[i];
@@ -190,7 +187,7 @@ namespace rk16{
       }
 
       // k3
-      f(k,time+0.5*h,xi);
+      f(k,time+(2.0/3.0)*h,xi);
       for(std::size_t i=0;i<size;i++){
         x4[i] += h*k[i];
         value[i] += (3.0/8.0)*h*k[i];
@@ -202,6 +199,70 @@ namespace rk16{
         value[i] += (1.0/8.0)*h*k[i];
 
       time+=h;
+    }
+  };
+
+  // Runge-Kutta Gill method
+  //   [[Runge-Kutta-Gill法について - あらきけいすけの雑記帳>http://d.hatena.ne.jp/arakik10/20091004/p1]]
+  struct gill_integrator{
+    static const int stage = 4;
+    static const int order = 4;
+    mutable working_buffer buffer;
+
+    template<typename F>
+    void operator()(double& time,double* value,std::size_t size,F const& f,double h) const{
+      buffer.ensure(2*size);
+      double* __restrict__ k  = buffer.ptr();
+      double* __restrict__ q  = buffer.ptr()+size;
+
+      static constexpr double alpha1 = 1.0/2.0;
+      static constexpr double alpha2 = 1.0-std::sqrt(1.0/2.0);
+      static constexpr double alpha3 = 1.0+std::sqrt(1.0/2.0);
+      static constexpr double alpha4 = 1.0/2.0;
+
+      // k1
+      f(k,time,value);
+      for(std::size_t i=0;i<size;i++){
+        double const y = value[i] + alpha1*(h*k[i] - 2.0*q[i]);
+
+        // ※丸め誤差をキャンセルする為に r = ynew - yold とする必要がある。
+        //   先に r を計算してから y に足すのでは駄目らしい。
+        //   http://d.hatena.ne.jp/arakik10/20091004/p1
+        //   http://ci.nii.ac.jp/naid/110002718589/
+        double const r = y - value[i];
+
+        q[i] = q[i] + 3.0*r - alpha1*h*k[i];
+        value[i] = y;
+      }
+
+      // k2
+      f(k,time+0.5*h,value);
+      for(std::size_t i=0;i<size;i++){
+        double const y = value[i] + alpha2*(h*k[i] - q[i]);
+        double const r = y - value[i];
+        q[i] = q[i] + 3.0*r - alpha2*h*k[i];
+        value[i] = y;
+      }
+
+      // k3
+      f(k,time+0.5*h,value);
+      for(std::size_t i=0;i<size;i++){
+        double const y = value[i] + alpha3*(h*k[i] - q[i]);
+        double const r = y - value[i];
+        q[i] = q[i] + 3.0*r - alpha3*h*k[i];
+        value[i] = y;
+      }
+
+      // k4
+      f(k,time+h,value);
+      for(std::size_t i=0;i<size;i++){
+        double const y = value[i] + (alpha4/3.0)*(h*k[i] - 2.0*q[i]);
+        double const r = y - value[i];
+        q[i] = q[i] + 3.0*r - alpha4*h*k[i]; // ※次のステップで使う
+        value[i] = y;
+      }
+
+      time += h;
     }
   };
 

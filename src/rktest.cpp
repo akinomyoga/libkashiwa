@@ -118,6 +118,11 @@ int main(){
   test_method(file,kashiwa::rk16::kutta_3_8_integrator());
   std::fclose(file);
 
+  mwg_printd("gill");
+  file = std::fopen("out/rk/rkgill.txt","wb");
+  test_method(file,kashiwa::rk16::gill_integrator());
+  std::fclose(file);
+
   mwg_printd("cv8");
   file = std::fopen("out/rk/rkcv8.txt","wb");
   test_method(file,kashiwa::rk16::cooper_verner8_integrator());

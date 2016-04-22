@@ -17,4 +17,5 @@ plot \
   "out/rk/rkral.txt"   u 1:(abs($5)) w lp ps 0.5 title 'Ralston', \
   "out/rk/rkrk4.txt"   u 1:(abs($5)) w lp ps 0.5 title 'RK4', \
   "out/rk/rkk38.txt"   u 1:(abs($5)) w lp ps 0.5 title 'Kutta 3/8', \
+  "out/rk/rkgill.txt"  u 1:(abs($5)) w lp ps 0.5 title 'Gill', \
   "out/rk/rkcv8.txt"   u 1:(abs($5)) w lp ps 0.5 title 'Cooper Verner 8'
