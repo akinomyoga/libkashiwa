@@ -2,25 +2,12 @@
 #pragma once
 #ifndef KASHIWA_RK_ERK_H
 #define KASHIWA_RK_ERK_H
-#include <cstdlib>
+#include <cstddef>
 #include <cmath>
-#include <vector>
+#include "buffer.h"
 
 namespace kashiwa{
 namespace rk16{
-
-  struct working_buffer{
-    std::vector<double> data;
-  public:
-    void ensure(std::size_t minimalSize){
-      if(data.size()<minimalSize)
-        data.resize(minimalSize,0.0);
-    }
-
-    double      * ptr()      {return &data[0];}
-    double const* ptr() const{return &data[0];}
-  };
-
 
   // オイラー(1768) Institutiones Calculi Integralis
   struct euler_integrator{
