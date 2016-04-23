@@ -431,9 +431,258 @@ namespace rk16{
     }
   };
 
+
+  //---------------------------------------------------------------------------
+  // 6段5次公式
+
+  // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
+  struct butcher5v1_integrator{
+    static const int stage = 6;
+    static const int order = 5;
+    mutable working_buffer buffer;
+
+    template<typename F>
+    void operator()(double& time,double* __restrict__ value,std::size_t size,F const& f,double h) const{
+      buffer.ensure(6*size);
+      double* __restrict__  x  = buffer.ptr();
+      double* __restrict__  k1 = buffer.ptr()+size*1;
+      double* __restrict__  k2 = buffer.ptr()+size*2;
+      double* __restrict__  k3 = buffer.ptr()+size*3;
+      double* __restrict__  k4 = buffer.ptr()+size*4;
+      double* __restrict__  k5 = buffer.ptr()+size*5;
+      double* __restrict__& k6 = k2;
+
+      // k1
+      f(k1,time,value);
+
+      // k2
+      static constexpr double a21 = 1.0/8.0;
+      static constexpr double c2  = 1.0/8.0;
+      for(std::size_t i=0;i<size;i++)
+        x[i] = value[i] + a21*h*k1[i];
+      f(k2,time+c2*h,x);
+
+      // k3
+      static constexpr double a32 = 1.0/4.0;
+      static constexpr double c3  = 1.0/4.0;
+      for(std::size_t i=0;i<size;i++)
+        x[i] = value[i] + a32*h*k2[i];
+      f(k3,time+c3*h,x);
+
+      // k4
+      static constexpr double a41 = -1.0/2.0;
+      static constexpr double a42 = 1.0;
+      static constexpr double c4  = 1.0/2.0;
+      for(std::size_t i=0;i<size;i++)
+        x[i] = value[i] + h*(a41*k1[i] + a42*k2[i]);
+      f(k4,time+c4*h,x);
+
+      // k5
+      static constexpr double a51 = 15.0/16.0;
+      static constexpr double a52 = -3.0/2.0;
+      static constexpr double a53 = 3.0/4.0;
+      static constexpr double a54 = 9.0/16.0;
+      static constexpr double c5  = 3.0/4.0;
+      for(std::size_t i=0;i<size;i++)
+        x[i] = value[i] + h*(a51*k1[i] + a52*k2[i] + a53*k3[i] + a54*k4[i]);
+      f(k5,time+c5*h,x);
+
+      // k6
+      static constexpr double a61 = -17.0/7.0;
+      static constexpr double a62 = 4.0;
+      static constexpr double a64 = -12.0/7.0;
+      static constexpr double a65 = 8.0/7.0;
+      static constexpr double c6  = 1.0;
+      for(std::size_t i=0;i<size;i++)
+        x[i] = value[i] + h*(a61*k1[i] + a62*k2[i] + a64*k4[i] + a65*k5[i]);
+      f(k6,time+c6*h,x);
+
+      // increment
+      static constexpr double b1  = 7.0/90.0;
+      static constexpr double b3  = 16.0/45.0;
+      static constexpr double b4  = 2.0/15.0;
+      static constexpr double b5  = 16.0/45.0;
+      static constexpr double b6  = 7.0/90.0;
+      for(std::size_t i=0;i<size;i++)
+        value[i] += h*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i]);
+
+      time+=h;
+    }
+  };
+
+  // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
+  struct butcher5v2_integrator{
+    static const int stage = 6;
+    static const int order = 5;
+    mutable working_buffer buffer;
+
+    template<typename F>
+    void operator()(double& time,double* __restrict__ value,std::size_t size,F const& f,double h) const{
+      buffer.ensure(5*size);
+      double* __restrict__  x  = buffer.ptr();
+      double* __restrict__  y  = buffer.ptr()+size*1;
+      double* __restrict__  k1 = buffer.ptr()+size*2;
+      double* __restrict__  k2 = buffer.ptr()+size*3;
+      double* __restrict__& k3 = k2;
+      double* __restrict__& k4 = k2;
+      double* __restrict__& k5 = k2;
+      double* __restrict__  k6 = buffer.ptr()+size*4;
+
+      static constexpr double a21 = 1.0/4.0;
+      static constexpr double c2  = 1.0/4.0;
+
+      static constexpr double a31 = 1.0/8.0;
+      static constexpr double a32 = 1.0/8.0;
+      static constexpr double c3  = 1.0/4.0;
+
+      static constexpr double a42 = -1.0/2.0;
+      static constexpr double a43 = 1.0;
+      static constexpr double c4  = 1.0/2.0;
+
+      static constexpr double a51 = 3.0/16.0;
+      static constexpr double a54 = 9.0/16.0;
+      static constexpr double c5  = 3.0/4.0;
+
+      static constexpr double a61 = -3.0/7.0;
+      static constexpr double a62 = 2.0/7.0;
+      static constexpr double a63 = 12.0/7.0;
+      static constexpr double a64 = -12.0/7.0;
+      static constexpr double a65 = 8.0/7.0;
+      static constexpr double c6  = 1.0;
+
+      static constexpr double b1  = 7.0/90.0;
+      static constexpr double b3  = 16.0/45.0;
+      static constexpr double b4  = 2.0/15.0;
+      static constexpr double b5  = 16.0/45.0;
+      static constexpr double b6  = 7.0/90.0;
+
+      // k1
+      f(k1,time,value);
+
+      // k2
+      for(std::size_t i=0;i<size;i++){
+        x[i]  = value[i] + a21*h*k1[i];
+        k6[i] = value[i] + a61*h*k1[i];
+        y[i]  = value[i] + b1*h*k1[i];
+      }
+      f(k2,time+c2*h,x);
+
+      // k3
+      for(std::size_t i=0;i<size;i++){
+        x[i] = value[i] + h*(a31*k1[i] + a32*k2[i]);
+        k6[i] += a62*h*k2[i];
+      }
+      f(k3,time+c3*h,x);
+
+      // k4
+      for(std::size_t i=0;i<size;i++){
+        x[i] = a42/a32*x[i] + (1.0-a42/a32)*value[i] - ((a42/a32)*a31)*h*k1[i] + a43*h*k3[i];
+        k6[i] += a63*h*k3[i];
+        y[i] += b3*h*k3[i];
+      }
+      f(k4,time+c4*h,x);
+
+      // k5
+      for(std::size_t i=0;i<size;i++){
+        x[i] = value[i] + h*(a51*k1[i] + a54*k4[i]);
+        k6[i] += a64*h*k4[i];
+        y[i] += b4*h*k4[i];
+      }
+      f(k5,time+c5*h,x);
+
+      // k6
+      for(std::size_t i=0;i<size;i++){
+        x[i] = k6[i] + a65*h*k5[i];
+        y[i] += b5*h*k5[i];
+      }
+      f(k6,time+c6*h,x);
+
+      // increment
+      for(std::size_t i=0;i<size;i++)
+        value[i] = y[i] + b6*h*k6[i];
+
+      time+=h;
+
+    }
+  };
+
+  // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
+  struct butcher5v3_integrator{
+    static const int stage = 6;
+    static const int order = 5;
+    mutable working_buffer buffer;
+
+    template<typename F>
+    void operator()(double& time,double* __restrict__ value,std::size_t size,F const& f,double h) const{
+      buffer.ensure(6*size);
+      double* __restrict__  x  = buffer.ptr();
+      double* __restrict__  k1 = buffer.ptr()+size*1;
+      double* __restrict__  k2 = buffer.ptr()+size*2;
+      double* __restrict__  k3 = buffer.ptr()+size*3;
+      double* __restrict__  k4 = buffer.ptr()+size*4;
+      double* __restrict__  k5 = buffer.ptr()+size*5;
+      double* __restrict__& k6 = k2;
+
+      // k1
+      f(k1,time,value);
+
+      // k2
+      static constexpr double a21 = -1.0/2.0;
+      static constexpr double c2  = -1.0/2.0;
+      for(std::size_t i=0;i<size;i++)
+        x[i] = value[i] + a21*h*k1[i];
+      f(k2,time+c2*h,x);
+
+      // k3
+      static constexpr double a31 = 5.0/16.0;
+      static constexpr double a32 = -1.0/16.0;
+      static constexpr double c3  = 1.0/4.0;
+      for(std::size_t i=0;i<size;i++)
+        x[i] = value[i] + h*(a31*k1[i] + a32*k2[i]);
+      f(k3,time+c3*h,x);
+
+      // k4
+      static constexpr double a41 = -3.0/4.0;
+      static constexpr double a42 = 1.0/4.0;
+      static constexpr double a43 = 1.0;
+      static constexpr double c4  = 1.0/2.0;
+      for(std::size_t i=0;i<size;i++)
+        x[i] = value[i] + h*(a41*k1[i] + a42*k2[i] + a43*k3[i]);
+      f(k4,time+c4*h,x);
+
+      // k5
+      static constexpr double a51 = 3.0/16.0;
+      static constexpr double a54 = 9.0/16.0;
+      static constexpr double c5  = 3.0/4.0;
+      for(std::size_t i=0;i<size;i++)
+        x[i] = value[i] + h*(a51*k1[i] + a54*k4[i]);
+      f(k5,time+c5*h,x);
+
+      // k6
+      static constexpr double a62 = -1.0/7.0;
+      static constexpr double a63 = 12.0/7.0;
+      static constexpr double a64 = -12.0/7.0;
+      static constexpr double a65 = 8.0/7.0;
+      static constexpr double c6  = 1.0;
+      for(std::size_t i=0;i<size;i++)
+        x[i] = value[i] + h*(a62*k2[i] + a63*k3[i] + a64*k4[i] + a65*k5[i]);
+      f(k6,time+c6*h,x);
+
+      // increment
+      static constexpr double b1  = 7.0/90.0;
+      static constexpr double b3  = 16.0/45.0;
+      static constexpr double b4  = 2.0/15.0;
+      static constexpr double b5  = 16.0/45.0;
+      static constexpr double b6  = 7.0/90.0;
+      for(std::size_t i=0;i<size;i++)
+        value[i] += h*(b1*k1[i] + b3*k3[i] + b4*k4[i] + b5*k5[i] + b6*k6[i]);
+
+      time+=h;
+    }
+  };
+
   //---------------------------------------------------------------------------
   // 高次公式
-
 
   struct hammud6_integrator{
     static const int stage = 7;

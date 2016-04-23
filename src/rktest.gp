@@ -9,7 +9,7 @@ set log x
 set log y
 set format x "10^{%L}"
 set format y "10^{%L}"
-set xlabel '{/Times {/Times-Italic x}(1)} abs(error)'
+set xlabel '{/Times {/Times-Italic x}(1.13)} abs(error)'
 set ylabel '#{/Times-Italic f} eval'
 set xrange [] reverse
 set key left top reverse Left
@@ -28,12 +28,15 @@ plot \
   "out/rk/rkrk4.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'RK4', \
   "out/rk/rkgill.txt"  u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Gill', \
   "out/rk/rkk38.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Kutta 3/8', \
+  "out/rk/b5v3.txt"    u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Butcher5v3', \
+  "out/rk/b5v2.txt"    u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Butcher5v2', \
+  "out/rk/b5v1.txt"    u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Butcher5v1', \
   "out/rk/hammud6.txt" u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Hammud6', \
   "out/rk/shanks7.txt" u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Shanks7', \
   "out/rk/rkcv7.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Cooper Verner 7', \
   "out/rk/rkcv8.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Cooper Verner 8'
 
-yaxis(fe,err) = -log(abs(err)/0.25)/log(abs(fe)); set nolog y; unset format y; set ylabel 'Score'; set yrange [] reverse; set key left bottom
+yaxis(fe,err) = (-log(abs(err)/0.25)/log(abs(fe))); set nolog y; unset format y; set ylabel 'Score'; set yrange [] reverse; set key left bottom
 plot \
   "out/rk/rkeuler.txt" u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Euler', \
   "out/rk/rkmid.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'midpoint', \
@@ -46,6 +49,9 @@ plot \
   "out/rk/rkrk4.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'RK4', \
   "out/rk/rkgill.txt"  u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Gill', \
   "out/rk/rkk38.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Kutta 3/8', \
+  "out/rk/b5v3.txt"    u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Butcher5v3', \
+  "out/rk/b5v2.txt"    u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Butcher5v2', \
+  "out/rk/b5v1.txt"    u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Butcher5v1', \
   "out/rk/hammud6.txt" u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Hammud6', \
   "out/rk/shanks7.txt" u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Shanks7', \
   "out/rk/rkcv7.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 title 'Cooper Verner 7', \

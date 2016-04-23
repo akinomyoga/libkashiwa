@@ -205,6 +205,25 @@ int main(){
   std::fclose(file);
 
   //
+  // 5次公式
+  //
+
+  mwg_printd("b5v1");
+  file = std::fopen("out/rk/b5v1.txt","wb");
+  test_method(file,kashiwa::rk16::butcher5v1_integrator());
+  std::fclose(file);
+
+  mwg_printd("b5v2");
+  file = std::fopen("out/rk/b5v2.txt","wb");
+  test_method(file,kashiwa::rk16::butcher5v2_integrator());
+  std::fclose(file);
+
+  mwg_printd("b5v3");
+  file = std::fopen("out/rk/b5v3.txt","wb");
+  test_method(file,kashiwa::rk16::butcher5v3_integrator());
+  std::fclose(file);
+
+  //
   // 高次公式
   //
 
