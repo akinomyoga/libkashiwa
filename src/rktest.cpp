@@ -3,7 +3,7 @@
 #include <vector>
 #include <mwg/except.h>
 #include <mwg/xprintf.h>
-#include "rk16.h"
+#include "ksh/erk.h"
 
 template<typename F>
 double binary_search_function(double lowerBound,double upperBound,double value,double tolerance,F func){

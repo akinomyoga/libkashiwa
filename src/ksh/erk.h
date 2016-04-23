@@ -1,7 +1,7 @@
 // -*- mode:c++ -*-
 #pragma once
-#ifndef KASHIWA_RK16_H
-#define KASHIWA_RK16_H
+#ifndef KASHIWA_RK_ERK_H
+#define KASHIWA_RK_ERK_H
 #include <cstdlib>
 #include <cmath>
 #include <vector>
@@ -684,6 +684,7 @@ namespace rk16{
   //---------------------------------------------------------------------------
   // 高次公式
 
+  // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
   struct hammud6_integrator{
     static const int stage = 7;
     static const int order = 6;
@@ -778,6 +779,7 @@ namespace rk16{
     }
   };
 
+  // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
   struct shanks7_integrator{
     static const int stage = 9;
     static const int order = 7;
