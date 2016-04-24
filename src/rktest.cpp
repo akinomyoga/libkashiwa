@@ -9,14 +9,14 @@ template<typename Integrator>
 void test_embedded_integrate(std::FILE* file,Integrator const& integ){
   double const sol = exactSolution(finalTime);
 
-  for(double tol=1e-18;tol<1e-4;tol*=10){
+  for(double tol=1e-15;tol<1e-4;tol*=10){
     typename Integrator::stat_t  stat;
     typename Integrator::param_t params;
     params.atol = tol;
     params.rtol = tol;
-    params.step = 0.1;
+    //params.step = 0.1;
 
-    double time = 0.0;
+    double time = initialTime;
     double value[1] = { initialCondition };
     integ.integrate(time,value,1,f,finalTime,stat,params);
 
@@ -41,7 +41,7 @@ void test_erk2(){
 }
 
 int main(){
-  //test_erk1();
+  test_erk1();
   test_erk2();
   return 0;
 }

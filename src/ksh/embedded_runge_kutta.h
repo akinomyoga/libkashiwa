@@ -467,7 +467,7 @@ namespace rk16{
 
       double h = bwd*std::abs(params.step);
       if(h == 0.0){
-        this->_determine_initial_step(time,value,size,f,bwd,atol,rtol,hmax);
+        h = this->_determine_initial_step(time,value,size,f,bwd,atol,rtol,hmax);
         stat.nfcn++;
       }
 

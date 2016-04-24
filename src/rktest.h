@@ -42,10 +42,11 @@ double binary_search_function(double lowerBound,double upperBound,double value,d
 //   解 √(2t + X0^2)
 
 // static const double initialCondition = 1.0;
-// void f(double* __restrict__ slope,double t,double const* __restrict__ value){
+// static const double finalTime = 1.0;
+// static void f(double* __restrict__ slope,double t,double const* __restrict__ value){
 //   slope[0] = 1.0/value[0];
 // }
-// double exactSolution(double t){
+// static double exactSolution(double t){
 //   return std::sqrt(2*t+initialCondition*initialCondition);
 // }
 
@@ -55,17 +56,18 @@ double binary_search_function(double lowerBound,double upperBound,double value,d
 // dx/dt = (tan(y) + 1)/2.
 //   解: t - t0 = x + ln(sin(x)+cos(x)). (但し、t in [0, t*).)
 //   初期条件を x(t=0) = 0 とすると A = 1.
-//   特異点 t* = pi/4 + (1/2)ln(2) = 1.131971753677421
+//   特異点 t* = t(x=pi/2) = pi/2 = 1.5707963267948966
 //
 
-static const double initialCondition = 0.0;
-static const double finalTime = 1.13;
+static const double initialCondition = 1.0;
+static const double initialTime = 1.0 + std::log(std::sin(1.0)+std::cos(1.0)); // = 1.3233676675153825
+static const double finalTime = initialTime + 0.2; // ~ 1.52
 static void f(double* __restrict__ slope,double t,double const* __restrict__ value){
   slope[0] = (std::tan(value[0])+1.0)/2;
 }
 static double exactSolution(double t){
   return binary_search_function(
-    0.0,0.25*M_PI,t,0.0,[](double x){
+    0.0,0.5*M_PI,t,0.0,[](double x){
       return x+std::log(std::cos(x)+std::sin(x));
     }
   );
@@ -91,7 +93,7 @@ void test_method(std::FILE* file,Integrator const& integ){
     Integrator::order>=4?0x10000:
     0x100000;
   for(std::size_t nval=1;nval<nvalMax;nval*=2){
-    double time = 0.0;
+    double time = initialTime;
     double value[1] = { initialCondition };
 
     if(nval*2 <= nstage) continue;
