@@ -218,6 +218,7 @@ namespace rk16{
       double safe {0.0};
       double hmax {0.0};
       double step {0.0};
+      int    nstif{0};
       std::ptrdiff_t nmax {100000};
     };
 
@@ -456,11 +457,13 @@ namespace rk16{
       int    const bwd   = time<timeN?1: -1;
       double const rtol  = std::abs(params.rtol);
       double const atol  = std::abs(params.atol);
+      int    const nstif = std::abs(params.nstif==0?10: params.nstif);
       std::ptrdiff_t const nmax = params.nmax;
 
       double* __restrict__ const x  = buffer.ptr();
-      double* __restrict__ const k1 = buffer.ptr()+size*1;
-      double* __restrict__ const kD = buffer.ptr()+size*2;
+      double* __restrict__ const k1 = buffer.ptr()+size*1; // 最初の微分評価 (c = 0.0) を入れる場所
+      double* __restrict__ const kD = buffer.ptr()+size*2; // 次のステップの最初の微分 (FSAL) を入れる場所
+      double* __restrict__ const kC = buffer.ptr()+size*3; // 最後の微分評価 (c = 1.0) の入る場所
 
       f(k1,time,value);
       stat.nfcn++;
@@ -473,8 +476,8 @@ namespace rk16{
 
       double facold=1e-4;
       bool reject=false, last=false;
-      // double hlamb=0.0;
-      // int iasti=0;
+      double hlamb=0.0;
+      int iasti=0,nonsti=0;
       for(;;stat.nstep++){
         mwg_check(nmax<0||stat.nstep<nmax,"収束しません time = %g, h = %g at step#%d",time,h,stat.nstep);
         mwg_check(0.1*std::abs(h)>std::abs(time)*DBL_EPSILON,"時刻桁落ち time = %g, h = %g",time,h);
@@ -507,23 +510,22 @@ namespace rk16{
           stat.nfcn++;
 
           // stiffness detection
-          // if(stat.naccpt%nstiff==0||iasti>0){
-          //   if(stf>0.0){
-          //     double stnum=0.0;
-          //     for(std::size_t i=0;i<size;i++)
-          //       stnum=stnum+(kD[i]-kC[i])**2;
-          //     hlamb=std::abs(h)*std::sqrt(stnum/stf);
-          //   }
-          //   if(hlamb>6.1){
-          //     nonsti=0;
-          //     iasti++;
-          //     if(iasti==15)
-          //       mwg_printd("the problem seems to become stiff at time = %g",time);
-          //   }else{
-          //     nonsti++;
-          //     if(nonsti==6) iasti=0;
-          //   }
-          // }
+          if(stat.naccpt%nstif==0||iasti>0){
+            if(stf>0.0){
+              double stnum=0.0;
+              for(std::size_t i=0;i<size;i++)
+                stnum+=(kD[i]-kC[i])*(kD[i]-kC[i]);
+              hlamb=std::abs(h)*std::sqrt(stnum/stf);
+            }
+            if(hlamb>6.1){
+              nonsti=0;
+              iasti++;
+              mwg_assert_nothrow(iasti==15,"the problem seems to become stiff at time = %g",time);
+            }else{
+              nonsti++;
+              if(nonsti==6) iasti=0;
+            }
+          }
 
           // 密出力
 
