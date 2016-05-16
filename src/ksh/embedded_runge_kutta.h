@@ -447,6 +447,14 @@ namespace rk16{
       double& time,double* __restrict__ value,std::size_t size,F const& f,
       double timeN,stat_t& stat,param_t const& params
     ) const{
+      this->integrate(time,value,size,f,timeN,stat,params,[](){});
+    }
+
+    template<typename F,typename CB>
+    void integrate(
+      double& time,double* __restrict__ value,std::size_t size,F const& f,
+      double timeN,stat_t& stat,param_t const& params,CB const& stepCallback
+    ) const{
       buffer.ensure(10*size);
       double const beta  = kashiwa::clamp(params.beta, 0.0, 0.2); // e.g. 0.04
       double const safe  = params.safe==0.0?0.9: kashiwa::clamp(params.safe, 1e-4, 1.0);
@@ -543,6 +551,9 @@ namespace rk16{
           }
 
           time+=h;
+
+          stepCallback();
+
           if(last)return;
 
           if(std::abs(hnew)>hmax) hnew=bwd*hmax;
