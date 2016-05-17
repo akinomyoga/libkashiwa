@@ -186,20 +186,22 @@ namespace rk16{
       for(std::size_t i=0;i<size;i++){
         double const slope = b1*k1[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i]+bA*kA[i]+bB*kB[i]+bC*kC[i];
         double const _y = value[i] + h*slope;
-        double const sk = atol+rtol*std::max(value[i],_y);
+        double const sk = atol+rtol*std::max(std::abs(value[i]),std::abs(_y));
         double const e1 = er1*k1[i]+er6*k6[i]+er7*k7[i]+er8*k8[i]+er9*k9[i]+erA*kA[i]+erB*kB[i]+erC*kC[i];
         double const e2 = slope-bhh1*k1[i]-bhh9*k9[i]-bhhC*kC[i];
 
-        x[i] = _y;
         err1 += (e1/sk)*(e1/sk);
         err2 += (e2/sk)*(e2/sk);
-        err3 += (_y-x[i])*(_y-x[i]);
+        err3 += slope*slope;
+        x[i] = _y;
       }
-
+      
       double deno = err1+0.01*err2;
       if(deno<=0.0) deno = 1.0;
       _err = std::abs(h)*err1/std::sqrt(size*deno);
-      _stf = err3;
+      _stf = h*h*err3;
+
+      //std::printf("h = %g, tol=(%g %g), (|slope|, |err1|, |err2|) = (%g, %g, %g), _err=%g\n",h,atol,rtol,std::sqrt(err3/size),std::sqrt(err1/size),std::sqrt(err2/size),_err);
     }
 
     struct stat_t{
@@ -528,7 +530,8 @@ namespace rk16{
             if(hlamb>6.1){
               nonsti=0;
               iasti++;
-              mwg_assert_nothrow(iasti==15,"the problem seems to become stiff at time = %g",time);
+              if(!(iasti==15))
+                std::fprintf(stderr,"the problem seems to become stiff at time = %g\n",time);
             }else{
               nonsti++;
               if(nonsti==6) iasti=0;
