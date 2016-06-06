@@ -4,14 +4,42 @@
 #define KASHIWA_RK_EMBEDDED_RUNGE_KUTTA_H
 #include <cstddef>
 #include <cfloat>
+#include <mwg/except.h>
 #include "buffer.h"
 
 namespace kashiwa{
 namespace rk16{
 
+  struct iequation_for_erk;
+
+  struct stat_t{
+    int nfcn   {0};
+    int nstep  {0};
+    int naccpt {0};
+    int nrejct {0};
+
+    iequation_for_erk* eq            {nullptr};
+    double const*      previousValue {nullptr};
+    std::size_t        previousSize  {0};
+    double             previousTime  {0.0};
+    double             previousStep  {0.0};
+  };
+
+  struct idense_output{
+    virtual void get_values_at(
+      double* __restrict__ interpolated,double time,
+      std::size_t const* icomp,std::size_t ncomp
+    ) = 0;
+
+    void get_values_at(double* __restrict__ interpolated,double time){
+      return get_values_at(interpolated,time,nullptr,0);
+    }
+  };
+
   struct iequation_for_erk{
     virtual void eval_f(double* __restrict__ slope,double t,double const* __restrict__ value) = 0;
     virtual void onstep(){}
+    virtual void ondense(stat_t const& stat,idense_output& data){}
     virtual ~iequation_for_erk(){}
   };
 
@@ -25,18 +53,12 @@ namespace rk16{
     // buffer の状態
     //   before [  ? | k1 |  ? |  ? |  ? |  ? |  ? |  ? |  ? |  ? ]
     //   after  [  x | k1 | k5 | kC | x6 | x7 | x8 | k9 | kA | kB ]
+    //   但し x は次の step の値である。
     void _integrate8(
       double& time,double* __restrict__ value,std::size_t size,
       iequation_for_erk& eq,double h,
       double atol,double rtol,double& _err,double& _stf
     ) const;
-
-    struct stat_t{
-      int nfcn   { 0 };
-      int nstep  { 0 };
-      int naccpt { 0 };
-      int nrejct { 0 };
-    };
 
     struct param_t{
       double atol {1e-13};
@@ -51,12 +73,8 @@ namespace rk16{
       std::ptrdiff_t nmax {100000};
     };
 
-    // buffer の状態
-    //   before [  x | k1 | kD | kC | k6 | k7 | k8 | k9 | kA | kB ]
-    //   after  [  x | k1 | kD | kC | xE | xF | xG | kE | kF | kG ]
     void _dense_output_initialize(
-      double const& time,double const* __restrict__ value,std::size_t size,
-      iequation_for_erk& eq,double h,stat_t& stat,int* icomp,std::size_t nrd,double* __restrict__ cont
+      working_buffer& interpBuffer,stat_t& stat,int* icomp,std::size_t nrd
     ) const;
 
     double _determine_initial_step(
@@ -132,12 +150,6 @@ namespace rk16{
       this->integrate(time,value,size,eq,timeN,stat,params);
     }
 
-  private:
-    std::size_t denseVersion {0};
-    std::size_t previousSize;
-    double      previousTime;
-    double      previousStep;
-
   public:
     void integrate(
       double& time,double* __restrict__ value,std::size_t size,
@@ -145,54 +157,7 @@ namespace rk16{
       double timeN,stat_t& stat,param_t const& params
     ) const;
 
-    // struct dense_type{
-    //   dop853_integrator const& integ;
-    //   std::vector<std::size_t> icomp;
-    //   working_buffer buffer;
-
-    //   std::size_t denseVersion {-1};
-    //   double previousTime;
-    //   double previousStep;
-    // public:
-    //   dense_type(dop853_integrator const& integ):integ(integ){}
-    //   dense_type(dop853_integrator const& integ,std::size_t const* icomp,std::size_t ncomp)
-    //     :integ(integ),icomp(icomp,icomp+ncomp){}
-
-    //   void get_value_at(double* __restrict__ value,double time) const{
-    //     int const ncomp = icomp.size()? icomp.size(): integ.presviousSize;
-
-    //     // void _dense_output_initialize(
-    //     //   double time,double const* __restrict__ value,std::size_t size,
-    //     //   F const& f,double h,stat_t& stat,int* icomp,std::size_t nrd,double* __restrict__ cont
-    //     // );
-
-    //     integ._dense_output_initialize(time,value,size,f,h,stat,&icomp[0],ncomp);
-
-    //     double const s = (time-integ.previousTime)/integ.previousStep;
-    //     double const t = 1.0-s;
-    //     mwg_check(0.0<=s&&s<=1.0, "time out of range.");
-    //     double const con0 = con;
-    //     double const con1 = con+ncomp;
-    //     double const con2 = con+ncomp*2;
-    //     double const con3 = con+ncomp*3;
-    //     double const con4 = con+ncomp*4;
-
-    //     for(std::size_t i=0; i<ncomp; i++){
-    //       int const j = icomp.size()? icomp[i]: i;
-
-    //       double a=con[i+7*ncomp];
-    //       a=a*s+con[i+6*ncomp];
-    //       a=a*t+con[i+5*ncomp];
-    //       a=a*s+con[i+4*ncomp];
-    //       a=a*t+con[i+3*ncomp];
-    //       a=a*s+con[i+2*ncomp];
-    //       a=a*t+con[i+1*ncomp];
-    //       a=a*s+con[i+0*ncomp];
-    //       value[i]=a;
-    //     }
-    //   }
-    // };
-
+    struct dense_output;
   };
 
 }

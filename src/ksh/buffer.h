@@ -16,6 +16,8 @@ namespace kashiwa{
 
     double      * ptr()      {return &data[0];}
     double const* ptr() const{return &data[0];}
+
+    std::size_t size() const{return this->data.size();}
   };
 
   template<typename T>
