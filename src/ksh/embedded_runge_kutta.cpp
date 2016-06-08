@@ -388,14 +388,6 @@ namespace rk16{
         stat.previousStep  = h;
         eq.ondense(stat,denseData);
 
-        // if(iout==2 || event)
-        //   _dense_output_initialize(...);
-
-        // if(iout==1||iout==2||event){
-        //   solout(naccpt+1,time,time+h,value,size,cont,icomp,nrd,irtrn,xout);
-        //   if (irtrn<0) goto 79; // error report
-        // }
-
         for(std::size_t i=0;i<size;i++){
           k1[i] = kD[i];
           value[i] = x[i];
