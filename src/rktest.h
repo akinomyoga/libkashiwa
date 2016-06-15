@@ -104,7 +104,7 @@ void test_method(std::FILE* file,Integrator const& integ){
       integ(time,value,1,f,h);
 
     double const err = sol-value[0];
-    std::fprintf(file,"%zu %g %g %g %g\n",nstep*nstage,time,value[0],sol,err);
+    std::fprintf(file,"%u %g %g %g %g\n",nstep*nstage,time,value[0],sol,err);
 
     // check order
     if(!roundingDominant){
