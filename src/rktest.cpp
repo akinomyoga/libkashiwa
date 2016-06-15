@@ -21,7 +21,7 @@ void test_embedded_integrate(std::FILE* file,Integrator const& integ){
     integ.integrate(time,value,1,f,finalTime,stat,params);
 
     double const err = sol-value[0];
-    std::fprintf(file,"%zu %g %g %g %g\n",stat.nfcn,time,value[0],sol,err);
+    std::fprintf(file,"%u %g %g %g %g\n",stat.nfcn,time,value[0],sol,err);
     std::printf("DOP853: nfe = %d, nac:nrj = %d:%d\n",stat.nfcn,stat.naccpt,stat.nrejct);
   }
 }
