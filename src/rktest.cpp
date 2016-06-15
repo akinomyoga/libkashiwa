@@ -10,7 +10,7 @@ void test_embedded_integrate(std::FILE* file,Integrator const& integ){
   double const sol = exactSolution(finalTime);
 
   for(double tol=1e-15;tol<1e-4;tol*=10){
-    typename Integrator::stat_t  stat;
+    kashiwa::rk16::stat_t stat;
     typename Integrator::param_t params;
     params.atol = tol;
     params.rtol = tol;
