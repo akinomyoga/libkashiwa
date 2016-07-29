@@ -36,7 +36,9 @@ namespace rk16{
 
       double const s = (time-stat.previousTime)/stat.previousStep;
       double const t = 1.0-s;
-      mwg_check(0.0<=s&&s<=1.0, "time out of range.");
+      mwg_check(0.0<=s&&s<=1.0,
+        "time out of range: time=%g in [%g, %g]?",
+        time,stat.previousTime,stat.previousTime+stat.previousStep);
 
       double const* data=buffer.ptr();
       std::size_t const ncomp = icomp? _ncomp: stat.previousSize;
