@@ -5,76 +5,76 @@
 #include <mwg/except.h>
 #include "buffer.h" /* for kawshiwa::clamp */
 
-namespace kashiwa{
-namespace rk16{
+namespace kashiwa {
+namespace rk16 {
 
-  struct dop853_integrator::dense_output:idense_output{
+  struct dop853_integrator::dense_output: idense_output {
     dop853_integrator const& integ;
     stat_t& stat;
     int bufferId {-1};
     working_buffer buffer;
 
   public:
-    dense_output(dop853_integrator const& integ,stat_t& stat):integ(integ),stat(stat){}
+    dense_output(dop853_integrator const& integ, stat_t& stat): integ(integ), stat(stat) {}
 
   private:
-    void initialize_data(){
-      if(this->bufferId==stat.nstep)return;
-      this->bufferId=stat.nstep;
+    void initialize_data() {
+      if (this->bufferId == stat.nstep)return;
+      this->bufferId = stat.nstep;
 
       std::size_t const size = stat.previousSize;
-      buffer.ensure(size*8);
-      integ._dense_output_initialize(buffer,stat,nullptr,0);
+      buffer.ensure(size * 8);
+      integ._dense_output_initialize(buffer, stat, nullptr, 0);
     }
 
   public:
     virtual void get_values_at(
-      double* __restrict__ interpolated,double time,
-      std::size_t const* icomp,std::size_t _ncomp
-    ) override{
+      double* __restrict__ interpolated, double time,
+      std::size_t const* icomp, std::size_t _ncomp
+    ) override {
       this->initialize_data();
 
-      double const s = (time-stat.previousTime)/stat.previousStep;
-      double const t = 1.0-s;
-      mwg_check(0.0<=s&&s<=1.0,
+      double const s = (time - stat.previousTime) / stat.previousStep;
+      double const t = 1.0 - s;
+      mwg_check(0.0 <= s && s <= 1.0,
         "time out of range: time=%g in [%g, %g]?",
-        time,stat.previousTime,stat.previousTime+stat.previousStep);
+        time, stat.previousTime, stat.previousTime + stat.previousStep);
 
-      double const* data=buffer.ptr();
+      double const* data = buffer.ptr();
       std::size_t const ncomp = icomp? _ncomp: stat.previousSize;
-      for(std::size_t i=0; i<ncomp; i++){
+      for (std::size_t i = 0; i < ncomp; i++) {
         int const j = icomp? icomp[i]: i;
 
-        double a=data[j+7*ncomp];
-        a=a*s+data[j+6*ncomp];
-        a=a*t+data[j+5*ncomp];
-        a=a*s+data[j+4*ncomp];
-        a=a*t+data[j+3*ncomp];
-        a=a*s+data[j+2*ncomp];
-        a=a*t+data[j+1*ncomp];
-        a=a*s+data[j+0*ncomp];
-        interpolated[i]=a;
+        double a = data[j + 7 * ncomp];
+        a = a * s + data[j + 6 * ncomp];
+        a = a * t + data[j + 5 * ncomp];
+        a = a * s + data[j + 4 * ncomp];
+        a = a * t + data[j + 3 * ncomp];
+        a = a * s + data[j + 2 * ncomp];
+        a = a * t + data[j + 1 * ncomp];
+        a = a * s + data[j + 0 * ncomp];
+        interpolated[i] = a;
       }
     }
   };
 
   void dop853_integrator::_integrate8(
-    double& time,double* __restrict__ value,std::size_t size,
-    iequation_for_erk& eq,double h,
-    double atol,double rtol,double& _err,double& _stf
-  ) const{
+    double& time, double* __restrict__ value, std::size_t size,
+    iequation_for_erk& eq, double h,
+    double atol, double rtol, double& _err, double& _stf
+  ) const {
     double* __restrict__  x  = buffer.ptr();
-    double* __restrict__  k1 = buffer.ptr()+size*1;
-    double* __restrict__  k2 = buffer.ptr()+size*2;
+    double* __restrict__  k1 = buffer.ptr() + size * 1;
+    double* __restrict__  k2 = buffer.ptr() + size * 2;
     double* __restrict__& k3 = k2;
-    double* __restrict__  k4 = buffer.ptr()+size*3;
+    double* __restrict__  k4 = buffer.ptr() + size * 3;
     double* __restrict__& k5 = k3;
-    double* __restrict__  k6 = buffer.ptr()+size*4;
-    double* __restrict__  k7 = buffer.ptr()+size*5;
-    double* __restrict__  k8 = buffer.ptr()+size*6;
-    double* __restrict__  k9 = buffer.ptr()+size*7;
-    double* __restrict__  kA = buffer.ptr()+size*8;
-    double* __restrict__  kB = buffer.ptr()+size*9;
+    double* __restrict__  k6 = buffer.ptr() + size * 4;
+    double* __restrict__  k7 = buffer.ptr() + size * 5;
+    double* __restrict__  k8 = buffer.ptr() + size * 6;
+    double* __restrict__  k9 = buffer.ptr() + size * 7;
+    double* __restrict__  kA = buffer.ptr() + size * 8;
+    double* __restrict__  kB = buffer.ptr() + size * 9;
     double* __restrict__& kC = k4;
 
     static constexpr double c2 = 0.526001519587677318785587544488E-01;
@@ -165,219 +165,219 @@ namespace rk16{
     // k1: この関数を呼び出す前に設定しておく (FSAL)
 
     // k2
-    for(std::size_t i=0;i<size;i++)
-      x[i] = value[i] + h*(a21*k1[i]);
-    eq.eval_f(k2,time+c2*h,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + h * (a21 * k1[i]);
+    eq.eval_f(k2, time + c2 * h, x);
 
     // k3 := k2
-    for(std::size_t i=0;i<size;i++)
-      x[i] = value[i] + h*(a31*k1[i]+a32*k2[i]);
-    eq.eval_f(k3,time+c3*h,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + h * (a31 * k1[i] + a32 * k2[i]);
+    eq.eval_f(k3, time + c3 * h, x);
 
     // k4
-    for(std::size_t i=0;i<size;i++)
-      x[i] = value[i] + h*(a41*k1[i]+a43*k3[i]);
-    eq.eval_f(k4,time+c4*h,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + h * (a41 * k1[i] + a43 * k3[i]);
+    eq.eval_f(k4, time + c4 * h, x);
 
     // k5 := k3
-    for(std::size_t i=0;i<size;i++)
-      x[i] = value[i] + h*(a51*k1[i]+a53*k3[i]+a54*k4[i]);
-    eq.eval_f(k5,time+c5*h,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + h * (a51 * k1[i] + a53 * k3[i] + a54 * k4[i]);
+    eq.eval_f(k5, time + c5 * h, x);
 
     // k6
-    for(std::size_t i=0;i<size;i++)
-      x[i] = value[i] + h*(a61*k1[i]+a64*k4[i]+a65*k5[i]);
-    eq.eval_f(k6,time+c6*h,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + h * (a61 * k1[i] + a64 * k4[i] + a65 * k5[i]);
+    eq.eval_f(k6, time + c6 * h, x);
 
     // k7
-    for(std::size_t i=0;i<size;i++)
-      x[i] = value[i] + h*(a71*k1[i]+a74*k4[i]+a75*k5[i]+a76*k6[i]);
-    eq.eval_f(k7,time+c7*h,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + h * (a71 * k1[i] + a74 * k4[i] + a75 * k5[i] + a76 * k6[i]);
+    eq.eval_f(k7, time + c7 * h, x);
 
     // k8
-    for(std::size_t i=0;i<size;i++)
-      x[i] = value[i] + h*(a81*k1[i]+a84*k4[i]+a85*k5[i]+a86*k6[i]+a87*k7[i]);
-    eq.eval_f(k8,time+c8*h,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + h * (a81 * k1[i] + a84 * k4[i] + a85 * k5[i] + a86 * k6[i] + a87 * k7[i]);
+    eq.eval_f(k8, time + c8 * h, x);
 
     // k9
-    for(std::size_t i=0;i<size;i++)
-      x[i] = value[i] + h*(a91*k1[i]+a94*k4[i]+a95*k5[i]+a96*k6[i]+a97*k7[i]+a98*k8[i]);
-    eq.eval_f(k9,time+c9*h,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + h * (a91 * k1[i] + a94 * k4[i] + a95 * k5[i] + a96 * k6[i] + a97 * k7[i] + a98 * k8[i]);
+    eq.eval_f(k9, time + c9 * h, x);
 
     // kA
-    for(std::size_t i=0;i<size;i++)
-      x[i] = value[i] + h*(aA1*k1[i]+aA4*k4[i]+aA5*k5[i]+aA6*k6[i]+aA7*k7[i]+aA8*k8[i]+aA9*k9[i]);
-    eq.eval_f(kA,time+cA*h,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + h * (aA1 * k1[i] + aA4 * k4[i] + aA5 * k5[i] + aA6 * k6[i] + aA7 * k7[i] + aA8 * k8[i] + aA9 * k9[i]);
+    eq.eval_f(kA, time + cA * h, x);
 
     // kB
-    for(std::size_t i=0;i<size;i++)
-      x[i] = value[i] + h*(aB1*k1[i]+aB4*k4[i]+aB5*k5[i]+aB6*k6[i]+aB7*k7[i]+aB8*k8[i]+aB9*k9[i]+aBA*kA[i]);
-    eq.eval_f(kB,time+cB*h,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + h * (aB1 * k1[i] + aB4 * k4[i] + aB5 * k5[i] + aB6 * k6[i] + aB7 * k7[i] + aB8 * k8[i] + aB9 * k9[i] + aBA * kA[i]);
+    eq.eval_f(kB, time + cB * h, x);
 
     // kC
-    for(std::size_t i=0;i<size;i++)
-      x[i] = value[i] + h*(aC1*k1[i]+aC4*k4[i]+aC5*k5[i]+aC6*k6[i]+aC7*k7[i]+aC8*k8[i]+aC9*k9[i]+aCA*kA[i]+aCB*kB[i]);
-    eq.eval_f(kC,time+cC*h,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + h * (aC1 * k1[i] + aC4 * k4[i] + aC5 * k5[i] + aC6 * k6[i] + aC7 * k7[i] + aC8 * k8[i] + aC9 * k9[i] + aCA * kA[i] + aCB * kB[i]);
+    eq.eval_f(kC, time + cC * h, x);
 
     // increment
     double err1 = 0.0, err2 = 0.0, err3 = 0.0;
-    for(std::size_t i=0;i<size;i++){
-      double const slope = b1*k1[i]+b6*k6[i]+b7*k7[i]+b8*k8[i]+b9*k9[i]+bA*kA[i]+bB*kB[i]+bC*kC[i];
-      double const _y = value[i] + h*slope;
-      double const sk = atol+rtol*std::max(std::abs(value[i]),std::abs(_y));
-      double const e1 = er1*k1[i]+er6*k6[i]+er7*k7[i]+er8*k8[i]+er9*k9[i]+erA*kA[i]+erB*kB[i]+erC*kC[i];
-      double const e2 = slope-bhh1*k1[i]-bhh9*k9[i]-bhhC*kC[i];
+    for (std::size_t i = 0; i < size; i++) {
+      double const slope = b1 * k1[i] + b6 * k6[i] + b7 * k7[i] + b8 * k8[i] + b9 * k9[i] + bA * kA[i] + bB * kB[i] + bC * kC[i];
+      double const _y = value[i] + h * slope;
+      double const sk = atol + rtol * std::max(std::abs(value[i]), std::abs(_y));
+      double const e1 = er1 * k1[i] + er6 * k6[i] + er7 * k7[i] + er8 * k8[i] + er9 * k9[i] + erA * kA[i] + erB * kB[i] + erC * kC[i];
+      double const e2 = slope - bhh1 * k1[i] - bhh9 * k9[i] - bhhC * kC[i];
 
-      err1 += (e1/sk)*(e1/sk);
-      err2 += (e2/sk)*(e2/sk);
-      err3 += slope*slope;
+      err1 += (e1 / sk) * (e1 / sk);
+      err2 += (e2 / sk) * (e2 / sk);
+      err3 += slope * slope;
       x[i] = _y;
     }
       
-    double deno = err1+0.01*err2;
-    if(deno<=0.0) deno = 1.0;
-    _err = std::abs(h)*err1/std::sqrt(size*deno);
-    _stf = h*h*err3;
+    double deno = err1 + 0.01 * err2;
+    if (deno <= 0.0) deno = 1.0;
+    _err = std::abs(h) * err1 / std::sqrt(size * deno);
+    _stf = h * h * err3;
 
-    // std::printf("h = %g, tol=(%g %g), (|slope|, |err1|, |err2|) = (%g, %g, %g), _err=%g\n",
-    //   h,atol,rtol,std::sqrt(err3/size),std::sqrt(err1/size),std::sqrt(err2/size),_err);
+    // std::printf("h = %g, tol = (%g %g), (|slope|, |err1|, |err2|) = (%g, %g, %g), _err=%g\n",
+    //   h, atol, rtol, std::sqrt(err3 / size), std::sqrt(err1 / size), std::sqrt(err2 / size),_err);
   }
 
   double dop853_integrator::_determine_initial_step(
-    double time,double* __restrict__ value,std::size_t size,
+    double time, double* __restrict__ value, std::size_t size,
     iequation_for_erk& eq,
-    int bwd,double atol,double rtol,double hmax
-  ) const{
+    int bwd, double atol, double rtol, double hmax
+  ) const {
     double* __restrict__ const x  = buffer.ptr();
-    double* __restrict__ const k1 = buffer.ptr()+size*1;
-    double* __restrict__ const k2 = buffer.ptr()+size*2;
+    double* __restrict__ const k1 = buffer.ptr() + size * 1;
+    double* __restrict__ const k2 = buffer.ptr() + size * 2;
 
     // compute a first guess for explicit euler as:
     //   h1 = 0.01 * NORM(value) / NORM(k1).
-    double dnf=0.0, dny=0.0;
-    for(std::size_t i = 0; i<size; i++){
-      double const sk=atol+rtol*std::abs(value[i]);
-      dnf+=(k1[i]/sk)*(k1[i]/sk);
-      dny+=(value[i]/sk)*(value[i]/sk);
+    double dnf = 0.0, dny = 0.0;
+    for (std::size_t i = 0; i < size; i++) {
+      double const sk = atol + rtol * std::abs(value[i]);
+      dnf += (k1[i] / sk) * (k1[i] / sk);
+      dny += (value[i] / sk) * (value[i] / sk);
     }
 
     double h1;
-    if(dnf<=1e-10||dny<=1e-10)
-      h1=1.0e-6;
+    if (dnf <= 1e-10 || dny <= 1e-10)
+      h1 = 1.0e-6;
     else
-      h1=std::sqrt(dny/dnf)*0.01;
-    h1=std::min(h1,hmax);
+      h1 = std::sqrt(dny / dnf) * 0.01;
+    h1 = std::min(h1, hmax);
 
-    for(std::size_t i = 0; i<size; i++)
-      x[i]=value[i]+bwd*h1*k1[i];
-    eq.eval_f(k2,time+bwd*h1,x);
+    for (std::size_t i = 0; i < size; i++)
+      x[i] = value[i] + bwd * h1 * k1[i];
+    eq.eval_f(k2, time + bwd * h1, x);
 
     // 二階微分ノルム |f'|
-    double norm2=0.0;
-    for(std::size_t i = 0; i<size; i++){
-      double const sk=atol+rtol*abs(value[i]);
-      double const z =(k2[i]-k1[i])/sk;
-      norm2+=z*z;
+    double norm2 = 0.0;
+    for (std::size_t i = 0; i < size; i++) {
+      double const sk = atol + rtol * abs(value[i]);
+      double const z =(k2[i] - k1[i]) / sk;
+      norm2 += z * z;
     }
-    norm2=std::sqrt(norm2)/h1;
+    norm2 = std::sqrt(norm2) / h1;
 
     // step size `h2' is computed such that:
-    //   h2^order * max{norm(f), norm(f')} = 0.01
-    double const der12=std::max(norm2,std::sqrt(dnf));
+    //   h2^order * max {norm(f), norm(f')} = 0.01
+    double const der12 = std::max(norm2, std::sqrt(dnf));
     double h2;
-    if(der12<=1e-15)
-      h2=std::max(1e-6,std::abs(h1)*1e-3);
+    if (der12 <= 1e-15)
+      h2 = std::max(1e-6, std::abs(h1) * 1e-3);
     else
-      h2=std::pow(0.01/der12, 1.0/order);
+      h2 = std::pow(0.01 / der12, 1.0 / order);
 
-    return bwd*std::min(std::min(100*h1,h2),hmax);
+    return bwd * std::min(std::min(100 * h1, h2), hmax);
   }
 
   void dop853_integrator::integrate(
-    double& time,double* __restrict__ value,std::size_t size,
+    double& time, double* __restrict__ value, std::size_t size,
     iequation_for_erk& eq,
-    double timeN,stat_t& stat,param_t const& params
-  ) const{
-    buffer.ensure(10*size);
+    double timeN, stat_t& stat, param_t const& params
+  ) const {
+    buffer.ensure(10 * size);
     double const beta  = kashiwa::clamp(params.beta, 0.0, 0.2); // e.g. 0.04
-    double const safe  = params.safe==0.0?0.9: kashiwa::clamp(params.safe, 1e-4, 1.0);
-    double const facc1 = 1.0/(params.fac1==0.0?0.333: params.fac1);
-    double const facc2 = 1.0/(params.fac2==0.0?6.000: params.fac2);
-    double const expo1 = 1.0/8.0-beta*0.2;
-    double const hmax  = std::abs(params.hmax==0.0?timeN-time: params.hmax);
-    int    const bwd   = time<timeN?1: -1;
+    double const safe  = params.safe == 0.0? 0.9: kashiwa::clamp(params.safe, 1e-4, 1.0);
+    double const facc1 = 1.0 / (params.fac1 == 0.0? 0.333: params.fac1);
+    double const facc2 = 1.0 / (params.fac2 == 0.0? 6.000: params.fac2);
+    double const expo1 = 1.0 / 8.0 - beta * 0.2;
+    double const hmax  = std::abs(params.hmax == 0.0? timeN - time: params.hmax);
+    int    const bwd   = time < timeN? 1: -1;
     double const rtol  = std::abs(params.rtol);
     double const atol  = std::abs(params.atol);
-    int    const nstif = std::abs(params.nstif==0?10: params.nstif);
+    int    const nstif = std::abs(params.nstif == 0?10: params.nstif);
     std::ptrdiff_t const nmax = params.nmax;
 
     double* __restrict__ const x  = buffer.ptr();
-    double* __restrict__ const k1 = buffer.ptr()+size*1; // 最初の微分評価 (c = 0.0) を入れる場所
-    double* __restrict__ const kD = buffer.ptr()+size*2; // 次のステップの最初の微分 (FSAL) を入れる場所
-    double* __restrict__ const kC = buffer.ptr()+size*3; // 最後の微分評価 (c = 1.0) の入る場所
+    double* __restrict__ const k1 = buffer.ptr() + size * 1; // 最初の微分評価 (c = 0.0) を入れる場所
+    double* __restrict__ const kD = buffer.ptr() + size * 2; // 次のステップの最初の微分 (FSAL) を入れる場所
+    double* __restrict__ const kC = buffer.ptr() + size * 3; // 最後の微分評価 (c = 1.0) の入る場所
 
-    eq.eval_f(k1,time,value);
+    eq.eval_f(k1, time, value);
     stat.nfcn++;
 
-    double h = bwd*std::abs(params.step);
-    if(h == 0.0){
-      h = this->_determine_initial_step(time,value,size,eq,bwd,atol,rtol,hmax);
+    double h = bwd * std::abs(params.step);
+    if (h == 0.0) {
+      h = this->_determine_initial_step(time, value, size, eq, bwd, atol, rtol, hmax);
       stat.nfcn++;
     }
 
-    dense_output denseData(*this,stat);
+    dense_output denseData(*this, stat);
 
-    double facold=1e-4;
-    bool reject=false, last=false;
-    double hlamb=0.0;
-    int iasti=0,nonsti=0;
-    for(;;stat.nstep++){
-      mwg_check(nmax<0||stat.nstep<nmax,"収束しません time = %g, h = %g at step#%d",time,h,stat.nstep);
-      mwg_check(0.1*std::abs(h)>std::abs(time)*DBL_EPSILON,"時刻桁落ち time = %g, h = %g",time,h);
+    double facold = 1e-4;
+    bool reject = false, last = false;
+    double hlamb = 0.0;
+    int iasti = 0, nonsti = 0;
+    for (;; stat.nstep++) {
+      mwg_check(nmax < 0 || stat.nstep < nmax,"収束しません time = %g, h = %g at step#%d", time, h, stat.nstep);
+      mwg_check(0.1 * std::abs(h) > std::abs(time) * DBL_EPSILON,"時刻桁落ち time = %g, h = %g", time, h);
 
-      if((time+1.01*h-timeN)*bwd>0.0){
-        h=timeN-time;
-        last=true;
+      if ((time + 1.01 * h - timeN) * bwd > 0.0) {
+        h = timeN - time;
+        last = true;
       }
 
-      //mwg_printd("time = %g, h = %g",time,h);
-      double err,stf;
+      //mwg_printd("time = %g, h = %g", time, h);
+      double err, stf;
       this->_integrate8(
-        time,value,size,eq,h,
-        atol,rtol,err,stf
+        time, value, size, eq, h,
+        atol, rtol, err, stf
       );
-      stat.nfcn+=11;
+      stat.nfcn += 11;
 
-      double const fac11=std::pow(err,expo1);
-      double const fac = kashiwa::clamp(fac11/(std::pow(facold,beta)*safe), facc2, facc1);
-      double hnew = h/fac;
-      if(err > 1.0){
-        h /= std::min(facc1, fac11/safe);
-        reject=true;
-        last=false;
-        if(stat.naccpt>=1) stat.nrejct++;
-      }else{
+      double const fac11 = std::pow(err, expo1);
+      double const fac = kashiwa::clamp(fac11 / (std::pow(facold, beta) * safe), facc2, facc1);
+      double hnew = h / fac;
+      if (err > 1.0) {
+        h /= std::min(facc1, fac11 / safe);
+        reject = true;
+        last = false;
+        if (stat.naccpt >= 1) stat.nrejct++;
+      } else {
         stat.naccpt++;
-        facold=std::max(err,1e-4);
-        eq.eval_f(kD,time+h,x);
+        facold = std::max(err, 1e-4);
+        eq.eval_f(kD, time + h, x);
         stat.nfcn++;
 
         // stiffness detection
-        if(stat.naccpt%nstif==0||iasti>0){
-          if(stf>0.0){
-            double stnum=0.0;
-            for(std::size_t i=0;i<size;i++)
-              stnum+=(kD[i]-kC[i])*(kD[i]-kC[i]);
-            hlamb=std::abs(h)*std::sqrt(stnum/stf);
+        if (stat.naccpt%nstif == 0 || iasti > 0) {
+          if (stf > 0.0) {
+            double stnum = 0.0;
+            for (std::size_t i = 0; i < size; i++)
+              stnum += (kD[i] - kC[i]) * (kD[i] - kC[i]);
+            hlamb = std::abs(h) * std::sqrt(stnum / stf);
           }
-          if(hlamb>6.1){
-            nonsti=0;
+          if (hlamb > 6.1) {
+            nonsti = 0;
             iasti++;
-            if(!(iasti==15))
-              std::fprintf(stderr,"the problem seems to become stiff at time = %g\n",time);
-          }else{
+            if (!(iasti == 15))
+              std::fprintf(stderr,"the problem seems to become stiff at time = %g\n", time);
+          } else {
             nonsti++;
-            if(nonsti==6) iasti=0;
+            if (nonsti == 6) iasti = 0;
           }
         }
 
@@ -388,24 +388,24 @@ namespace rk16{
         stat.previousSize  = size;
         stat.previousTime  = time;
         stat.previousStep  = h;
-        eq.ondense(stat,denseData);
+        eq.ondense(stat, denseData);
 
-        for(std::size_t i=0;i<size;i++){
+        for (std::size_t i = 0; i < size; i++) {
           k1[i] = kD[i];
           value[i] = x[i];
         }
 
-        time+=h;
+        time += h;
 
         eq.onstep();
 
-        if(last)return;
+        if (last)return;
 
-        if(std::abs(hnew)>hmax) hnew=bwd*hmax;
-        if(reject) hnew=bwd*std::min(std::abs(hnew),std::abs(h));
-        reject=false;
+        if (std::abs(hnew) > hmax) hnew = bwd * hmax;
+        if (reject) hnew = bwd * std::min(std::abs(hnew), std::abs(h));
+        reject = false;
 
-        h=hnew;
+        h = hnew;
       }
     }
   }
@@ -419,8 +419,8 @@ namespace rk16{
   // この関数を呼び出すと内部の情報を破壊するため、この関数は 1 回限りしか呼び出せない。
   //
   void dop853_integrator::_dense_output_initialize(
-    working_buffer& interpBuffer,stat_t& stat,int* icomp,std::size_t nrd
-  ) const{
+    working_buffer& interpBuffer, stat_t& stat, int* icomp, std::size_t nrd
+  ) const {
     double* __restrict__             cont  = interpBuffer.ptr();
     iequation_for_erk&               eq    = *stat.eq;
     double const                     time  = stat.previousTime;
@@ -429,15 +429,15 @@ namespace rk16{
     double const                     h     = stat.previousStep;
 
     double* __restrict__  x = buffer.ptr();
-    double* __restrict__  k1 = buffer.ptr()+size*1;
-    double* __restrict__  k6 = buffer.ptr()+size*4;
-    double* __restrict__  k7 = buffer.ptr()+size*5;
-    double* __restrict__  k8 = buffer.ptr()+size*6;
-    double* __restrict__  k9 = buffer.ptr()+size*7;
-    double* __restrict__  kA = buffer.ptr()+size*8;
-    double* __restrict__  kB = buffer.ptr()+size*9;
-    double* __restrict__  kC = buffer.ptr()+size*3;
-    double* __restrict__  kD = buffer.ptr()+size*2;
+    double* __restrict__  k1 = buffer.ptr() + size * 1;
+    double* __restrict__  k6 = buffer.ptr() + size * 4;
+    double* __restrict__  k7 = buffer.ptr() + size * 5;
+    double* __restrict__  k8 = buffer.ptr() + size * 6;
+    double* __restrict__  k9 = buffer.ptr() + size * 7;
+    double* __restrict__  kA = buffer.ptr() + size * 8;
+    double* __restrict__  kB = buffer.ptr() + size * 9;
+    double* __restrict__  kC = buffer.ptr() + size * 3;
+    double* __restrict__  kD = buffer.ptr() + size * 2;
 
     double* __restrict__& xE = k6;
     double* __restrict__& xF = k7;
@@ -527,46 +527,46 @@ namespace rk16{
     static constexpr double d7F = -0.39177261675615439165231486172E+02;
     static constexpr double d7G = -0.14972683625798562581422125276E+03;
 
-    if(!icomp)nrd=size;
+    if (!icomp) nrd = size;
 
-    for(std::size_t j=0; j<nrd; j++){
-      int const i=icomp?icomp[j]:j; // 出力する変数の index
-      cont[j]=value[i];
-      double const ydiff=x[i]-value[i];
-      cont[j+nrd]=ydiff;
-      double const bspl=h*k1[i]-ydiff;
-      cont[j+nrd*2]=bspl;
-      cont[j+nrd*3]=ydiff-h*kD[i]-bspl;
-      cont[j+nrd*4]=d41*k1[i]+d46*k6[i]+d47*k7[i]+d48*k8[i]+d49*k9[i]+d4A*kA[i]+d4B*kB[i]+d4C*kC[i];
-      cont[j+nrd*5]=d51*k1[i]+d56*k6[i]+d57*k7[i]+d58*k8[i]+d59*k9[i]+d5A*kA[i]+d5B*kB[i]+d5C*kC[i];
-      cont[j+nrd*6]=d61*k1[i]+d66*k6[i]+d67*k7[i]+d68*k8[i]+d69*k9[i]+d6A*kA[i]+d6B*kB[i]+d6C*kC[i];
-      cont[j+nrd*7]=d71*k1[i]+d76*k6[i]+d77*k7[i]+d78*k8[i]+d79*k9[i]+d7A*kA[i]+d7B*kB[i]+d7C*kC[i];
+    for (std::size_t j = 0; j < nrd; j++) {
+      int const i = icomp? icomp[j]: j; // 出力する変数の index
+      cont[j] = value[i];
+      double const ydiff = x[i] - value[i];
+      cont[j + nrd] = ydiff;
+      double const bspl = h * k1[i] - ydiff;
+      cont[j + nrd * 2] = bspl;
+      cont[j + nrd * 3] = ydiff - h * kD[i] - bspl;
+      cont[j + nrd * 4] = d41 * k1[i] + d46 * k6[i] + d47 * k7[i] + d48 * k8[i] + d49 * k9[i] + d4A * kA[i] + d4B * kB[i] + d4C * kC[i];
+      cont[j + nrd * 5] = d51 * k1[i] + d56 * k6[i] + d57 * k7[i] + d58 * k8[i] + d59 * k9[i] + d5A * kA[i] + d5B * kB[i] + d5C * kC[i];
+      cont[j + nrd * 6] = d61 * k1[i] + d66 * k6[i] + d67 * k7[i] + d68 * k8[i] + d69 * k9[i] + d6A * kA[i] + d6B * kB[i] + d6C * kC[i];
+      cont[j + nrd * 7] = d71 * k1[i] + d76 * k6[i] + d77 * k7[i] + d78 * k8[i] + d79 * k9[i] + d7A * kA[i] + d7B * kB[i] + d7C * kC[i];
     }
 
-    for(std::size_t i=0;i<size;i++){
-      double const _xE = value[i] + h*(aE1*k1[i]+aE7*k7[i]+aE8*k8[i]+aE9*k9[i]+aEA*kA[i]+aEB*kB[i]+aEC*kC[i]+aED*kD[i]);
-      double const _xF = value[i] + h*(aF1*k1[i]+aF6*k6[i]+aF7*k7[i]+aF8*k8[i]+aFB*kB[i]+aFC*kC[i]+aFD*kD[i]);
-      double const _xG = value[i] + h*(aG1*k1[i]+aG6*k6[i]+aG7*k7[i]+aG8*k8[i]+aG9*k9[i]+aGD*kD[i]);
+    for (std::size_t i = 0; i < size; i++) {
+      double const _xE = value[i] + h * (aE1 * k1[i] + aE7 * k7[i] + aE8 * k8[i] + aE9 * k9[i] + aEA * kA[i] + aEB * kB[i] + aEC * kC[i] + aED * kD[i]);
+      double const _xF = value[i] + h * (aF1 * k1[i] + aF6 * k6[i] + aF7 * k7[i] + aF8 * k8[i] + aFB * kB[i] + aFC * kC[i] + aFD * kD[i]);
+      double const _xG = value[i] + h * (aG1 * k1[i] + aG6 * k6[i] + aG7 * k7[i] + aG8 * k8[i] + aG9 * k9[i] + aGD * kD[i]);
       /* xE == k6 */ k6[i] = _xE;
       /* xF == k7 */ k7[i] = _xF;
       /* xG == k8 */ k8[i] = _xG;
     }
 
-    eq.eval_f(kE,time+cE*h,xE);
+    eq.eval_f(kE, time + cE * h, xE);
 
-    for(std::size_t i=0;i<size;i++) xF[i] += h*aFE*kE[i];
-    eq.eval_f(kF,time+cF*h,xF);
+    for (std::size_t i = 0; i < size; i++) xF[i] += h * aFE * kE[i];
+    eq.eval_f(kF, time + cF * h, xF);
 
-    for(std::size_t i=0;i<size;i++) xG[i] += h*(aGE*kE[i]+aGF*kF[i]);
-    eq.eval_f(kG,time+cG*h,xG);
+    for (std::size_t i = 0; i < size; i++) xG[i] += h * (aGE * kE[i] + aGF * kF[i]);
+    eq.eval_f(kG, time + cG * h, xG);
 
-    stat.nfcn+=3;
-    for(std::size_t j=0; j<nrd; j++){
-      int const i=icomp?icomp[j]:j;
-      cont[j+nrd*4]=h*(cont[j+nrd*4]+d4D*kD[i]+d4E*kE[i]+d4F*kF[i]+d4G*kG[i]);
-      cont[j+nrd*5]=h*(cont[j+nrd*5]+d5D*kD[i]+d5E*kE[i]+d5F*kF[i]+d5G*kG[i]);
-      cont[j+nrd*6]=h*(cont[j+nrd*6]+d6D*kD[i]+d6E*kE[i]+d6F*kF[i]+d6G*kG[i]);
-      cont[j+nrd*7]=h*(cont[j+nrd*7]+d7D*kD[i]+d7E*kE[i]+d7F*kF[i]+d7G*kG[i]);
+    stat.nfcn += 3;
+    for (std::size_t j = 0; j < nrd; j++) {
+      int const i = icomp? icomp[j]: j;
+      cont[j + nrd * 4] = h * (cont[j + nrd * 4] + d4D * kD[i] + d4E * kE[i] + d4F * kF[i] + d4G * kG[i]);
+      cont[j + nrd * 5] = h * (cont[j + nrd * 5] + d5D * kD[i] + d5E * kE[i] + d5F * kF[i] + d5G * kG[i]);
+      cont[j + nrd * 6] = h * (cont[j + nrd * 6] + d6D * kD[i] + d6E * kE[i] + d6F * kF[i] + d6G * kG[i]);
+      cont[j + nrd * 7] = h * (cont[j + nrd * 7] + d7D * kD[i] + d7E * kE[i] + d7F * kF[i] + d7G *  kG[i]);
     }
   }
 
