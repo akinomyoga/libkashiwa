@@ -39,7 +39,7 @@ namespace rk16 {
   struct iequation_for_erk {
     virtual void eval_f(double* __restrict__ slope, double t, double const* __restrict__ value) = 0;
     virtual void onstep() {}
-    virtual void ondense(stat_t const& stat, idense_output& data) {}
+    virtual void ondense(stat_t const&, idense_output&) {}
     virtual ~iequation_for_erk() {}
   };
 
