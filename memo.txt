@@ -1,0 +1,137 @@
+
+-------------------------------------------------------------------------------
+  概要
+-------------------------------------------------------------------------------
+
+Title: kashiwa library
+Author: K. Murase <myoga.murase@gmail.com>
+
+
+他で必要になった数値計算関連のコードを放り込んでおく場所。
+
+-------------------------------------------------------------------------------
+  ToDo
+-------------------------------------------------------------------------------
+
+2016-12-13
+
+* 取り敢えずいま準備できる物
+
+  - Runge-Kutta
+  - 線形方程式解放
+  - Gauss-Legendre quadrature
+
+* 今必要な物・今後必要になる物
+
+  - 線形フィッティング用のコード
+  - ベクトル場の積分曲線を作ること
+    これは Runge-Kutta を利用する
+
+  - 多倍長演算
+  - Gauss-Legendre quadrature 高精度版
+
+* Runge-Kutta 取り込み
+
+  Runge-Kutta に関しては bolt repository から取り込む。
+  関連する commit だけを抽出する方法について調べる。
+  うーん。先ず初めに filter-branch --tree-filter で
+  関係ないファイルを全て削除してそれから空のコミットを squash すれば良いのだろうか。
+
+    $ g log --name-status | sed -n 's/^[A-Z]\b[[:space:]]*//p' | sort -u > list.txt
+
+  とすると過去のファイル名一覧が出てくるのでそれを見て残したファイル名を削除する。
+  そして、そのファイル名を使って filter-branch を実行する。
+  Makefile, memo.txt に関しては使う部分もあるが不要な部分もあるだろう。
+  これらに関しては取り敢えず削除しておいて後で必要な部分を pick up する。
+
+    $ g filter-branch --tree-filter 'rm -rf $(< remove-list.txt)'
+
+  取り敢えずはうまく行っている。そして沢山の空のコミットが残っている。これらはどの様に squash すれば良いのか。
+  この方法がよく分からないと思ったが filter-branch --commit-filter の skip_commit を使えば良いらしい。
+  しかし filter-branch の最中に現在のコミットが変更のないコミットなのかどうか調べる方法はあるのか。
+  どうやら引数に commit id が与えられる様であるのでそれを用いて
+
+    % git filter-branch --commit-filter '
+    %   if [[ $(git log --name-status $1 | grep '^[A-Z]\b') ]]; then
+    %     skip_commit "$@"
+    %   else
+    %     git commit-tree "$@"
+    %   fi'
+
+  とかやれば良いのだろうか。よく分からないので実際に試す必要があるだろうか。
+  と思っていたら filter-branch の help に git_commit_non_empty_tree という物の説明がある。
+
+    https://www.kernel.org/pub/software/scm/git/docs/git-filter-branch.html
+
+  という事は単に
+
+    $ g filter-branch --commit-filter 'git_commit_non_empty_tree "$@"'
+
+  で良いという事なのだろうか。試してみる事にする。うまく行ったので OK.
+ 
+  改めて repository を観察してみると submodule (ext/getopt) が削除できていない。
+  --tree-filter 'rm -rf ext/getopt' では不十分な様だ。検索してみると
+
+    http://stackoverflow.com/questions/23207104/git-filter-branch-remove-all-submodules-from-my-repo
+
+  にその物が書かれている。さて、これの回答を見ると --prune-empty というオプションがついている。
+  これについて調べてみると、空になったコミットは自動で削除してくれる様である。
+
+    [git filter-branchで過去の全てのcommitから画像ファイルの追加/変更をなかったことにしてリポジトリを軽量化する - dskd](http://dskd.jp/archives/46.html)
+
+  つまり、わざわざ後で squash/git_commit_non_empty_tree を実行する必要はなかったのだ。
+
+    $ git filter-branch -f --prune-empty --tree-filter '
+    $   git submodule deinit -f .
+    $   git rm -rf ./ext/getopt && rm -rf ./ext
+    $   find . -name .gitmodules -delete'
+
+  何か色々とエラーが出たような気がするが気にしない。更に、
+  すべてのファイルの歴史をサブディレクトリ src 内に移動したい。
+  これはできるのだろうか。
+
+    [Gitリポジトリのディレクトリ構成を変更する - ekreaの日記](http://d.hatena.ne.jp/ekrea/20120819/1345401248)
+
+  を参考にして試してみる。
+
+    % git filter-branch -f --tree-filter 'mkdir src; mv *.* bflow ksh src/'
+
+  エラーが出て出来ない。仕方がないので丁寧に書くことにする。
+
+    $ git filter-branch -f --tree-filter '
+    $   mkdir -p src
+    $   a=()
+    $   for f in *.* bflow ksh; do
+    $     [[ -e $f ]] && a+=("$f")
+    $   done
+    $   if ((${#a[@]})); then
+    $     mv -f "${a[@]}" src
+    $   fi'
+
+  できた。後はくっつけるだけである。
+
+-------------------------------------------------------------------------------
+  ToDo
+-------------------------------------------------------------------------------
+
+2016-12-13
+
+* 取り敢えず作る。計画を立てる。
+
+  今までに書いたコード、それからこれから書く数値計算関連のコードに関して、
+  便利で汎用的な物を全部ここに放り込んでいく事にする。
+
+  実の所、殆ど車輪の再発明になる様な気がするが学習の為、
+  モチベーションの為という事にする。
+
+  既に書いたコードとしては Runge-Kutta 等があるが
+  これはボルツマンのコードの方に記録されている。
+  また線形方程式を LU 分解を用いて解くコードに関しては、
+  rfh の方で書いてそれがボルツマンの方にも流用されている。
+
+  また、線形フィッティングに関してはボルツマンの方で使いたいので、
+  こちらで実装する事にしたい。
+
+  更に Gauss quadrature に関してもまとめて置きたい。
+  ゼロ点を正しく求める為には多倍長演算も欲しい。
+  しかしこれは今の所使う予定はないので後で考えておく。
