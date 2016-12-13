@@ -1,0 +1,125 @@
+#!/bin/bc -lq
+# -*- mode:awk -*-
+
+sqrt21 = sqrt(21)
+
+b1 =  1.0/ 20.0;
+b8 = 49.0/180.0;
+b9 = 16.0/ 45.0;
+ba = 49.0/180.0;
+bb =  1.0/ 20.0;
+print "static constexpr b1 = ", b1, ";\n"
+print "static constexpr b8 = ", b8, ";\n"
+print "static constexpr b9 = ", b9, ";\n"
+print "static constexpr bA = ", ba, ";\n"
+print "static constexpr bB = ", bb, ";\n"
+
+a21 = 0.5;
+c20 = a21;
+print "static constexpr a21 = ", a21, ";\n"
+print "static constexpr c20 = ", c30, ";\n"
+
+a31 = 0.25;
+a32 = 0.25;
+c30 = a31 + a32;
+print "static constexpr a31 = ", a31, ";\n"
+print "static constexpr a32 = ", a32, ";\n"
+print "static constexpr c30 = ", c30, ";\n"
+
+a41 = (1.0/ 7.0);
+a42 = (1.0/98.0)*(-7+3*sqrt21);
+a43 = (1.0/49.0)*(21-5*sqrt21);
+c40 = a41 + a42 + a43;
+print "static constexpr a41 = ", a41, ";\n"
+print "static constexpr a42 = ", a42, ";\n"
+print "static constexpr a43 = ", a43, ";\n"
+print "static constexpr c40 = ", c40, ";\n"
+
+a51 = (1.0/ 84.0)*(11-1*sqrt21);
+a53 = (1.0/ 63.0)*(18-4*sqrt21);
+a54 = (1.0/252.0)*(21+1*sqrt21);
+c50 = a51 + a53 + a54;
+print "static constexpr a51 = ", a51, ";\n"
+print "static constexpr a53 = ", a53, ";\n"
+print "static constexpr a54 = ", a54, ";\n"
+print "static constexpr c50 = ", c50, ";\n"
+
+a61 = (1.0/ 48.0)*(   5 -1*sqrt21);
+a63 = (1.0/ 36.0)*(   9 -1*sqrt21);
+a64 = (1.0/360.0)*(-231-14*sqrt21);
+a65 = (1.0/ 80.0)*(  63 +7*sqrt21);
+c60 = a61 + a63 + a64 + a65;
+print "static constexpr a61 = ", a61, ";\n"
+print "static constexpr a63 = ", a63, ";\n"
+print "static constexpr a64 = ", a64, ";\n"
+print "static constexpr a65 = ", a65, ";\n"
+print "static constexpr c60 = ", c60, ";\n"
+
+a71 = (1.0/ 42.0)*(  10+  1*sqrt21);
+a73 = (1.0/315.0)*(-432- 92*sqrt21);
+a74 = (1.0/ 90.0)*( 633+145*sqrt21);
+a75 = (1.0/ 70.0)*(-504-115*sqrt21);
+a76 = (1.0/ 35.0)*(  63+ 13*sqrt21);
+c70 = a71 + a73 + a74 + a75 + a76;
+print "static constexpr a71 = ", a71, ";\n"
+print "static constexpr a73 = ", a73, ";\n"
+print "static constexpr a74 = ", a74, ";\n"
+print "static constexpr a75 = ", a75, ";\n"
+print "static constexpr a76 = ", a76, ";\n"
+print "static constexpr c70 = ", c70, ";\n"
+
+a81 =  1.0/ 14.0;
+a85 = (1.0/126.0)*(14+3*sqrt21);
+a86 = (1.0/ 63.0)*(13+3*sqrt21);
+a87 =  1.0/  9.0;
+c80 = a81 + a85 + a86 + a87;
+print "static constexpr a81 = ", a81, ";\n"
+print "static constexpr a85 = ", a85, ";\n"
+print "static constexpr a86 = ", a86, ";\n"
+print "static constexpr a87 = ", a87, ";\n"
+print "static constexpr c80 = ", c80, ";\n"
+
+a91 =   1.0/  32.0;
+a95 = ( 1.0/ 576.0)*(  91.0+21.0*sqrt21);
+a96 =  11.0/  72.0;
+a97 = ( 1.0/1152.0)*(-385.0+75.0*sqrt21);
+a98 = ( 1.0/ 128.0)*(  63.0-13.0*sqrt21);
+c90 = a91 + a95 + a96 + a97 + a98;
+print "static constexpr a91 = ", a91, ";\n"
+print "static constexpr a95 = ", a95, ";\n"
+print "static constexpr a96 = ", a96, ";\n"
+print "static constexpr a97 = ", a97, ";\n"
+print "static constexpr a98 = ", a98, ";\n"
+print "static constexpr c90 = ", c90, ";\n"
+
+aa1 =  1.0/  14.0;
+aa5 =  1.0/   9.0;
+aa6 = (1.0/2205.0)*(-733.0+147.0*sqrt21);
+aa7 = (1.0/ 504.0)*( 515.0-111.0*sqrt21);
+aa8 = (1.0/  56.0)*(- 51.0+ 11.0*sqrt21);
+aa9 = (1.0/ 245.0)*( 132.0- 28.0*sqrt21);
+ca0 = aa1 + aa5 + aa6 + aa7 + aa8 + aa9;
+print "static constexpr aA1 = ", aa1, ";\n"
+print "static constexpr aA5 = ", aa5, ";\n"
+print "static constexpr aA6 = ", aa6, ";\n"
+print "static constexpr aA7 = ", aa7, ";\n"
+print "static constexpr aA8 = ", aa8, ";\n"
+print "static constexpr aA9 = ", aa9, ";\n"
+print "static constexpr cA0 = ", ca0, ";\n"
+
+ab5 = (1.0/18.0)*(- 42.0- 7.0*sqrt21);
+ab6 = (1.0/45.0)*(- 18.0-28.0*sqrt21);
+ab7 = (1.0/72.0)*(-273.0+53.0*sqrt21);
+ab8 = (1.0/72.0)*( 301.0-53.0*sqrt21);
+ab9 = (1.0/45.0)*(  28.0+28.0*sqrt21);
+aba = (1.0/18.0)*(  49.0+ 7.0*sqrt21);
+cb0 = ab5 + ab6 + ab7 + ab8 + ab9 + aba;
+print "static constexpr aB5 = ", ab5, ";\n"
+print "static constexpr aB6 = ", ab6, ";\n"
+print "static constexpr aB7 = ", ab7, ";\n"
+print "static constexpr aB8 = ", ab8, ";\n"
+print "static constexpr aB9 = ", ab9, ";\n"
+print "static constexpr aBA = ", aba, ";\n"
+print "static constexpr cB0 = ", cb0, ";\n"
+
+quit
