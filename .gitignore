@@ -4,9 +4,11 @@
 
 *~
 /COMMIT
+/mat
 
 # generated files
 
 /src/Makefile
 /out
 *.exe
+/src/libksh.a

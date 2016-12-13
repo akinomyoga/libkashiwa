@@ -23,7 +23,7 @@ ifeq ($(HOSTNAME),padparadscha)
   CXXFLAGS:= -Wall -std=gnu++14 -O3 -march=native
 endif
 
-ifeq ($(HOSTNAME),tkyntn.phys.s.u-tokyo.ac.jp)
+ifeq ($(USER)@$(HOSTNAME),murase@tkyntn.phys.s.u-tokyo.ac.jp)
   host:=found
 
   OTFFT_PREFIX :=$(HOME)/opt/otfft-6.4
@@ -58,10 +58,27 @@ directories := $(OUTDIR) $(OBJDIR)
 #
 
 # ksh
+
 directories += $(OBJDIR)/ksh
+
+objectfiles += $(OBJDIR)/ksh/embedded_runge_kutta.o
 -include $(OBJDIR)/ksh/embedded_runge_kutta.d
 $(OBJDIR)/ksh/embedded_runge_kutta.o: ksh/embedded_runge_kutta.cpp | $(OBJDIR)/ksh
-	$(CXX) $(CXXFLAGS) -c -MD -MF $(@:.o=.d) -o $@ $<
+	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ $<
+
+objectfiles += $(OBJDIR)/ksh/integrator.o
+-include $(OBJDIR)/ksh/integrator.d
+$(OBJDIR)/ksh/integrator.o: ksh/integrator.cpp
+	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ -I ksh $<
+
+objectfiles += $(OBJDIR)/ksh/linear_lu.o
+-include $(OBJDIR)/ksh/linear_lu.d
+$(OBJDIR)/ksh/linear_lu.o: ksh/linear_lu.cpp
+	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ -I ksh $<
+
+all: libksh.a
+libksh.a: $(objectfiles)
+	ar crs $@ $^
 
 #
 # Binaries
