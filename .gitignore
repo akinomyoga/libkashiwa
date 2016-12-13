@@ -1,3 +1,12 @@
 # gitignore
 
+# edit files
+
+*~
 /COMMIT
+
+# generated files
+
+/src/Makefile
+/out
+*.exe

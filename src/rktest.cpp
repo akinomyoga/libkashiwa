@@ -30,12 +30,12 @@ void test_erk2(){
   std::FILE* file;
 
   mwg_printd("dop853");
-  file = std::fopen("out/rk/dop853.txt","wb");
+  file = std::fopen("../out/rk/dop853.txt","wb");
   test_method(file,kashiwa::rk16::dop853_integrator());
   std::fclose(file);
 
   mwg_printd("dop853");
-  file = std::fopen("out/rk/mdop853.txt","wb");
+  file = std::fopen("../out/rk/mdop853.txt","wb");
   test_embedded_integrate(file,kashiwa::rk16::dop853_integrator());
   std::fclose(file);
 }
