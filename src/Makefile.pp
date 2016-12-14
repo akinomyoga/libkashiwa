@@ -68,16 +68,16 @@ $(OBJDIR)/ksh/embedded_runge_kutta.o: ksh/embedded_runge_kutta.cpp | $(OBJDIR)/k
 
 objectfiles += $(OBJDIR)/ksh/integrator.o
 -include $(OBJDIR)/ksh/integrator.d
-$(OBJDIR)/ksh/integrator.o: ksh/integrator.cpp
+$(OBJDIR)/ksh/integrator.o: ksh/integrator.cpp | $(OBJDIR)/ksh
 	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ -I ksh $<
 
 objectfiles += $(OBJDIR)/ksh/linear_lu.o
 -include $(OBJDIR)/ksh/linear_lu.d
-$(OBJDIR)/ksh/linear_lu.o: ksh/linear_lu.cpp
+$(OBJDIR)/ksh/linear_lu.o: ksh/linear_lu.cpp | $(OBJDIR)/ksh
 	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ -I ksh $<
 
-all: libksh.a
-libksh.a: $(objectfiles)
+all: $(OUTDIR)/libksh.a
+$(OUTDIR)/libksh.a: $(objectfiles) | $(OUTDIR)
 	ar crs $@ $^
 
 #
