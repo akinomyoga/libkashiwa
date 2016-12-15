@@ -21,6 +21,7 @@ ifeq ($(HOSTNAME),padparadscha)
   OTFFT_PREFIX   := $(HOME)/work/idt/otfft/out/bin
   CXX:=cxx
   CXXFLAGS:= -Wall -std=gnu++14 -O3 -march=native
+  LDFLAGS:= -Wall -std=gnu++14 -O3 -march=native
 endif
 
 ifeq ($(USER)@$(HOSTNAME),murase@tkyntn.phys.s.u-tokyo.ac.jp)
@@ -29,6 +30,7 @@ ifeq ($(USER)@$(HOSTNAME),murase@tkyntn.phys.s.u-tokyo.ac.jp)
   OTFFT_PREFIX :=$(HOME)/opt/otfft-6.4
   CXX:=g++-5.3.0
   CXXFLAGS:= -Wall -std=gnu++14 -O3 -march=native
+  LDFLAGS:= -Wall -std=gnu++14 -O3 -march=native
 
   LIBMWG_PREFIX:=$(HOME)/opt/libmwg-20160527
   CXXFLAGS+= \
@@ -92,7 +94,7 @@ $(OBJDIR)/rktest.o: rktest.cpp ksh/embedded_runge_kutta.h | $(OBJDIR)
 $(OBJDIR)/rktest_erk.o: rktest_erk.cpp ksh/erk.h | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ $<
 rktest.exe: $(OBJDIR)/rktest.o $(OBJDIR)/rktest_erk.o $(OBJDIR)/ksh/embedded_runge_kutta.o
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(LDFLAGS) -o $@ $^
 
 $(OUTDIR)/rk/rkeuler.txt: | $(OUTDIR)/rk
 	./rktest.exe
@@ -101,6 +103,29 @@ directories += $(OUTDIR)/rk
 all: $(OUTDIR)/rk/rktest.pdf
 $(OUTDIR)/rk/rktest.pdf: rktest.gp $(OUTDIR)/rk/rkeuler.txt | $(OUTDIR)/rk
 	gnuplot rktest.gp
+
+
+#------------------------------------------------------------------------------
+#
+# Check
+#
+
+check_LDFLAGS := $(LDFLAGS) -L $(OUTDIR)
+check_LIBS    := $(LIBS) -lksh
+check:
+.PHONY: check
+
+directories += $(OBJDIR)/test
+
+check: linear
+.PHONY: linear
+linear: test/linear.exe
+	./$<
+-include $(OBJDIR)/test/linear.d
+$(OBJDIR)/test/linear.o: test/linear.cpp | $(OBJDIR)/test
+	$(CXX) $(CXXFLAGS) -I . -MD -MF $(@:.o=.d) -c -o $@ $<
+test/linear.exe: $(OBJDIR)/test/linear.o $(OUTDIR)/libksh.a
+	$(CXX) $(check_LDFLAGS) -o $@ $^ $(check_LIBS)
 
 clean:
 	-rm -rf *.o *.d
