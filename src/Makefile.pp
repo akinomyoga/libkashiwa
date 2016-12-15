@@ -91,7 +91,7 @@ all: rktest.exe
 -include $(OBJDIR)/rktest_erk.d
 $(OBJDIR)/rktest.o: rktest.cpp ksh/embedded_runge_kutta.h | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ $<
-$(OBJDIR)/rktest_erk.o: rktest_erk.cpp ksh/erk.h | $(OBJDIR)
+$(OBJDIR)/rktest_erk.o: rktest_erk.cpp | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ $<
 rktest.exe: $(OBJDIR)/rktest.o $(OBJDIR)/rktest_erk.o $(OBJDIR)/ksh/embedded_runge_kutta.o
 	$(CXX) $(LDFLAGS) -o $@ $^
@@ -128,7 +128,7 @@ test/linear.exe: $(OBJDIR)/test/linear.o $(OUTDIR)/libksh.a
 	$(CXX) $(check_LDFLAGS) -o $@ $^ $(check_LIBS)
 
 clean:
-	-rm -rf *.o *.d
+	-find $(OBJDIR) -name \*.d -o -name \*.o | xargs rm -f
 
 $(directories):
 	mkdir -p $@

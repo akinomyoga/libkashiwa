@@ -3,7 +3,8 @@
 #include <cstdio>
 #include <cmath>
 #include <mwg/except.h>
-#include "buffer.h" /* for kawshiwa::clamp */
+#include "def.h"
+#include "buffer.h"
 
 namespace kashiwa {
 namespace rk16 {
@@ -23,7 +24,7 @@ namespace rk16 {
       this->bufferId = stat.nstep;
 
       std::size_t const size = stat.previousSize;
-      buffer.ensure(size * 8);
+      buffer.ensure<double>(size * 8);
       integ._dense_output_initialize(buffer, stat, nullptr, 0);
     }
 
@@ -40,7 +41,7 @@ namespace rk16 {
         "time out of range: time=%g in [%g, %g]?",
         time, stat.previousTime, stat.previousTime + stat.previousStep);
 
-      double const* data = buffer.ptr();
+      double const* data = buffer.ptr<double>();
       std::size_t const ncomp = icomp? _ncomp: stat.previousSize;
       for (std::size_t i = 0; i < ncomp; i++) {
         int const j = icomp? icomp[i]: i;
@@ -63,18 +64,18 @@ namespace rk16 {
     iequation_for_erk& eq, double h,
     double atol, double rtol, double& _err, double& _stf
   ) const {
-    double* __restrict__  x  = buffer.ptr();
-    double* __restrict__  k1 = buffer.ptr() + size * 1;
-    double* __restrict__  k2 = buffer.ptr() + size * 2;
+    double* __restrict__  x  = buffer.ptr<double>();
+    double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
+    double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
     double* __restrict__& k3 = k2;
-    double* __restrict__  k4 = buffer.ptr() + size * 3;
+    double* __restrict__  k4 = buffer.ptr<double>() + size * 3;
     double* __restrict__& k5 = k3;
-    double* __restrict__  k6 = buffer.ptr() + size * 4;
-    double* __restrict__  k7 = buffer.ptr() + size * 5;
-    double* __restrict__  k8 = buffer.ptr() + size * 6;
-    double* __restrict__  k9 = buffer.ptr() + size * 7;
-    double* __restrict__  kA = buffer.ptr() + size * 8;
-    double* __restrict__  kB = buffer.ptr() + size * 9;
+    double* __restrict__  k6 = buffer.ptr<double>() + size * 4;
+    double* __restrict__  k7 = buffer.ptr<double>() + size * 5;
+    double* __restrict__  k8 = buffer.ptr<double>() + size * 6;
+    double* __restrict__  k9 = buffer.ptr<double>() + size * 7;
+    double* __restrict__  kA = buffer.ptr<double>() + size * 8;
+    double* __restrict__  kB = buffer.ptr<double>() + size * 9;
     double* __restrict__& kC = k4;
 
     static constexpr double c2 = 0.526001519587677318785587544488E-01;
@@ -233,7 +234,7 @@ namespace rk16 {
       err3 += slope * slope;
       x[i] = _y;
     }
-      
+
     double deno = err1 + 0.01 * err2;
     if (deno <= 0.0) deno = 1.0;
     _err = std::abs(h) * err1 / std::sqrt(size * deno);
@@ -248,9 +249,9 @@ namespace rk16 {
     iequation_for_erk& eq,
     int bwd, double atol, double rtol, double hmax
   ) const {
-    double* __restrict__ const x  = buffer.ptr();
-    double* __restrict__ const k1 = buffer.ptr() + size * 1;
-    double* __restrict__ const k2 = buffer.ptr() + size * 2;
+    double* __restrict__ const x  = buffer.ptr<double>();
+    double* __restrict__ const k1 = buffer.ptr<double>() + size * 1;
+    double* __restrict__ const k2 = buffer.ptr<double>() + size * 2;
 
     // compute a first guess for explicit euler as:
     //   h1 = 0.01 * NORM(value) / NORM(k1).
@@ -298,7 +299,7 @@ namespace rk16 {
     iequation_for_erk& eq,
     double timeN, stat_t& stat, param_t const& params
   ) const {
-    buffer.ensure(10 * size);
+    buffer.ensure<double>(10 * size);
     double const beta  = kashiwa::clamp(params.beta, 0.0, 0.2); // e.g. 0.04
     double const safe  = params.safe == 0.0? 0.9: kashiwa::clamp(params.safe, 1e-4, 1.0);
     double const facc1 = 1.0 / (params.fac1 == 0.0? 0.333: params.fac1);
@@ -311,10 +312,10 @@ namespace rk16 {
     int    const nstif = std::abs(params.nstif == 0?10: params.nstif);
     std::ptrdiff_t const nmax = params.nmax;
 
-    double* __restrict__ const x  = buffer.ptr();
-    double* __restrict__ const k1 = buffer.ptr() + size * 1; // 最初の微分評価 (c = 0.0) を入れる場所
-    double* __restrict__ const kD = buffer.ptr() + size * 2; // 次のステップの最初の微分 (FSAL) を入れる場所
-    double* __restrict__ const kC = buffer.ptr() + size * 3; // 最後の微分評価 (c = 1.0) の入る場所
+    double* __restrict__ const x  = buffer.ptr<double>();
+    double* __restrict__ const k1 = buffer.ptr<double>() + size * 1; // 最初の微分評価 (c = 0.0) を入れる場所
+    double* __restrict__ const kD = buffer.ptr<double>() + size * 2; // 次のステップの最初の微分 (FSAL) を入れる場所
+    double* __restrict__ const kC = buffer.ptr<double>() + size * 3; // 最後の微分評価 (c = 1.0) の入る場所
 
     eq.eval_f(k1, time, value);
     stat.nfcn++;
@@ -421,23 +422,23 @@ namespace rk16 {
   void dop853_integrator::_dense_output_initialize(
     working_buffer& interpBuffer, stat_t& stat, int* icomp, std::size_t nrd
   ) const {
-    double* __restrict__             cont  = interpBuffer.ptr();
+    double* __restrict__             cont  = interpBuffer.ptr<double>();
     iequation_for_erk&               eq    = *stat.eq;
     double const                     time  = stat.previousTime;
     double const* __restrict__ const value = stat.previousValue;
     std::size_t const                size  = stat.previousSize;
     double const                     h     = stat.previousStep;
 
-    double* __restrict__  x = buffer.ptr();
-    double* __restrict__  k1 = buffer.ptr() + size * 1;
-    double* __restrict__  k6 = buffer.ptr() + size * 4;
-    double* __restrict__  k7 = buffer.ptr() + size * 5;
-    double* __restrict__  k8 = buffer.ptr() + size * 6;
-    double* __restrict__  k9 = buffer.ptr() + size * 7;
-    double* __restrict__  kA = buffer.ptr() + size * 8;
-    double* __restrict__  kB = buffer.ptr() + size * 9;
-    double* __restrict__  kC = buffer.ptr() + size * 3;
-    double* __restrict__  kD = buffer.ptr() + size * 2;
+    double* __restrict__  x  = buffer.ptr<double>();
+    double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
+    double* __restrict__  k6 = buffer.ptr<double>() + size * 4;
+    double* __restrict__  k7 = buffer.ptr<double>() + size * 5;
+    double* __restrict__  k8 = buffer.ptr<double>() + size * 6;
+    double* __restrict__  k9 = buffer.ptr<double>() + size * 7;
+    double* __restrict__  kA = buffer.ptr<double>() + size * 8;
+    double* __restrict__  kB = buffer.ptr<double>() + size * 9;
+    double* __restrict__  kC = buffer.ptr<double>() + size * 3;
+    double* __restrict__  kD = buffer.ptr<double>() + size * 2;
 
     double* __restrict__& xE = k6;
     double* __restrict__& xF = k7;

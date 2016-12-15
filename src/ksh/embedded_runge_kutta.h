@@ -1,7 +1,6 @@
 // -*- mode:c++ -*-
-#pragma once
-#ifndef KASHIWA_RK_EMBEDDED_RUNGE_KUTTA_H
-#define KASHIWA_RK_EMBEDDED_RUNGE_KUTTA_H
+#ifndef KASHIWA_EMBEDDED_RUNGE_KUTTA_H
+#define KASHIWA_EMBEDDED_RUNGE_KUTTA_H
 #include <cstddef>
 #include <cfloat>
 #include <mwg/except.h>
@@ -112,14 +111,14 @@ namespace rk16 {
     void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
       eq_by_f<F> eq(f);
 
-      buffer.ensure(10 * size);
+      buffer.ensure<double>(10 * size);
 
       double const atol = 1e-12;
       double const rtol = 1e-12;
       double err, stf;
 
-      double* __restrict__  x = buffer.ptr();
-      double* __restrict__  k1 = buffer.ptr() + size * 1;
+      double* __restrict__  x  = buffer.ptr<double>();
+      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
       eq.eval_f(k1, time, value);
       this->_integrate8(
         time, value, size, eq, h,
