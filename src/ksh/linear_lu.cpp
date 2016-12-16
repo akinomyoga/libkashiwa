@@ -3,13 +3,15 @@
 #include <algorithm>
 #include <utility>
 #include <vector>
-//#include <mwg/except.h>
+#include <iterator>
+#include <mwg/except.h>
+#include "buffer.h"
 #include "linear_lu.h"
 
 namespace {
 
-  class LUDecomposer {
-    int N;
+  class lu_decomposer {
+    std::size_t N;
     double* arr;
     int* imap;
 
@@ -20,7 +22,7 @@ namespace {
     double determine_pivot(int i) {
       int imax = i;
       double vmax = std::abs(A(i, i));
-      for (int icand = i + 1; icand < N; icand++) {
+      for (std::size_t icand = i + 1; icand < N; icand++) {
         double const vcand = std::abs(A(icand, i));
         if (vcand > vmax) {
           imax = icand;
@@ -40,14 +42,14 @@ namespace {
       this->arr = arr;
       this->imap = imap;
 
-      for (int i = 0; i < N; i++) imap[i] = i;
+      for (std::size_t i = 0; i < N; i++) imap[i] = i;
 
-      for (int i = 0; i < N; i++) {
+      for (std::size_t i = 0; i < N; i++) {
         double const scal = 1.0 / this->determine_pivot(i);
 
-        for (int ii = i + 1; ii < N; ii++) {
+        for (std::size_t ii = i + 1; ii < N; ii++) {
           double const l = A(ii, i) *= scal;
-          for (int jj = i + 1; jj < N; jj++) {
+          for (std::size_t jj = i + 1; jj < N; jj++) {
             double const u = A(i, jj);
             A(ii, jj) -= l * u;
           }
@@ -56,87 +58,96 @@ namespace {
     }
 
   public:
-    LUDecomposer(int N):N(N) {}
+    lu_decomposer(std::size_t N): N(N) {}
   };
 
-  class LUEquationSolver {
-    int N;
-    double* arr;
-    double* vec;
-    int* imap;
-    std::vector < double> vtmp;
+  class lu_solver {
+    std::size_t N;
+    double* result;
+    double const* lumat;
+    int    const* lupiv;
+    double const* vec;
+    double* vtmp;
 
-    double& A(int i, int j) {
-      return arr[imap[i] * N + j];
-    }
-    double& b(int i) {
-      return vec[imap[i]];
-    }
+    double A(int i, int j) const {return lumat[lupiv[i] * N + j];}
+    double b(int i) const {return vec[lupiv[i]];}
 
-    void forward_substitute() {
-      for (int i = 0; i < N; i++) {
-        double& vv(vtmp[i] = b(i));
-        for (int j = 0; j < i; j++)
-          vv -= A(i, j) * vtmp[j];
+    void forward_substitute() const {
+      for (std::size_t i = 0; i < N; i++) {
+        double value = b(i);
+        for (std::size_t j = 0; j < i; j++)
+          value -= A(i, j) * vtmp[j];
+        vtmp[i] = value;
       }
     }
-    void backward_substitute() {
-      for (int i = N - 1; i >= 0; i--) {
-        double& vv(vec[i] = vtmp[i]);
-        for (int j = i + 1; j < N; j++)
-          vv -= A(i, j) * vec[j];
-        vv /= A(i, i);
+    void backward_substitute() const {
+      for (std::size_t i = N; i--; ) {
+        double value = vtmp[i];
+        for (std::size_t j = i + 1; j < N; j++)
+          value -= A(i, j) * result[j];
+        result[i] = value / A(i, i);
       }
     }
 
   public:
-    void solve(double const* arr, int const* imap, double* vec) {
-      this->arr = const_cast<double*>(arr);
-      this->imap = const_cast<int*>(imap);
-      this->vec = vec;
+    void solve(double* result, double const* lumat, int const* lupiv, double const* vec, double* vtmp) {
+      mwg_assert(vec != vtmp);
+      this->result = result;
+      this->lumat  = lumat;
+      this->lupiv  = lupiv;
+      this->vec    = vec;
+      this->vtmp   = vtmp;
       this->forward_substitute();
       this->backward_substitute();
     }
 
   public:
-    LUEquationSolver(int N):N(N) {
-      this->vtmp.resize(N, 0.0);
-    }
+    lu_solver(std::size_t N): N(N) {}
   };
 
-
-  // template < int N>
-  // void SolveLinearEquationLU(double* arr, double* vec) {
-  //   // 取り敢えずの実装:
-  //   //   arr を破壊的に使用する
-  //   //   vec ベクトルを指定し結果を格納する。
-  //   LinearEquationSolver_LU(N, arr, vec);
-  // }
-
 }
 
-namespace idt {
-namespace rfh {
-  void LUDecompose(int N, double* arr, int* imap) {
-    LUDecomposer calculator(N);
-    calculator.decompose(arr, imap);
+namespace kashiwa {
+
+  void lu_decompose(std::size_t N, double* lumat, int* imap) {
+    lu_decomposer(N).decompose(lumat, imap);
   }
-  void LUEquationSolve(int N, double const* arr, int const* imap, double* vec) {
-    LUEquationSolver calculator(N);
-    calculator.solve(arr, imap, vec);
+
+  void solve_lu_equation(std::size_t N, double* result, double const* lumat, int const* lupiv, double const* vec, working_buffer& buffer) {
+    double* vtmp = result;
+    if (vtmp == vec) {
+      buffer.ensure<double>(N);
+      vtmp = buffer.ptr<double>();
+    }
+
+    lu_solver(N).solve(result, lumat, lupiv, vec, vtmp);
   }
-  void SolveLinearEquationLU(std::size_t N, double* arr, double* vec) {
-    std::vector<int> imap((std::size_t)N);
-    LUDecompose(N, arr,&imap[0]);
-    LUEquationSolve(N, arr,&imap[0], vec);
-  }
-  void SolveLinearEquation(int N, double* arr, double* vec) {
-    SolveLinearEquationLU(N, arr, vec);
+
+  void solve_linear_equation_lu(std::size_t N, double* result, double const* mat, double const* vec, working_buffer& buffer, double* tmpMat) {
+    {
+      std::size_t sz = N * sizeof(int);
+      if (!tmpMat) sz += N * N * sizeof(double);
+      if (result == vec) sz += N * sizeof(double);
+      buffer.ensure(sz);
+    }
+
+    double* pbuf = buffer.ptr<double>();
+    double* lumat = tmpMat;
+    if (!tmpMat) {
+      lumat = pbuf;
+      pbuf += N * N;
+    }
+    double* vtmp = result;
+    if (result == vec) {
+      vtmp = pbuf;
+      pbuf += N;
+    }
+    int* const lupiv = reinterpret_cast<int*>(pbuf);
+
+    if (lumat != mat) std::copy(mat, mat + N * N, lumat);
+    lu_decompose(N, lumat, lupiv);
+
+    lu_solver(N).solve(result, lumat, lupiv, vec, vtmp);
   }
 
 }
-}
-
-// int main() {
-//   return 0;
-// }

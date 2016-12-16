@@ -17,8 +17,8 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(size);
-      double* __restrict__ knode = buffer.ptr();
+      buffer.ensure<double>(size);
+      double* __restrict__ knode = buffer.ptr<double>();
       f(knode, time, value);
       for (std::size_t i = 0; i < size; i++)
         value[i] += h * knode[i];
@@ -39,9 +39,9 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(2 * size);
-      double* __restrict__ knode = buffer.ptr();
-      double* __restrict__ xnode = buffer.ptr() + size;
+      buffer.ensure<double>(2 * size);
+      double* __restrict__ knode = buffer.ptr<double>();
+      double* __restrict__ xnode = buffer.ptr<double>() + size;
 
       f(knode, time, value);
       for (std::size_t i = 0; i < size; i++)
@@ -67,9 +67,9 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(2 * size);
-      double* __restrict__ k = buffer.ptr();
-      double* __restrict__ x = buffer.ptr() + size;
+      buffer.ensure<double>(2 * size);
+      double* __restrict__ k = buffer.ptr<double>();
+      double* __restrict__ x = buffer.ptr<double>() + size;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -92,9 +92,9 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(2 * size);
-      double* __restrict__ k = buffer.ptr();
-      double* __restrict__ x = buffer.ptr() + size;
+      buffer.ensure<double>(2 * size);
+      double* __restrict__ k = buffer.ptr<double>();
+      double* __restrict__ x = buffer.ptr<double>() + size;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -123,10 +123,10 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(3 * size);
-      double* __restrict__ k = buffer.ptr();
-      double* __restrict__ x = buffer.ptr() + size;
-      double* __restrict__ y = buffer.ptr() + size * 2;
+      buffer.ensure<double>(3 * size);
+      double* __restrict__ k = buffer.ptr<double>();
+      double* __restrict__ x = buffer.ptr<double>() + size;
+      double* __restrict__ y = buffer.ptr<double>() + size * 2;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -165,9 +165,9 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(2 * size);
-      double* __restrict__ k = buffer.ptr();
-      double* __restrict__ x = buffer.ptr() + size;
+      buffer.ensure<double>(2 * size);
+      double* __restrict__ k = buffer.ptr<double>();
+      double* __restrict__ x = buffer.ptr<double>() + size;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -197,9 +197,9 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(2 * size);
-      double* __restrict__ k = buffer.ptr();
-      double* __restrict__ x = buffer.ptr() + size;
+      buffer.ensure<double>(2 * size);
+      double* __restrict__ k = buffer.ptr<double>();
+      double* __restrict__ x = buffer.ptr<double>() + size;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -236,9 +236,9 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(2 * size);
-      double* __restrict__ k = buffer.ptr();
-      double* __restrict__ x = buffer.ptr() + size;
+      buffer.ensure<double>(2 * size);
+      double* __restrict__ k = buffer.ptr<double>();
+      double* __restrict__ x = buffer.ptr<double>() + size;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -271,10 +271,10 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(3 * size);
-      double* __restrict__ knode = buffer.ptr();
-      double* __restrict__ xnode = buffer.ptr() + size;
-      double* __restrict__ delta = buffer.ptr() + size * 2;
+      buffer.ensure<double>(3 * size);
+      double* __restrict__ knode = buffer.ptr<double>();
+      double* __restrict__ xnode = buffer.ptr<double>() + size;
+      double* __restrict__ delta = buffer.ptr<double>() + size * 2;
 
       // k1
       f(knode, time, value);
@@ -316,10 +316,10 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(3 * size);
-      double* __restrict__ k  = buffer.ptr();
-      double* __restrict__ xi = buffer.ptr() + size;
-      double* __restrict__ x4 = buffer.ptr() + size * 2;
+      buffer.ensure<double>(3 * size);
+      double* __restrict__ k  = buffer.ptr<double>();
+      double* __restrict__ xi = buffer.ptr<double>() + size;
+      double* __restrict__ x4 = buffer.ptr<double>() + size * 2;
 
       // k1
       f(k, time, value);
@@ -363,9 +363,9 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(2 * size);
-      double* __restrict__ k  = buffer.ptr();
-      double* __restrict__ q  = buffer.ptr() + size;
+      buffer.ensure<double>(2 * size);
+      double* __restrict__ k  = buffer.ptr<double>();
+      double* __restrict__ q  = buffer.ptr<double>() + size;
 
       static constexpr double alpha1 = 1.0 / 2.0;
       static constexpr double alpha2 = 1.0 - std::sqrt(1.0 / 2.0);
@@ -430,13 +430,13 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(6 * size);
-      double* __restrict__  x  = buffer.ptr();
-      double* __restrict__  k1 = buffer.ptr() + size * 1;
-      double* __restrict__  k2 = buffer.ptr() + size * 2;
-      double* __restrict__  k3 = buffer.ptr() + size * 3;
-      double* __restrict__  k4 = buffer.ptr() + size * 4;
-      double* __restrict__  k5 = buffer.ptr() + size * 5;
+      buffer.ensure<double>(6 * size);
+      double* __restrict__  x  = buffer.ptr<double>();
+      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
+      double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
+      double* __restrict__  k3 = buffer.ptr<double>() + size * 3;
+      double* __restrict__  k4 = buffer.ptr<double>() + size * 4;
+      double* __restrict__  k5 = buffer.ptr<double>() + size * 5;
       double* __restrict__& k6 = k2;
 
       // k1
@@ -505,15 +505,15 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(5 * size);
-      double* __restrict__  x  = buffer.ptr();
-      double* __restrict__  y  = buffer.ptr() + size * 1;
-      double* __restrict__  k1 = buffer.ptr() + size * 2;
-      double* __restrict__  k2 = buffer.ptr() + size * 3;
+      buffer.ensure<double>(5 * size);
+      double* __restrict__  x  = buffer.ptr<double>();
+      double* __restrict__  y  = buffer.ptr<double>() + size * 1;
+      double* __restrict__  k1 = buffer.ptr<double>() + size * 2;
+      double* __restrict__  k2 = buffer.ptr<double>() + size * 3;
       double* __restrict__& k3 = k2;
       double* __restrict__& k4 = k2;
       double* __restrict__& k5 = k2;
-      double* __restrict__  k6 = buffer.ptr() + size * 4;
+      double* __restrict__  k6 = buffer.ptr<double>() + size * 4;
 
       static constexpr double a21 = 1.0 / 4.0;
       static constexpr double c2  = 1.0 / 4.0;
@@ -601,13 +601,13 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(6 * size);
-      double* __restrict__  x  = buffer.ptr();
-      double* __restrict__  k1 = buffer.ptr() + size * 1;
-      double* __restrict__  k2 = buffer.ptr() + size * 2;
-      double* __restrict__  k3 = buffer.ptr() + size * 3;
-      double* __restrict__  k4 = buffer.ptr() + size * 4;
-      double* __restrict__  k5 = buffer.ptr() + size * 5;
+      buffer.ensure<double>(6 * size);
+      double* __restrict__  x  = buffer.ptr<double>();
+      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
+      double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
+      double* __restrict__  k3 = buffer.ptr<double>() + size * 3;
+      double* __restrict__  k4 = buffer.ptr<double>() + size * 4;
+      double* __restrict__  k5 = buffer.ptr<double>() + size * 5;
       double* __restrict__& k6 = k2;
 
       // k1
@@ -681,14 +681,14 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(7 * size);
-      double* __restrict__  x  = buffer.ptr();
-      double* __restrict__  k1 = buffer.ptr() + size * 1;
-      double* __restrict__  k2 = buffer.ptr() + size * 2;
-      double* __restrict__  k3 = buffer.ptr() + size * 3;
-      double* __restrict__  k4 = buffer.ptr() + size * 4;
-      double* __restrict__  k5 = buffer.ptr() + size * 5;
-      double* __restrict__  k6 = buffer.ptr() + size * 6;
+      buffer.ensure<double>(7 * size);
+      double* __restrict__  x  = buffer.ptr<double>();
+      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
+      double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
+      double* __restrict__  k3 = buffer.ptr<double>() + size * 3;
+      double* __restrict__  k4 = buffer.ptr<double>() + size * 4;
+      double* __restrict__  k5 = buffer.ptr<double>() + size * 5;
+      double* __restrict__  k6 = buffer.ptr<double>() + size * 6;
       double* __restrict__& k7 = k2;
 
       static constexpr double sqrt5 = std::sqrt(5);
@@ -776,16 +776,16 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(9 * size);
-      double* __restrict__  x  = buffer.ptr();
-      double* __restrict__  k1 = buffer.ptr() + size * 1;
-      double* __restrict__  k2 = buffer.ptr() + size * 2;
+      buffer.ensure<double>(9 * size);
+      double* __restrict__  x  = buffer.ptr<double>();
+      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
+      double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
       double* __restrict__& k3 = k2;
-      double* __restrict__  k4 = buffer.ptr() + size * 4;
-      double* __restrict__  k5 = buffer.ptr() + size * 5;
-      double* __restrict__  k6 = buffer.ptr() + size * 6;
-      double* __restrict__  k7 = buffer.ptr() + size * 7;
-      double* __restrict__  k8 = buffer.ptr() + size * 8;
+      double* __restrict__  k4 = buffer.ptr<double>() + size * 4;
+      double* __restrict__  k5 = buffer.ptr<double>() + size * 5;
+      double* __restrict__  k6 = buffer.ptr<double>() + size * 6;
+      double* __restrict__  k7 = buffer.ptr<double>() + size * 7;
+      double* __restrict__  k8 = buffer.ptr<double>() + size * 8;
       double* __restrict__& k9 = k2;
 
       // k1
@@ -894,16 +894,16 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(9 * size);
-      double* __restrict__  x  = buffer.ptr();
-      double* __restrict__  k1 = buffer.ptr() + size * 1;
-      double* __restrict__  k2 = buffer.ptr() + size * 2;
+      buffer.ensure<double>(9 * size);
+      double* __restrict__  x  = buffer.ptr<double>();
+      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
+      double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
       double* __restrict__& k3 = k2;
-      double* __restrict__  k4 = buffer.ptr() + size * 4;
-      double* __restrict__  k5 = buffer.ptr() + size * 5;
-      double* __restrict__  k6 = buffer.ptr() + size * 6;
-      double* __restrict__  k7 = buffer.ptr() + size * 7;
-      double* __restrict__  k8 = buffer.ptr() + size * 8;
+      double* __restrict__  k4 = buffer.ptr<double>() + size * 4;
+      double* __restrict__  k5 = buffer.ptr<double>() + size * 5;
+      double* __restrict__  k6 = buffer.ptr<double>() + size * 6;
+      double* __restrict__  k7 = buffer.ptr<double>() + size * 7;
+      double* __restrict__  k8 = buffer.ptr<double>() + size * 8;
       double* __restrict__& k9 = k2;
 
       // k1
@@ -1014,18 +1014,18 @@ namespace rk16 {
 
     template<typename F>
     void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
-      buffer.ensure(8 * size);
-      double* __restrict__  delta = buffer.ptr();
-      double* __restrict__  xnode = buffer.ptr() + size;
-      double* __restrict__  k1    = buffer.ptr() + size * 2;
-      double* __restrict__  k2    = buffer.ptr() + size * 3;
-      double* __restrict__  k3    = buffer.ptr() + size * 4;
+      buffer.ensure<double>(8 * size);
+      double* __restrict__  delta = buffer.ptr<double>();
+      double* __restrict__  xnode = buffer.ptr<double>() + size;
+      double* __restrict__  k1    = buffer.ptr<double>() + size * 2;
+      double* __restrict__  k2    = buffer.ptr<double>() + size * 3;
+      double* __restrict__  k3    = buffer.ptr<double>() + size * 4;
       double* __restrict__& k4    = k2;
-      double* __restrict__  k5    = buffer.ptr() + size * 5;
-      double* __restrict__  k6    = buffer.ptr() + size * 6;
+      double* __restrict__  k5    = buffer.ptr<double>() + size * 5;
+      double* __restrict__  k6    = buffer.ptr<double>() + size * 6;
       double* __restrict__& k7    = k3;
       double* __restrict__& k8    = k4;
-      double* __restrict__  k9    = buffer.ptr() + size * 7;
+      double* __restrict__  k9    = buffer.ptr<double>() + size * 7;
       double* __restrict__& kA    = k1;
       double* __restrict__& kB    = k5;
 
