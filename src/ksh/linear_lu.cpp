@@ -4,7 +4,8 @@
 #include <utility>
 #include <vector>
 #include <iterator>
-//#include <mwg/except.h>
+#include <mwg/except.h>
+#include "buffer.h"
 #include "linear_lu.h"
 
 namespace {
@@ -60,78 +61,93 @@ namespace {
     lu_decomposer(std::size_t N): N(N) {}
   };
 
-  class lu_equation_solver {
+  class lu_solver {
     std::size_t N;
-    double const* arr;
-    double* vec;
-    int const* imap;
-    std::vector<double> vtmp;
+    double* result;
+    double const* lumat;
+    int    const* lupiv;
+    double const* vec;
+    double* vtmp;
 
-    double const& A(int i, int j) {
-      return arr[imap[i] * N + j];
-    }
-    double& b(int i) {
-      return vec[imap[i]];
-    }
+    double A(int i, int j) const {return lumat[lupiv[i] * N + j];}
+    double b(int i) const {return vec[lupiv[i]];}
 
-    void forward_substitute() {
+    void forward_substitute() const {
       for (std::size_t i = 0; i < N; i++) {
-        double& vv(vtmp[i] = b(i));
+        double value = b(i);
         for (std::size_t j = 0; j < i; j++)
-          vv -= A(i, j) * vtmp[j];
+          value -= A(i, j) * vtmp[j];
+        vtmp[i] = value;
       }
     }
-    void backward_substitute() {
+    void backward_substitute() const {
       for (std::size_t i = N; i--; ) {
-        double& vv(vec[i] = vtmp[i]);
+        double value = vtmp[i];
         for (std::size_t j = i + 1; j < N; j++)
-          vv -= A(i, j) * vec[j];
-        vv /= A(i, i);
+          value -= A(i, j) * result[j];
+        result[i] = value / A(i, i);
       }
     }
 
   public:
-    void solve(double const* arr, int const* imap, double* vec) {
-      this->arr = const_cast<double*>(arr);
-      this->imap = const_cast<int*>(imap);
-      this->vec = vec;
+    void solve(double* result, double const* lumat, int const* lupiv, double const* vec, double* vtmp) {
+      mwg_assert(vec != vtmp);
+      this->result = result;
+      this->lumat  = lumat;
+      this->lupiv  = lupiv;
+      this->vec    = vec;
+      this->vtmp   = vtmp;
       this->forward_substitute();
       this->backward_substitute();
     }
 
   public:
-    lu_equation_solver(std::size_t N): N(N) {
-      this->vtmp.resize(N, 0.0);
-    }
+    lu_solver(std::size_t N): N(N) {}
   };
-
-
-  // template<int N>
-  // void solve_linear_equation_lu(double* arr, double* vec) {
-  //   // 取り敢えずの実装:
-  //   //   arr を破壊的に使用する
-  //   //   vec ベクトルを指定し結果を格納する。
-  //   LinearEquationSolver_LU(N, arr, vec);
-  // }
 
 }
 
 namespace kashiwa {
-  void lu_decompose(std::size_t N, double* arr, int* imap) {
-    lu_decomposer calculator(N);
-    calculator.decompose(arr, imap);
+
+  void lu_decompose(std::size_t N, double* lumat, int* imap) {
+    lu_decomposer(N).decompose(lumat, imap);
   }
-  void solve_lu_equation(std::size_t N, double const* luMatrix, int const* imap, double* vec) {
-    lu_equation_solver calculator(N);
-    calculator.solve(luMatrix, imap, vec);
+
+  void solve_lu_equation(std::size_t N, double* result, double const* lumat, int const* lupiv, double const* vec, working_buffer& buffer) {
+    double* vtmp = result;
+    if (vtmp == vec) {
+      buffer.ensure<double>(N);
+      vtmp = buffer.ptr<double>();
+    }
+
+    lu_solver(N).solve(result, lumat, lupiv, vec, vtmp);
   }
-  void solve_linear_equation_lu(std::size_t N, double* arr, double* vec) {
-    std::vector<int> imap((std::size_t) N);
-    lu_decompose(N, arr, &imap[0]);
-    solve_lu_equation(N, arr, &imap[0], vec);
+
+  void solve_linear_equation_lu(std::size_t N, double* result, double const* mat, double const* vec, working_buffer& buffer, double* tmpMat) {
+    {
+      std::size_t sz = N * sizeof(int);
+      if (!tmpMat) sz += N * N * sizeof(double);
+      if (result == vec) sz += N * sizeof(double);
+      buffer.ensure(sz);
+    }
+
+    double* pbuf = buffer.ptr<double>();
+    double* lumat = tmpMat;
+    if (!tmpMat) {
+      lumat = pbuf;
+      pbuf += N * N;
+    }
+    double* vtmp = result;
+    if (result == vec) {
+      vtmp = pbuf;
+      pbuf += N;
+    }
+    int* const lupiv = reinterpret_cast<int*>(pbuf);
+
+    if (lumat != mat) std::copy(mat, mat + N * N, lumat);
+    lu_decompose(N, lumat, lupiv);
+
+    lu_solver(N).solve(result, lumat, lupiv, vec, vtmp);
   }
-  void solve_linear_equation(std::size_t N, double const* mat, double* vec, double* tmpMat) {
-    if (tmpMat != mat) std::copy(mat, mat + N * N, tmpMat);
-    solve_linear_equation_lu(N, tmpMat, vec);
-  }
+
 }
