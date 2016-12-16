@@ -1,6 +1,7 @@
 // -*- C++ -*-
 #ifndef KASHIWA_INTEGRATOR_H
 #define KASHIWA_INTEGRATOR_H
+#include <algorithm>
 namespace kashiwa{
 //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 namespace integrator_detail{
@@ -8,7 +9,7 @@ namespace integrator_detail{
     double t;
     double w;
   };
-  
+
   template<int I>
   struct GaussLegendre{
     static const int order=I;
@@ -21,11 +22,11 @@ namespace integrator_detail{
   template<typename F>
   double IntegrateByTrapezoid(const double lower,const double upper,const int iN,const F& f){
     double const dx=(upper-lower)/iN;
-    
+
     double s=0.5*(f(lower)+f(upper));
     for(int i=1;i<iN;i++)
       s+=f(lower+i*dx);
-    
+
     return s*dx;
   }
 
@@ -59,7 +60,7 @@ namespace integrator_detail{
        dxdt(0.5*(xmax-xmin))
     {
       typedef integrator_detail::GaussLegendre<I> traits_t;
-      
+
       for(int i=0;i<(I+1)/2;i++){
         double const t=traits_t::data[i].t;
         double const w=traits_t::data[i].w;
@@ -75,10 +76,36 @@ namespace integrator_detail{
         double const w=this->data[i].w;
         s+=w*(f(center+t)+f(center-t));
       }
-      
+
       return s;
     }
   };
+
+  template<int I, typename F>
+  void gauss_legendre_quadrature(int N, double* result, double xmin, double xmax, F f) {
+    typedef integrator_detail::GaussLegendre<I> traits_t;
+    double const center = 0.5 * (xmax + xmin);
+    double const dxdt   = 0.5 * (xmax - xmin);
+
+    std::fill(result, result + N, 0.0);
+
+    double s=0;
+    for (int i = 0; i < I / 2; i++) {
+      double const t = traits_t::data[i].t;
+      double const w = traits_t::data[i].w;
+
+      double value1[N];
+      f(value1, center + dxdt * t);
+      double value2[N];
+      f(value2, center - dxdt * t);
+
+      for (int k = 0; k < N; k++)
+        result[k] += w * (value1[k] + value2[k]);
+    }
+
+    for (int k = 0; k < N; k++)
+      result[k] *= dxdt;
+  }
 
 //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 }
