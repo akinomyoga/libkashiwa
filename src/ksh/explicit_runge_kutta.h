@@ -1,13 +1,12 @@
 // -*- mode:c++ -*-
-#pragma once
-#ifndef KASHIWA_RK_ERK_H
-#define KASHIWA_RK_ERK_H
+#ifndef KASHIWA_EXPLICIT_RUNGE_KUTTA_H
+#define KASHIWA_EXPLICIT_RUNGE_KUTTA_H
 #include <cstddef>
 #include <cmath>
 #include "buffer.h"
 
 namespace kashiwa {
-namespace rk16 {
+namespace runge_kutta {
 
   // オイラー(1768) Institutiones Calculi Integralis
   struct euler_integrator {

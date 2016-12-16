@@ -10,7 +10,7 @@ void test_embedded_integrate(std::FILE* file,Integrator const& integ){
   double const sol = exactSolution(finalTime);
 
   for(double tol=1e-15;tol<1e-4;tol*=10){
-    kashiwa::rk16::stat_t stat;
+    kashiwa::runge_kutta::stat_t stat;
     typename Integrator::param_t params;
     params.atol = tol;
     params.rtol = tol;
@@ -31,12 +31,12 @@ void test_erk2(){
 
   mwg_printd("dop853");
   file = std::fopen("../out/rk/dop853.txt","wb");
-  test_method(file,kashiwa::rk16::dop853_integrator());
+  test_method(file,kashiwa::runge_kutta::dop853_integrator());
   std::fclose(file);
 
   mwg_printd("dop853");
   file = std::fopen("../out/rk/mdop853.txt","wb");
-  test_embedded_integrate(file,kashiwa::rk16::dop853_integrator());
+  test_embedded_integrate(file,kashiwa::runge_kutta::dop853_integrator());
   std::fclose(file);
 }
 

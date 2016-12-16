@@ -7,7 +7,7 @@
 #include "buffer.h"
 
 namespace kashiwa {
-namespace rk16 {
+namespace runge_kutta {
 
   struct dop853_integrator::dense_output: idense_output {
     dop853_integrator const& integ;

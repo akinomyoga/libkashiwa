@@ -7,7 +7,7 @@
 #include "buffer.h"
 
 namespace kashiwa {
-namespace rk16 {
+namespace runge_kutta {
 
   struct iequation_for_erk;
 
