@@ -457,38 +457,38 @@ namespace runge_kutta {
 
       // k4
       static constexpr double a41 = -1.0 / 2.0;
-      static constexpr double a42 = 1.0;
-      static constexpr double c4  = 1.0 / 2.0;
+      static constexpr double a42 =  1.0;
+      static constexpr double c4  =  1.0 / 2.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a41 * k1[i] + a42 * k2[i]);
       f(k4, time + c4 * h, x);
 
       // k5
       static constexpr double a51 = 15.0 / 16.0;
-      static constexpr double a52 = -3.0 / 2.0;
-      static constexpr double a53 = 3.0 / 4.0;
-      static constexpr double a54 = 9.0 / 16.0;
-      static constexpr double c5  = 3.0 / 4.0;
+      static constexpr double a52 = -3.0 /  2.0;
+      static constexpr double a53 =  3.0 /  4.0;
+      static constexpr double a54 =  9.0 / 16.0;
+      static constexpr double c5  =  3.0 /  4.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a51 * k1[i] + a52 * k2[i] + a53 * k3[i] + a54 * k4[i]);
       f(k5, time + c5 * h, x);
 
       // k6
       static constexpr double a61 = -17.0 / 7.0;
-      static constexpr double a62 = 4.0;
+      static constexpr double a62 =   4.0;
       static constexpr double a64 = -12.0 / 7.0;
-      static constexpr double a65 = 8.0 / 7.0;
-      static constexpr double c6  = 1.0;
+      static constexpr double a65 =   8.0 / 7.0;
+      static constexpr double c6  =   1.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a61 * k1[i] + a62 * k2[i] + a64 * k4[i] + a65 * k5[i]);
       f(k6, time + c6 * h, x);
 
       // increment
-      static constexpr double b1  = 7.0 / 90.0;
+      static constexpr double b1  =  7.0 / 90.0;
       static constexpr double b3  = 16.0 / 45.0;
-      static constexpr double b4  = 2.0 / 15.0;
+      static constexpr double b4  =  2.0 / 15.0;
       static constexpr double b5  = 16.0 / 45.0;
-      static constexpr double b6  = 7.0 / 90.0;
+      static constexpr double b6  =  7.0 / 90.0;
       for (std::size_t i = 0; i < size; i++)
         value[i] += h * (b1 * k1[i] + b3 * k3[i] + b4 * k4[i] + b5 * k5[i] + b6 * k6[i]);
 
@@ -522,25 +522,25 @@ namespace runge_kutta {
       static constexpr double c3  = 1.0 / 4.0;
 
       static constexpr double a42 = -1.0 / 2.0;
-      static constexpr double a43 = 1.0;
-      static constexpr double c4  = 1.0 / 2.0;
+      static constexpr double a43 =  1.0;
+      static constexpr double c4  =  1.0 / 2.0;
 
       static constexpr double a51 = 3.0 / 16.0;
       static constexpr double a54 = 9.0 / 16.0;
-      static constexpr double c5  = 3.0 / 4.0;
+      static constexpr double c5  = 3.0 /  4.0;
 
-      static constexpr double a61 = -3.0 / 7.0;
-      static constexpr double a62 = 2.0 / 7.0;
-      static constexpr double a63 = 12.0 / 7.0;
+      static constexpr double a61 =  -3.0 / 7.0;
+      static constexpr double a62 =   2.0 / 7.0;
+      static constexpr double a63 =  12.0 / 7.0;
       static constexpr double a64 = -12.0 / 7.0;
-      static constexpr double a65 = 8.0 / 7.0;
-      static constexpr double c6  = 1.0;
+      static constexpr double a65 =   8.0 / 7.0;
+      static constexpr double c6  =   1.0;
 
-      static constexpr double b1  = 7.0 / 90.0;
+      static constexpr double b1  =  7.0 / 90.0;
       static constexpr double b3  = 16.0 / 45.0;
-      static constexpr double b4  = 2.0 / 15.0;
+      static constexpr double b4  =  2.0 / 15.0;
       static constexpr double b5  = 16.0 / 45.0;
-      static constexpr double b6  = 7.0 / 90.0;
+      static constexpr double b6  =  7.0 / 90.0;
 
       // k1
       f(k1, time, value);
@@ -620,18 +620,18 @@ namespace runge_kutta {
       f(k2, time + c2 * h, x);
 
       // k3
-      static constexpr double a31 = 5.0 / 16.0;
+      static constexpr double a31 =  5.0 / 16.0;
       static constexpr double a32 = -1.0 / 16.0;
-      static constexpr double c3  = 1.0 / 4.0;
+      static constexpr double c3  =  1.0 /  4.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a31 * k1[i] + a32 * k2[i]);
       f(k3, time + c3 * h, x);
 
       // k4
       static constexpr double a41 = -3.0 / 4.0;
-      static constexpr double a42 = 1.0 / 4.0;
-      static constexpr double a43 = 1.0;
-      static constexpr double c4  = 1.0 / 2.0;
+      static constexpr double a42 =  1.0 / 4.0;
+      static constexpr double a43 =  1.0;
+      static constexpr double c4  =  1.0 / 2.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a41 * k1[i] + a42 * k2[i] + a43 * k3[i]);
       f(k4, time + c4 * h, x);
@@ -639,27 +639,27 @@ namespace runge_kutta {
       // k5
       static constexpr double a51 = 3.0 / 16.0;
       static constexpr double a54 = 9.0 / 16.0;
-      static constexpr double c5  = 3.0 / 4.0;
+      static constexpr double c5  = 3.0 /  4.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a51 * k1[i] + a54 * k4[i]);
       f(k5, time + c5 * h, x);
 
       // k6
-      static constexpr double a62 = -1.0 / 7.0;
-      static constexpr double a63 = 12.0 / 7.0;
+      static constexpr double a62 =  -1.0 / 7.0;
+      static constexpr double a63 =  12.0 / 7.0;
       static constexpr double a64 = -12.0 / 7.0;
-      static constexpr double a65 = 8.0 / 7.0;
+      static constexpr double a65 =   8.0 / 7.0;
       static constexpr double c6  = 1.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a62 * k2[i] + a63 * k3[i] + a64 * k4[i] + a65 * k5[i]);
       f(k6, time + c6 * h, x);
 
       // increment
-      static constexpr double b1  = 7.0 / 90.0;
+      static constexpr double b1  =  7.0 / 90.0;
       static constexpr double b3  = 16.0 / 45.0;
-      static constexpr double b4  = 2.0 / 15.0;
+      static constexpr double b4  =  2.0 / 15.0;
       static constexpr double b5  = 16.0 / 45.0;
-      static constexpr double b6  = 7.0 / 90.0;
+      static constexpr double b6  =  7.0 / 90.0;
       for (std::size_t i = 0; i < size; i++)
         value[i] += h * (b1 * k1[i] + b3 * k3[i] + b4 * k4[i] + b5 * k5[i] + b6 * k6[i]);
 
@@ -701,57 +701,57 @@ namespace runge_kutta {
       f(k1, time, value);
 
       // k2
-      static constexpr double a21 = 4.0 / 7.0;;
-      static constexpr double c2 = 4.0 / 7.0;
+      static constexpr double a21 = 4.0 / 7.0;
+      static constexpr double c2  = 4.0 / 7.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + a21 * h * k1[i];
       f(k2, time + c2 * h, x);
 
       // k3
-      static constexpr double a31 = 115.0 / 112.0;;
-      static constexpr double a32 = -5.0 / 16.0;;
-      static constexpr double c3 = 5.0 / 7.0;
+      static constexpr double a31 = 115.0 / 112.0;
+      static constexpr double a32 =  -5.0 /  16.0;
+      static constexpr double c3  =   5.0 /   7.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a31 * k1[i] + a32 * k2[i]);
       f(k3, time + c3 * h, x);
 
       // k4
       static constexpr double a41 = 589.0 / 630.0;
-      static constexpr double a42 = 5.0 / 18.0;
-      static constexpr double a43 = -16.0 / 45.0;
-      static constexpr double c4 = 6.0 / 7.0;
+      static constexpr double a42 =   5.0 /  18.0;
+      static constexpr double a43 = -16.0 /  45.0;
+      static constexpr double c4  =   6.0 /   7.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a41 * k1[i] + a42 * k2[i] + a43 * k3[i]);
       f(k4, time + c4 * h, x);
 
       // k5
-      static constexpr double a51 = 229.0 / 1200.0 - 29.0 * sqrt5 / 6000.0;
-      static constexpr double a52 = 119.0 / 240.0 - 187.0 * sqrt5 / 1200.0;
-      static constexpr double a53 = -14.0 / 75.0 + 34.0 * sqrt5 / 375.0;
-      static constexpr double a54 = -3.0 * sqrt5 / 100.0;
-      static constexpr double c5 = (5.0 - sqrt5) / 10.0;
+      static constexpr double a51 = 229.0 / 1200.0 -  29.0 * sqrt5 / 6000.0;
+      static constexpr double a52 = 119.0 /  240.0 - 187.0 * sqrt5 / 1200.0;
+      static constexpr double a53 = -14.0 /   75.0 +  34.0 * sqrt5 /  375.0;
+      static constexpr double a54 =                   -3.0 * sqrt5 /  100.0;
+      static constexpr double c5  = (5.0 - sqrt5) / 10.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a51 * k1[i] + a52 * k2[i] + a53 * k3[i] + a54 * k4[i]);
       f(k5, time + c5 * h, x);
 
       // k6
-      static constexpr double a61 = 71.0 / 2400.0 - 587.0 * sqrt5 / 12000.0;
-      static constexpr double a62 = 187.0 / 480.0 - 391.0 * sqrt5 / 2400.0;
-      static constexpr double a63 = -38.0 / 75.0 + 26.0 * sqrt5 / 375.0;
-      static constexpr double a64 = 27.0 / 80.0 - 3.0 * sqrt5 / 400.0;
-      static constexpr double a65 = 1.0 / 4.0 + sqrt5 / 4.0;
-      static constexpr double c6 = (5.0 + sqrt5) / 10.0;
+      static constexpr double a61 =  71.0 / 2400.0 - 587.0 * sqrt5 / 12000.0;
+      static constexpr double a62 = 187.0 / 480.0  - 391.0 * sqrt5 /  2400.0;
+      static constexpr double a63 = -38.0 / 75.0   +  26.0 * sqrt5 /   375.0;
+      static constexpr double a64 =  27.0 / 80.0   -   3.0 * sqrt5 /   400.0;
+      static constexpr double a65 =   1.0 / 4.0    +         sqrt5 /     4.0;
+      static constexpr double c6  = (5.0 + sqrt5) / 10.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a61 * k1[i] + a62 * k2[i] + a63 * k3[i] + a64 * k4[i] + a65 * k5[i]);
       f(k6, time + c6 * h, x);
 
       // k7 <= k2
       static constexpr double a71 = -49.0 / 480.0 + 43.0 * sqrt5 / 160.0;
-      static constexpr double a72 = -425.0 / 96.0 + 51.0 * sqrt5 / 32.0;
-      static constexpr double a73 = 52.0 / 15.0 - 4.0 * sqrt5 / 5.0;
-      static constexpr double a74 = -27.0 / 16.0 + 3.0 * sqrt5 / 16.0;
-      static constexpr double a75 = 5.0 / 4.0 - 3.0 * sqrt5 / 4.0;
-      static constexpr double a76 = 5.0 / 2.0 - sqrt5 / 2.0;
+      static constexpr double a72 = -425.0 / 96.0 + 51.0 * sqrt5 /  32.0;
+      static constexpr double a73 =   52.0 / 15.0 -  4.0 * sqrt5 /   5.0;
+      static constexpr double a74 =  -27.0 / 16.0 +  3.0 * sqrt5 /  16.0;
+      static constexpr double a75 =    5.0 / 4.0  -  3.0 * sqrt5 /   4.0;
+      static constexpr double a76 =    5.0 / 2.0  -        sqrt5 /   2.0;
       static constexpr double c7 = 1.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a71 * k1[i] + a72 * k2[i] + a73 * k3[i] + a74 * k4[i] + a75 * k5[i] + a76 * k6[i]);
@@ -792,7 +792,7 @@ namespace runge_kutta {
 
       // k2
       static constexpr double a21 = 2.0 / 9.0;
-      static constexpr double c2 = 2.0 / 9.0;
+      static constexpr double c2  = 2.0 / 9.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + a21 * h * k1[i];
       f(k2, time + c2 * h, x);
@@ -800,7 +800,7 @@ namespace runge_kutta {
       // k3
       static constexpr double a31 = 1.0 / 12.0;
       static constexpr double a32 = 1.0 / 4.0;
-      static constexpr double c3 = 1.0 / 3.0;
+      static constexpr double c3  = 1.0 / 3.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a31 * k1[i] + a32 * k2[i]);
       f(k3, time + c3 * h, x);
@@ -808,16 +808,16 @@ namespace runge_kutta {
       // k4
       static constexpr double a41 = 1.0 / 8.0;
       static constexpr double a43 = 3.0 / 8.0;
-      static constexpr double c4 = 1.0 / 2.0;
+      static constexpr double c4  = 1.0 / 2.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a41 * k1[i] + a43 * k3[i]);
       f(k4, time + c4 * h, x);
 
       // k5
       static constexpr double a51 = 23.0 / 216.0;
-      static constexpr double a53 = 7.0 / 72.0;
+      static constexpr double a53 =  7.0 / 72.0;
       static constexpr double a54 = -1.0 / 27.0;
-      static constexpr double c5 = 1.0 / 6.0;
+      static constexpr double c5  =  1.0 / 6.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a51 * k1[i] + a53 * k3[i] + a54 * k4[i]);
       f(k5, time + c5 * h, x);
@@ -825,57 +825,57 @@ namespace runge_kutta {
       // k6
       static constexpr double a61 = -4136.0 / 729.0;
       static constexpr double a63 = -4528.0 / 243.0;
-      static constexpr double a64 = 5264.0 / 729.0;
-      static constexpr double a65 = 1456.0 / 81.0;
-      static constexpr double c6 = 8.0 / 9.0;
+      static constexpr double a64 =  5264.0 / 729.0;
+      static constexpr double a65 =  1456.0 / 81.0;
+      static constexpr double c6  =     8.0 / 9.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a61 * k1[i] + a63 * k3[i] + a64 * k4[i] + a65 * k5[i]);
       f(k6, time + c6 * h, x);
 
       // k7
       static constexpr double a71 = 8087.0 / 11664.0;
-      static constexpr double a73 = 484.0 / 243.0;
+      static constexpr double a73 =  484.0 / 243.0;
       static constexpr double a74 = -518.0 / 729.0;
       static constexpr double a75 = -658.0 / 351.0;
-      static constexpr double a76 = 7.0 / 624.0;
-      static constexpr double c7 = 1.0 / 9.0;
+      static constexpr double a76 =    7.0 / 624.0;
+      static constexpr double c7  =    1.0 / 9.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a71 * k1[i] + a73 * k3[i] + a74 * k4[i] + a75 * k5[i] + a76 * k6[i]);
       f(k7, time + c7 * h, x);
 
       // k8
       static constexpr double a81 = -1217.0 / 2160.0;
-      static constexpr double a83 = -145.0 / 72.0;
-      static constexpr double a84 = 8342.0 / 6615.0;
-      static constexpr double a85 = 361.0 / 195.0;
-      static constexpr double a86 = 3033.0 / 50960.0;
-      static constexpr double a87 = 117.0 / 490.0;
-      static constexpr double c8 = 5.0 / 6.0;
+      static constexpr double a83 =  -145.0 / 72.0;
+      static constexpr double a84 =  8342.0 / 6615.0;
+      static constexpr double a85 =   361.0 / 195.0;
+      static constexpr double a86 =  3033.0 / 50960.0;
+      static constexpr double a87 =   117.0 / 490.0;
+      static constexpr double c8  =     5.0 / 6.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a81 * k1[i] + a83 * k3[i] + a84 * k4[i] + a85 * k5[i] + a86 * k6[i] + a87 * k7[i]);
       f(k8, time + c8 * h, x);
 
       // k9
-      static constexpr double a91 = 259.0 / 2768.0;
-      static constexpr double a93 = -84.0 / 173.0;
-      static constexpr double a94 = -14.0 / 173.0;
-      static constexpr double a95 = 6210.0 / 2249.0;
+      static constexpr double a91 =    259.0 / 2768.0;
+      static constexpr double a93 =    -84.0 / 173.0;
+      static constexpr double a94 =    -14.0 / 173.0;
+      static constexpr double a95 =   6210.0 / 2249.0;
       static constexpr double a96 = -99873.0 / 251888.0;
       static constexpr double a97 = -29160.0 / 15743.0;
-      static constexpr double a98 = 2160.0 / 2249.0;
-      static constexpr double c9 = 1.0;
+      static constexpr double a98 =   2160.0 / 2249.0;
+      static constexpr double c9  = 1.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a91 * k1[i] + a93 * k3[i] + a94 * k4[i] + a95 * k5[i] + a96 * k6[i] + a97 * k7[i] + a98 * k8[i]);
       f(k9, time + c9 * h, x);
 
       // increment
-      static constexpr double b1 = 173.0 / 3360.0;
-      static constexpr double b4 = 1846.0 / 5145.0;
-      static constexpr double b5 = 27.0 / 91.0;
+      static constexpr double b1 =    173.0 / 3360.0;
+      static constexpr double b4 =   1846.0 / 5145.0;
+      static constexpr double b5 =     27.0 / 91.0;
       static constexpr double b6 = -19683.0 / 713440.0;
       static constexpr double b7 = -19683.0 / 713440.0;
-      static constexpr double b8 = 27.0 / 91.0;
-      static constexpr double b9 = 173.0 / 3360.0;
+      static constexpr double b8 =     27.0 / 91.0;
+      static constexpr double b9 =    173.0 / 3360.0;
       for (std::size_t i = 0; i < size; i++)
         value[i] += h * (b1 * k1[i] + b4 * k4[i] + b5 * k5[i] + b6 * k6[i] + b7 * k7[i] + b8 * k8[i] + b9 * k9[i]);
 
@@ -910,30 +910,30 @@ namespace runge_kutta {
 
       // k2
       static constexpr double a21 = (7.0 + 1.0 * sqrt21) / 42.0;
-      static constexpr double c2 = (7.0 + sqrt21) / 42.0;
+      static constexpr double c2  = (7.0 +       sqrt21) / 42.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + a21 * h * k1[i];
       f(k2, time + c2 * h, x);
 
       // k3
       static constexpr double a32 = (7.0 + 1.0 * sqrt21) / 21.0;
-      static constexpr double c3 = (7.0 + sqrt21) / 21.0;
+      static constexpr double c3  = (7.0 +       sqrt21) / 21.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + a32 * h * k2[i];
       f(k3, time + c3 * h, x);
 
       // k4
-      static constexpr double a41 = (7.0 + 1.0 * sqrt21) / 56.0;
+      static constexpr double a41 = ( 7.0 + 1.0 * sqrt21) / 56.0;
       static constexpr double a43 = (21.0 + 3.0 * sqrt21) / 56.0;
-      static constexpr double c4 = (7.0 + sqrt21) / 14.0;
+      static constexpr double c4  = ( 7.0 +       sqrt21) / 14.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a41 * k1[i] + a43 * k3[i]);
       f(k4, time + c4 * h, x);
 
       // k5
-      static constexpr double a51 = (8.0 - 1.0 * sqrt21) / 16.0;
+      static constexpr double a51 = (  8.0 - 1.0 * sqrt21) / 16.0;
       static constexpr double a53 = (-21.0 + 6.0 * sqrt21) / 16.0;
-      static constexpr double a54 = (21.0 - 5.0 * sqrt21) / 16.0;
+      static constexpr double a54 = ( 21.0 - 5.0 * sqrt21) / 16.0;
       static constexpr double c5 = 1.0 / 2.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a51 * k1[i] + a53 * k3[i] + a54 * k4[i]);
@@ -941,56 +941,56 @@ namespace runge_kutta {
 
       // k6
       static constexpr double a61 = (-1687.0 + 374.0 * sqrt21) / 196.0;
-      static constexpr double a63 = (969.0 - 210.0 * sqrt21) / 28.0;
-      static constexpr double a64 = (-381.0 + 83.0 * sqrt21) / 14.0;
-      static constexpr double a65 = (84.0 - 20.0 * sqrt21) / 49.0;
-      static constexpr double c6 = (7.0 - sqrt21) / 14.0;
+      static constexpr double a63 = (  969.0 - 210.0 * sqrt21) /  28.0;
+      static constexpr double a64 = ( -381.0 +  83.0 * sqrt21) /  14.0;
+      static constexpr double a65 = (   84.0 -  20.0 * sqrt21) /  49.0;
+      static constexpr double c6  = (    7.0 -         sqrt21) /  14.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a61 * k1[i] + a63 * k3[i] + a64 * k4[i] + a65 * k5[i]);
       f(k6, time + c6 * h, x);
 
       // k7
-      static constexpr double a71 = (583.0 - 131.0 * sqrt21) / 128.0;
+      static constexpr double a71 = (  583.0 - 131.0 * sqrt21) / 128.0;
       static constexpr double a73 = (-2373.0 + 501.0 * sqrt21) / 128.0;
-      static constexpr double a74 = (4221.0 - 914.0 * sqrt21) / 288.0;
-      static constexpr double a75 = (-9.0 + 4.0 * sqrt21) / 18.0;
-      static constexpr double a76 = (189.0 + 35.0 * sqrt21) / 576.0;
+      static constexpr double a74 = ( 4221.0 - 914.0 * sqrt21) / 288.0;
+      static constexpr double a75 = (   -9.0 +   4.0 * sqrt21) /  18.0;
+      static constexpr double a76 = (  189.0 +  35.0 * sqrt21) / 576.0;
       static constexpr double c7 = 1.0 / 2.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a71 * k1[i] + a73 * k3[i] + a74 * k4[i] + a75 * k5[i] + a76 * k6[i]);
       f(k7, time + c7 * h, x);
 
       // k8
-      static constexpr double a81 = (-623.0 + 169.0 * sqrt21) / 392.0;
-      static constexpr double a83 = (435.0 - 81.0 * sqrt21) / 56.0;
-      static constexpr double a84 = (-1437.0 + 307.0 * sqrt21) / 252.0;
+      static constexpr double a81 = ( -623.0 +  169.0 * sqrt21) /  392.0;
+      static constexpr double a83 = (  435.0 -   81.0 * sqrt21) /   56.0;
+      static constexpr double a84 = (-1437.0 +  307.0 * sqrt21) /  252.0;
       static constexpr double a85 = (-2028.0 - 1468.0 * sqrt21) / 7497.0;
-      static constexpr double a86 = (-21.0 - 4.0 * sqrt21) / 126.0;
-      static constexpr double a87 = (384.0 + 80.0 * sqrt21) / 833.0;
-      static constexpr double c8 = (7.0 + sqrt21) / 14.0;
+      static constexpr double a86 = (  -21.0 -    4.0 * sqrt21) /  126.0;
+      static constexpr double a87 = (  384.0 +   80.0 * sqrt21) /  833.0;
+      static constexpr double c8  = (    7.0 +          sqrt21) /   14.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a81 * k1[i] + a83 * k3[i] + a84 * k4[i] + a85 * k5[i] + a86 * k6[i] + a87 * k7[i]);
       f(k8, time + c8 * h, x);
 
       // k9
-      static constexpr double a91 = (579.0 - 131.0 * sqrt21) / 24.0;
-      static constexpr double a93 = (-791.0 + 167.0 * sqrt21) / 8.0;
-      static constexpr double a94 = (8099.0 - 1765.0 * sqrt21) / 108.0;
-      static constexpr double a95 = (-1976.0 + 784.0 * sqrt21) / 459.0;
-      static constexpr double a96 = (70.0 + 7.0 * sqrt21) / 54.0;
-      static constexpr double a97 = (160.0 - 80.0 * sqrt21) / 153.0;
-      static constexpr double a98 = (49.0 - 7.0 * sqrt21) / 18.0;
+      static constexpr double a91 = (  579.0 -  131.0 * sqrt21) /  24.0;
+      static constexpr double a93 = ( -791.0 +  167.0 * sqrt21) /   8.0;
+      static constexpr double a94 = ( 8099.0 - 1765.0 * sqrt21) / 108.0;
+      static constexpr double a95 = (-1976.0 +  784.0 * sqrt21) / 459.0;
+      static constexpr double a96 = (   70.0 +    7.0 * sqrt21) /  54.0;
+      static constexpr double a97 = (  160.0 -   80.0 * sqrt21) / 153.0;
+      static constexpr double a98 = (   49.0 -    7.0 * sqrt21) /  18.0;
       static constexpr double c9 = 1.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a91 * k1[i] + a93 * k3[i] + a94 * k4[i] + a95 * k5[i] + a96 * k6[i] + a97 * k7[i] + a98 * k8[i]);
       f(k9, time + c9 * h, x);
 
       // increment
-      static constexpr double b1 = 1.0 / 20.0;
+      static constexpr double b1 =  1.0 /  20.0;
       static constexpr double b6 = 49.0 / 180.0;
-      static constexpr double b7 = 16.0 / 45.0;
+      static constexpr double b7 = 16.0 /  45.0;
       static constexpr double b8 = 49.0 / 180.0;
-      static constexpr double b9 = 1.0 / 20.0;
+      static constexpr double b9 =  1.0 /  20.0;
       for (std::size_t i = 0; i < size; i++)
         value[i] += h * (b1 * k1[i] + b6 * k6[i] + b7 * k7[i] + b8 * k8[i] + b9 * k9[i]);
 
@@ -1131,12 +1131,12 @@ namespace runge_kutta {
       f(kA, time + cA0 * h, xnode);
 
       // kB <= k5
-      static constexpr double aB5 = (1.0 / 18.0) * (- 42.0+ 7.0 * sqrt21);
+      static constexpr double aB5 = (1.0 / 18.0) * (- 42.0 +  7.0 * sqrt21);
       static constexpr double aB6 = (1.0 / 45.0) * (- 18.0 + 28.0 * sqrt21);
       static constexpr double aB7 = (1.0 / 72.0) * (-273.0 - 53.0 * sqrt21);
       static constexpr double aB8 = (1.0 / 72.0) * ( 301.0 + 53.0 * sqrt21);
       static constexpr double aB9 = (1.0 / 45.0) * (  28.0 - 28.0 * sqrt21);
-      static constexpr double aBA = (1.0 / 18.0) * (  49.0- 7.0 * sqrt21);
+      static constexpr double aBA = (1.0 / 18.0) * (  49.0 -  7.0 * sqrt21);
       static constexpr double cB0 = aB5 + aB6 + aB7 + aB8 + aB9 + aBA;
       for (std::size_t i = 0; i < size; i++) {
         delta[i] += bA * h * kA[i];
