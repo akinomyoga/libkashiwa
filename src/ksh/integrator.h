@@ -107,6 +107,36 @@ namespace integrator_detail{
       result[k] *= dxdt;
   }
 
+  template<typename F>
+  void gauss_chebyshev_quadrature(int Nd, double* result, int Ni, double xmin, double xmax, F f) {
+    double const center = 0.5 * (xmax + xmin);
+    double const dxdt   = 0.5 * (xmax - xmin);
+    double const dh = M_PI/(2.0 * Ni);
+
+    if (Ni & 1) {
+      f(result, center);
+    } else {
+      std::fill(result, result + Nd, 0.0);
+    }
+
+    for (int i = 0, iN = Ni / 2; i < iN; i++) {
+      double const t = std::cos((2 * i + 1)*dh);
+      double const w = std::sqrt(1.0 - t * t);
+
+      double value1[Nd];
+      f(value1, center + dxdt * t);
+      double value2[Nd];
+      f(value2, center - dxdt * t);
+
+      for (int k = 0; k < Nd; k++)
+        result[k] += w * (value1[k] + value2[k]);
+    }
+
+    double const factor = dxdt * M_PI / Ni;
+    for (int k = 0; k < Nd; k++)
+      result[k] *= factor;
+  }
+
 //NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
 }
 #endif
