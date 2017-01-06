@@ -89,7 +89,6 @@ namespace integrator_detail{
 
     std::fill(result, result + N, 0.0);
 
-    double s=0;
     for (int i = 0; i < I / 2; i++) {
       double const t = traits_t::data[i].t;
       double const w = traits_t::data[i].w;
@@ -111,7 +110,7 @@ namespace integrator_detail{
   void gauss_chebyshev_quadrature(int Nd, double* result, int Ni, double xmin, double xmax, F f) {
     double const center = 0.5 * (xmax + xmin);
     double const dxdt   = 0.5 * (xmax - xmin);
-    double const dh = M_PI/(2.0 * Ni);
+    double const dh = M_PI / (2.0 * Ni);
 
     if (Ni & 1) {
       f(result, center);
@@ -120,7 +119,7 @@ namespace integrator_detail{
     }
 
     for (int i = 0, iN = Ni / 2; i < iN; i++) {
-      double const t = std::cos((2 * i + 1)*dh);
+      double const t = std::cos((2 * i + 1) * dh);
       double const w = std::sqrt(1.0 - t * t);
 
       double value1[Nd];

@@ -127,6 +127,16 @@ $(OBJDIR)/test/linear.o: test/linear.cpp | $(OBJDIR)/test
 test/linear.exe: $(OBJDIR)/test/linear.o $(OUTDIR)/libksh.a
 	$(CXX) $(check_LDFLAGS) -o $@ $^ $(check_LIBS)
 
+check: integrator
+.PHONY: integrator
+integrator: test/test_integrator.exe
+	./$<
+-include $(OBJDIR)/test/test_integrator.d
+$(OBJDIR)/test/test_integrator.o: test/test_integrator.cpp | $(OBJDIR)/test
+	$(CXX) $(CXXFLAGS) -I . -MD -MF $(@:.o=.d) -c -o $@ $<
+test/test_integrator.exe: $(OBJDIR)/test/test_integrator.o $(OUTDIR)/libksh.a
+	$(CXX) $(check_LDFLAGS) -o $@ $^ $(check_LIBS)
+
 clean:
 	-find $(OBJDIR) -name \*.d -o -name \*.o | xargs rm -f
 
