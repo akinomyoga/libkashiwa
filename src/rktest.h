@@ -1,12 +1,15 @@
 // -*- mode:c++ -*-
-#pragma once
 #ifndef KASHIWA_RKTEST_H
 #define KASHIWA_RKTEST_H
+#ifdef _MSC_VER
+# define _USE_MATH_DEFINES
+#endif
 #include <cstdio>
-#include <vector>
 #include <cstddef>
 #include <cmath>
+#include <vector>
 #include <algorithm>
+#include <numeric>
 #include <utility>
 #include <mwg/except.h>
 

@@ -1,6 +1,9 @@
 // -*- mode:c++ -*-
 #ifndef KASHIWA_EXPLICIT_RUNGE_KUTTA_H
 #define KASHIWA_EXPLICIT_RUNGE_KUTTA_H
+#ifdef _MSC_VER
+# define _USE_MATH_DEFINES
+#endif
 #include <cstddef>
 #include <cmath>
 #include "buffer.h"
