@@ -8,7 +8,8 @@
 
 # generated files
 
+a.out
+*.exe
 /src/Makefile
 /out
-*.exe
 /src/libksh.a
