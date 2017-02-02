@@ -1,5 +1,6 @@
 #include <ctime>
 #include <cstdlib>
+#include <cmath>
 #include <algorithm>
 #include <limits>
 #include <mwg/except.h>
