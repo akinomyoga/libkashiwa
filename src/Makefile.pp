@@ -137,6 +137,7 @@ test/test_%name%.exe: $(OBJDIR)/test/test_%name%.o $(OUTDIR)/libksh.a
 	$(CXX) $(check_LDFLAGS) -o $@ $^ $(check_LIBS)
 #%end
 #%x register_test.r/%name%/integrator/
+#%x register_test.r/%name%/polynomial/
 
 clean:
 	-find $(OBJDIR) -name \*.d -o -name \*.o | xargs rm -f
