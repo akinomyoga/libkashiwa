@@ -1,11 +1,12 @@
 // -*- mode: c++ -*-
-#ifndef KASHIWA_POLYNOMIAL_HH
-#define KASHIWA_POLYNOMIAL_HH
+#ifndef KASHIWA_POLYNOMIAL_H
+#define KASHIWA_POLYNOMIAL_H
 #include <cstddef>
 #include <vector>
 #include <initializer_list>
 #include <algorithm>
 #include <utility>
+#include <type_traits>
 #include <ostream>
 namespace kashiwa {
 
@@ -56,6 +57,13 @@ namespace kashiwa {
       this->m_data.resize(i);
     }
 
+    polynomial const& operator+() const {return *this;}
+
+    polynomial operator-() const {
+      polynomial ret(*this);
+      for (auto& e: ret.m_data) e *= -1;
+      return ret;
+    }
   };
 
   template<typename K>
@@ -141,6 +149,9 @@ namespace kashiwa {
     return merge(lhs, rhs, [](K const& lhs, K const& rhs) {return lhs - rhs;});
   }
 
+  //
+  // polynomial * polynomial
+  //
   template<typename K>
   polynomial<K> operator*(polynomial<K> const& lhs, polynomial<K> const& rhs) {
     polynomial<K> result;
@@ -160,11 +171,28 @@ namespace kashiwa {
 
     return result;
   }
-
   template<typename K>
-  polynomial<K>& operator*=(polynomial<K>& lhs, polynomial<K> const& rhs) {
-    return lhs = lhs * rhs;
+  polynomial<K>& operator*=(polynomial<K>& lhs, polynomial<K> const& rhs) {return lhs = lhs * rhs;}
+
+  //
+  // polynomial * scalar
+  //
+  template<typename K>
+  polynomial<K>& operator*=(polynomial<K>& lhs, K const& rhs) {
+    if (rhs == 0)
+      lhs.m_data.clear();
+    else
+      for (auto& e: lhs.m_data) e *= rhs;
+    return lhs;
   }
+  template<typename K>
+  polynomial<K> operator*(polynomial<K> const& lhs, K const& rhs) {
+    polynomial<K> ret(lhs);
+    ret *= rhs;
+    return ret;
+  }
+  template<typename K>
+  polynomial<K> operator*(K const& lhs, polynomial<K> const& rhs) {return rhs * lhs;}
 
   template<typename K>
   polynomial<K> pow(polynomial<K> const& lhs, unsigned exponent) {
@@ -191,7 +219,7 @@ namespace kashiwa {
   // }
 
   template<typename K>
-  std::ostream& print(std::ostream& ostr, polynomial<K> const& poly) {
+  std::ostream& operator<<(std::ostream& ostr, polynomial<K> const& poly) {
     auto const& data = poly.data();
     if (data.size() == 0)
       return ostr << '0';

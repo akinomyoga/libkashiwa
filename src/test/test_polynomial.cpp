@@ -10,7 +10,7 @@ using polynomial_t = ksh::polynomial<int>;
 
 void check_print(polynomial_t const& poly, const char* expected) {
   std::ostringstream str;
-  print(str, poly);
+  str << poly;
   mwg_check(str.str() == expected, "result = \"%s\" expected = \"%s\"", str.str().c_str(), expected);
 }
 
@@ -24,6 +24,9 @@ int main() {
   mwg_check((deg(polynomial_t {0, 1}) == 1));
   mwg_check((deg(polynomial_t {0, 1, 0}) == 1));
   mwg_check((deg(polynomial_t {2, 1, 1}) == 2));
+
+  mwg_check((-polynomial_t {1, 2, 1} == polynomial_t {-1, -2, -1}));
+  mwg_check((+polynomial_t {1, 2, 1} == polynomial_t {1, 2, 1}));
 
   polynomial_t p1 {1, 1};
   mwg_check((p1 * p1 == polynomial_t {1, 2, 1}));
