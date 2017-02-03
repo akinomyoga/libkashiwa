@@ -26,6 +26,9 @@ namespace kashiwa {
       }
   }
 
+  template<typename K>
+  constexpr K lcm(K lhs, K rhs) {return (lhs / gcd(lhs, rhs)) * rhs;}
+
   struct _canonical_tag {};
 
   template<typename K>
@@ -51,6 +54,8 @@ namespace kashiwa {
     constexpr K const& denominator() const {return m_den;}
     constexpr rational const& operator+() const {return *this;}
     constexpr rational operator-() const {return {-m_num, m_den};}
+
+    constexpr explicit operator bool() const {return m_num != 0;}
   };
 
   template<typename K>
@@ -203,6 +208,59 @@ namespace kashiwa {
     rational<K> const tmp {lhs, rhs.numerator()};
     return {tmp.numerator() * rhs.denominator(), tmp.denominator(), _canonical_tag()};
   }
+
+  // rational < rational
+  template<typename K> constexpr bool operator<(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() < 0;}
+  template<typename K> constexpr bool operator<=(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() < 0;}
+  template<typename K> constexpr bool operator>(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() > 0;}
+  template<typename K> constexpr bool operator>=(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() >= 0;}
+
+  // rational < scalar
+  template<typename K, typename Compare>
+  constexpr bool _impl_compare(rational<K> const& lhs, K const& rhs, Compare compare, int inf) {
+    if (lhs.denominator() == 0)
+      return lhs.numerator() == inf;
+    else
+      return compare(lhs.numerator(), lhs.denominator() * rhs); // overflow?
+  }
+  template<typename K>
+  constexpr bool operator<(rational<K> const& lhs, K const& rhs) {
+    return _impl_compare(lhs, rhs, std::less<K>(), -1);
+  }
+  template<typename K>
+  constexpr bool operator<=(rational<K> const& lhs, K const& rhs) {
+    return _impl_compare(lhs, rhs, std::less_equal<K>(), -1);
+  }
+  template<typename K>
+  constexpr bool operator>(rational<K> const& lhs, K const& rhs) {
+    return _impl_compare(lhs, rhs, std::greater<K>(), 1);
+  }
+  template<typename K>
+  constexpr bool operator>=(rational<K> const& lhs, K const& rhs) {
+    return _impl_compare(lhs, rhs, std::greater_equal<K>(), 1);
+  }
+  template<typename K> constexpr bool operator< (K const& lhs, rational<K> const& rhs) {return rhs > lhs;}
+  template<typename K> constexpr bool operator> (K const& lhs, rational<K> const& rhs) {return rhs < lhs;}
+  template<typename K> constexpr bool operator<=(K const& lhs, rational<K> const& rhs) {return rhs >= lhs;}
+  template<typename K> constexpr bool operator>=(K const& lhs, rational<K> const& rhs) {return rhs <= lhs;}
+
+  // rational < int
+  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
+  constexpr bool operator< (Int const& lhs, rational<K> const& rhs) {return (K) lhs < rhs;}
+  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
+  constexpr bool operator> (Int const& lhs, rational<K> const& rhs) {return (K) lhs > rhs;}
+  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
+  constexpr bool operator<=(Int const& lhs, rational<K> const& rhs) {return (K) lhs <= rhs;}
+  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
+  constexpr bool operator>=(Int const& lhs, rational<K> const& rhs) {return (K) lhs >= rhs;}
+  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
+  constexpr bool operator< (rational<K> const& lhs, Int const& rhs) {return lhs < (K) rhs;}
+  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
+  constexpr bool operator> (rational<K> const& lhs, Int const& rhs) {return lhs > (K) rhs;}
+  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
+  constexpr bool operator<=(rational<K> const& lhs, Int const& rhs) {return lhs <= (K) rhs;}
+  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
+  constexpr bool operator>=(rational<K> const& lhs, Int const& rhs) {return lhs >= (K) rhs;}
 
   template<typename K>
   std::ostream& operator<<(std::ostream& ostr, rational<K> const& value) {
