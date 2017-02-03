@@ -192,6 +192,18 @@ namespace kashiwa {
     return ret;
   }
   template<typename K>
+  polynomial<K>& operator/=(polynomial<K>& lhs, K const& rhs) {
+    for (auto& e: lhs.m_data) e /= rhs;
+    lhs.normalize();
+    return lhs;
+  }
+  template<typename K>
+  polynomial<K> operator/(polynomial<K> const& lhs, K const& rhs) {
+    polynomial<K> ret(lhs);
+    ret /= rhs;
+    return ret;
+  }
+  template<typename K>
   polynomial<K> operator*(K const& lhs, polynomial<K> const& rhs) {return rhs * lhs;}
 
   template<typename K>
