@@ -138,6 +138,7 @@ test/test_%name%.exe: $(OBJDIR)/test/test_%name%.o $(OUTDIR)/libksh.a
 #%end
 #%x register_test.r/%name%/integrator/
 #%x register_test.r/%name%/polynomial/
+#%x register_test.r/%name%/rational/
 
 clean:
 	-find $(OBJDIR) -name \*.d -o -name \*.o | xargs rm -f
