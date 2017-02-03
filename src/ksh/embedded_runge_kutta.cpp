@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cmath>
 #include <mwg/except.h>
-#include "def.h"
+#include "utility.h"
 #include "buffer.h"
 
 namespace kashiwa {

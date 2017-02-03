@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <functional>
 #include <ostream>
-#include "kshdef.h"
+#include "def.h"
 namespace kashiwa {
 
   namespace lambda {

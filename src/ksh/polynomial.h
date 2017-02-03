@@ -8,7 +8,7 @@
 #include <utility>
 #include <type_traits>
 #include <ostream>
-#include "kshdef.h"
+#include "def.h"
 namespace kashiwa {
 
   // K に対する要求
