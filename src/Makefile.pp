@@ -114,6 +114,7 @@ check_LDFLAGS := $(LDFLAGS) -L $(OUTDIR)
 check_LIBS    := $(LIBS) -lksh
 check:
 .PHONY: check
+directories += $(OBJDIR)/test
 
 check: linear
 .PHONY: linear
@@ -139,6 +140,33 @@ test/test_%name%.exe: $(OBJDIR)/test/test_%name%.o $(OUTDIR)/libksh.a
 #%x register_test.r/%name%/integrator/
 #%x register_test.r/%name%/polynomial/
 #%x register_test.r/%name%/rational/
+
+#------------------------------------------------------------------------------
+#
+# Samples
+#
+
+sample_LDFLAGS := $(LDFLAGS) -L $(OUTDIR)
+sample_LIBS    := $(LIBS) -lksh
+sample:
+.PHONY: sample
+directories += $(OBJDIR)/sample
+
+%.sample: $(OBJDIR)/sample/%.exe
+	@echo SAMPLE $@
+	@./$<
+$(OBJDIR)/sample/%.exe: $(OBJDIR)/sample/%.o $(OUTDIR)/libksh.a
+	$(CXX) $(sample_LDFLAGS) -o $@ $^ $(sample_LIBS)
+$(OBJDIR)/sample/%.o: sample/%.cpp | $(OBJDIR)/sample
+	$(CXX) $(CXXFLAGS) -I . -MD -MF $(@:.o=.d) -c -o $@ $<
+-include $(OBJDIR)/sample/%.d
+
+sample-names += legendre_polynomial
+sample: $(sample-names:%=%.sample)
+
+.SECONDARY:
+
+#------------------------------------------------------------------------------
 
 clean:
 	-find $(OBJDIR) -name \*.d -o -name \*.o | xargs rm -f
