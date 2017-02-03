@@ -159,9 +159,10 @@ $(OBJDIR)/sample/%.exe: $(OBJDIR)/sample/%.o $(OUTDIR)/libksh.a
 	$(CXX) $(sample_LDFLAGS) -o $@ $^ $(sample_LIBS)
 $(OBJDIR)/sample/%.o: sample/%.cpp | $(OBJDIR)/sample
 	$(CXX) $(CXXFLAGS) -I . -MD -MF $(@:.o=.d) -c -o $@ $<
--include $(OBJDIR)/sample/%.d
 
 sample-names += legendre_polynomial
+
+-include $(sample-names:%=$(OBJDIR)/sample/%.d)
 sample: $(sample-names:%=%.sample)
 
 .SECONDARY:
