@@ -1,26 +1,45 @@
 #include <cstdio>
 #include <cstdint>
+#include <limits>
 #include <vector>
 #include <algorithm>
 #include <mwg/except.h>
 
 namespace multi_precision_i1 {
 
+  template<
+    typename StoreInt = std::uint32_t,
+    typename CalcInt = std::uint64_t,
+    CalcInt modulo = (CalcInt) std::numeric_limits<StoreInt>::max() + 1 >
+  struct mp_integer;
+
+  template<typename StoreInt, typename CalcInt, CalcInt Modulo>
   struct mp_integer {
-    typedef std::uint32_t element_type;
-    static constexpr element_type modulo = 0x10000;
+    typedef StoreInt element_type;
+    typedef CalcInt calculation_type;
+    static constexpr element_type element_max = Modulo - 1;
+    static constexpr calculation_type modulo = Modulo;
+
+    static_assert(
+      Modulo > 1 &&
+      Modulo - 1 <= std::numeric_limits<element_type>::max() &&
+      element_max <= std::numeric_limits<calculation_type>::max() / element_max);
 
     int sign;
     std::vector<element_type> data;
 
     mp_integer(): sign(0) {}
-    mp_integer(int value): sign(0) {
-      if (value == 0) return;
+
+    mp_integer(int value) {
+      if (value == 0) {
+        sign = 0;
+        return;
+      }
 
       unsigned int uvalue = value;
       if (value < 0) {
         sign = -1;
-        uvalue = - uvalue;
+        uvalue = -uvalue;
       } else {
         sign = 1;
       }
@@ -34,23 +53,29 @@ namespace multi_precision_i1 {
     }
   };
 
-  void abs_set(mp_integer& lhs, mp_integer const& rhs) {
-    std::vector<mp_integer::element_type>& ddata = lhs.data;
+  template<typename S, typename C, C M>
+  void abs_set(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {
+    std::vector<typename mp_integer<S, C, M>::element_type>& ddata = lhs.data;
     ddata.resize(0);
     ddata.reserve(rhs.data.size());
     ddata.insert(ddata.begin(), rhs.data.begin(), rhs.data.end());
   }
 
-  void abs_add(mp_integer& lhs, mp_integer const& rhs) {
-    if (lhs.data.size() < rhs.data.size())
-      lhs.data.resize(rhs.data.size(), (mp_integer::element_type) 0u);
+  template<typename S, typename C, C M>
+  void abs_add(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {
+    typedef mp_integer<S, C, M> integer_t;
+    typedef typename integer_t::element_type  element_t;
+    typedef typename integer_t::calculation_type  calc_t;
 
-    mp_integer::element_type carry = 0;
+    if (lhs.data.size() < rhs.data.size())
+      lhs.data.resize(rhs.data.size(), (element_t) 0u);
+
+    calc_t carry = 0;
     std::size_t const iN = rhs.data.size();
     for (std::size_t i = 0; i < iN; i++) {
-      mp_integer::element_type const value = lhs.data[i] + rhs.data[i] + carry;
-      carry       = value / mp_integer::modulo;
-      lhs.data[i] = value % mp_integer::modulo;
+      calc_t const value = (calc_t) lhs.data[i] + (calc_t) rhs.data[i] + carry;
+      carry       = value / integer_t::modulo;
+      lhs.data[i] = (element_t) (value % integer_t::modulo);
     }
 
     if (carry) {
@@ -62,7 +87,8 @@ namespace multi_precision_i1 {
     }
   }
 
-  int abs_compare(mp_integer const& lhs, mp_integer const& rhs) {
+  template<typename S, typename C, C M>
+  int abs_compare(mp_integer<S, C, M> const& lhs, mp_integer<S, C, M> const& rhs) {
     if (lhs.data.size() != rhs.data.size())
       return lhs.data.size() < rhs.data.size()? -1: 1;
 
@@ -73,22 +99,27 @@ namespace multi_precision_i1 {
     return 0;
   }
 
-  void abs_sub(mp_integer& lhs, mp_integer const& rhs) {
+  template<typename S, typename C, C M>
+  void abs_sub(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {
+    typedef mp_integer<S, C, M> integer_t;
+    typedef typename integer_t::element_type element_t;
+    typedef typename integer_t::calculation_type calc_t;
+
     int const cmp = abs_compare(lhs, rhs);
     if (cmp == 0) {
       lhs.sign = 0;
-      lhs.data.resize(1, (mp_integer::element_type) 0);
+      lhs.data.resize(1, (element_t) 0);
     } else if (cmp != 0) {
-      mp_integer::element_type carry = 0;
-      mp_integer::element_type      * dst = &lhs.data[0];
-      mp_integer::element_type const* max;
-      mp_integer::element_type const* min;
+      element_t carry = 0;
+      element_t      * dst = &lhs.data[0];
+      element_t const* max;
+      element_t const* min;
       std::size_t maxN;
       std::size_t minN;
 
       if (cmp < 0) {
         lhs.sign = -lhs.sign;
-        lhs.data.resize(rhs.data.size(), (mp_integer::element_type) 0);
+        lhs.data.resize(rhs.data.size(), (element_t) 0);
         max = &rhs.data[0];
         min = &lhs.data[0];
         maxN = rhs.data.size();
@@ -101,12 +132,12 @@ namespace multi_precision_i1 {
       }
 
       for (std::size_t i = 0; i < minN; i++) {
-        mp_integer::element_type const sub = min[i] + carry;
+        calc_t const sub = (calc_t) min[i] + carry;
         if (max[i] < sub) {
-          dst[i] = max[i] + (mp_integer::modulo - sub);
+          dst[i] = (element_t) (max[i] + (integer_t::modulo - sub));
           carry = 1;
         } else {
-          dst[i] = max[i] - sub;
+          dst[i] = (element_t) (max[i] - sub);
           carry = 0;
         }
       }
@@ -116,8 +147,8 @@ namespace multi_precision_i1 {
         highest = maxN - 1;
         for (std::size_t j = minN; j < maxN; j++) {
           if (max[j] < carry) {
-            dst[j] = max[j] + (mp_integer::modulo - carry);
-            carry = 1;
+            mwg_assert(max[j] == 0 && carry == 1);
+            dst[j] = integer_t::element_max;
           } else {
             dst[j] = max[j] - carry;
             if (dst == max) {highest = j; break;}
@@ -128,12 +159,13 @@ namespace multi_precision_i1 {
 
       if (highest + 1 == lhs.data.size()) {
         while (highest > 0 && lhs.data[highest] == 0) highest--;
-        lhs.data.resize(highest + 1, (mp_integer::element_type) 0);
+        lhs.data.resize(highest + 1, (element_t) 0);
       }
     }
   }
 
-  mp_integer& operator+=(mp_integer& lhs, mp_integer const& rhs) {
+  template<typename S, typename C, C M>
+  mp_integer<S, C, M>& operator+=(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {
     if (rhs.sign == 0) return lhs;
     if (lhs.sign == 0) {
       lhs.sign = -rhs.sign;
@@ -148,15 +180,17 @@ namespace multi_precision_i1 {
     return lhs;
   }
 
-  mp_integer operator+(mp_integer const& lhs, mp_integer const& rhs) {
-    mp_integer ret;
+  template<typename S, typename C, C M>
+  mp_integer<S, C, M> operator+(mp_integer<S, C, M> const& lhs, mp_integer<S, C, M> const& rhs) {
+    mp_integer<S, C, M> ret;
     if (lhs.sign != 0)
       abs_set(ret, lhs);
     ret += rhs;
     return ret;
   }
 
-  void dump(mp_integer const& value) {
+  template<typename S, typename C, C M>
+  void dump(mp_integer<S, C, M> const& value) {
     std::printf("sign = %d, data = [ ", value.sign);
     for (std::size_t i = value.data.size(); i--; ) {
       std::printf("%llx", (unsigned long long) value.data[i]);
@@ -168,11 +202,11 @@ namespace multi_precision_i1 {
 
 namespace multi_precision_i1 {
   void test1() {
-    mp_integer a = 1234;
+    mp_integer<std::uint32_t, std::uint64_t, 0x100> a = 1234;
     dump(a);
     for (int i = 0; i <= 100; i++) {
       a += a;
-      a += 1;
+      a += (decltype(a)) 1;
       dump(a);
     }
   }
