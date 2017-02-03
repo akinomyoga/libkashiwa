@@ -5,10 +5,7 @@
 #include <type_traits>
 #include <functional>
 #include <ostream>
-// #include <vector>
-// #include <initializer_list>
-// #include <algorithm>
-// #include <utility>
+#include "kshdef.h"
 namespace kashiwa {
 
   namespace lambda {
@@ -28,8 +25,8 @@ namespace kashiwa {
 
   template<typename K>
   constexpr K gcd(K lhs, K rhs) {
-    if (lhs < 0) lhs = -lhs;
-    if (rhs < 0) rhs = -rhs;
+    if (lhs < 0) destructive_negate(lhs);
+    if (rhs < 0) destructive_negate(rhs);
     switch (lhs > rhs)
       for (;;) {
       case true:
@@ -44,7 +41,7 @@ namespace kashiwa {
   template<typename K>
   constexpr K lcm(K lhs, K rhs) {return (lhs / gcd(lhs, rhs)) * rhs;}
 
-  struct _canonical_tag {};
+  struct canonical_tag {};
 
   template<typename K>
   struct rational {
@@ -58,12 +55,12 @@ namespace kashiwa {
       m_num /= _gcd;
       m_den /= _gcd;
       if (m_den < 0) {
-        m_num = -m_num;
-        m_den = -m_den;
+        kashiwa::destructive_negate(m_num);
+        kashiwa::destructive_negate(m_den);
       }
     }
 
-    constexpr rational(K const& num, K const& den, _canonical_tag): m_num(num), m_den(den) {}
+    constexpr rational(K const& num, K const& den, canonical_tag): m_num(num), m_den(den) {}
 
     constexpr K const& numerator() const {return m_num;}
     constexpr K const& denominator() const {return m_den;}
@@ -71,6 +68,8 @@ namespace kashiwa {
     constexpr rational operator-() const {return {-m_num, m_den};}
 
     constexpr explicit operator bool() const {return m_num != 0;}
+
+    constexpr void destructive_negate() {kashiwa::destructive_negate(m_num);}
   };
 
   template<typename K>
@@ -116,7 +115,7 @@ namespace kashiwa {
       K const& d = rhs.denominator();
       if (c == 0 || d == 0) {
         if (c == d)
-          return {a == add(0, b)? a: 0, 0, _canonical_tag()};
+          return {a == add(0, b)? a: 0, 0, canonical_tag()};
         else
           return c == 0? lhs: neg(rhs);
       }
@@ -186,11 +185,11 @@ namespace kashiwa {
     K d = rhs.denominator();
     if (c == 0 || d == 0) {
       if (c == d)
-        return {a * b, 0, _canonical_tag()}; // {nan, inf} * {nan, inf}
+        return {a * b, 0, canonical_tag()}; // {nan, inf} * {nan, inf}
       else if (a == 0 || b == 0)
-        return {0, 0, _canonical_tag()}; // 0 * {nan, inf} or nonzero * nan -> nan
+        return {0, 0, canonical_tag()}; // 0 * {nan, inf} or nonzero * nan -> nan
       else
-        return {(a > 0? 1: -1) * (b > 0? 1: -1), 0, _canonical_tag()}; // nonzero * inf -> inf
+        return {(a > 0? 1: -1) * (b > 0? 1: -1), 0, canonical_tag()}; // nonzero * inf -> inf
     }
 
     K const _gcd1 = gcd(a, d);
@@ -204,7 +203,7 @@ namespace kashiwa {
       c /= _gcd2;
     }
 
-    return {a * b, c * d, _canonical_tag()};
+    return {a * b, c * d, canonical_tag()};
   }
   template<typename K>
   constexpr rational<K> operator/(rational<K> const& lhs, rational<K> const& rhs) {
@@ -221,19 +220,19 @@ namespace kashiwa {
   template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
   constexpr rational<K> operator*(rational<K> const& lhs, L const& rhs) {
     rational<K> const tmp {rhs, lhs.denominator()};
-    return {lhs.numerator() * tmp.numerator(), tmp.denominator(), _canonical_tag()};
+    return {lhs.numerator() * tmp.numerator(), tmp.denominator(), canonical_tag()};
   }
   template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
   constexpr rational<K> operator/(rational<K> const& lhs, L const& rhs) {
     rational<K> const tmp {lhs.numerator(), rhs};
-    return {tmp.numerator(), lhs.denominator() * tmp.denominator(), _canonical_tag()};
+    return {tmp.numerator(), lhs.denominator() * tmp.denominator(), canonical_tag()};
   }
   template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
   constexpr rational<K> operator*(L const& lhs, rational<K> const& rhs) {return rhs * lhs;}
   template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
   constexpr rational<K> operator/(L const& lhs, rational<K> const& rhs) {
     rational<K> const tmp {lhs, rhs.numerator()};
-    return {tmp.numerator() * rhs.denominator(), tmp.denominator(), _canonical_tag()};
+    return {tmp.numerator() * rhs.denominator(), tmp.denominator(), canonical_tag()};
   }
   template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
   rational<K> operator*=(rational<K>& lhs, L const& rhs) {return lhs = lhs * rhs;}

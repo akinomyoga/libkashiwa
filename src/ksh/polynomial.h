@@ -8,6 +8,7 @@
 #include <utility>
 #include <type_traits>
 #include <ostream>
+#include "kshdef.h"
 namespace kashiwa {
 
   // K に対する要求
@@ -276,7 +277,7 @@ namespace kashiwa {
           ostr << ' ';
           if (coefficient < 0) {
             ostr << '-';
-            coefficient = -coefficient;
+            destructive_negate(coefficient);
           } else
             ostr << '+';
           ostr << ' ';
