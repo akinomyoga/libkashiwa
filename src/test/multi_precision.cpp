@@ -54,7 +54,7 @@ namespace multi_precision_i1 {
       }
 
       while (uvalue) {
-        data.push_back(uvalue % modulo);
+        data.emplace_back((element_type) (uvalue % modulo));
         uvalue /= modulo;
       }
     }
@@ -94,6 +94,15 @@ namespace multi_precision_i1 {
   // compare(a, b)
   //
   namespace mp_integer_detail {
+    template<typename I, typename std::enable_if<std::is_integral<I>::value && std::is_signed<I>::value, std::nullptr_t>::type = nullptr>
+    typename std::make_unsigned<I>::type _abs(I const& value) {
+      typename std::make_unsigned<I>::type uvalue = value;
+      if (value < 0) uvalue = -uvalue;
+      return uvalue;
+    }
+    template<typename U, typename std::enable_if<std::is_integral<U>::value && std::is_unsigned<U>::value, std::nullptr_t>::type = nullptr>
+    U const& _abs(U const& value) {return value;}
+
     template<typename S, typename C, C M>
     int abs_compare(mp_integer<S, C, M> const& lhs, mp_integer<S, C, M> const& rhs) {
       if (lhs.data.size() != rhs.data.size())
@@ -108,14 +117,14 @@ namespace multi_precision_i1 {
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
     int abs_compare(mp_integer<S, C, M> const& lhs, I const& rhs) {
       using integer_t = mp_integer<S, C, M>;
+      using elem_t = typename integer_t::element_type;
 
-      typename std::make_unsigned<I>::type urhs = rhs;
-      if (std::is_signed<I>::value && rhs < 0) urhs = -urhs;
+      typename std::make_unsigned<I>::type urhs = _abs(rhs);
 
       int ret = 0;
       for (std::size_t i = 0; i < lhs.data.size(); i++) {
         if (urhs == 0) return 1;
-        auto const part = urhs % integer_t::modulo;
+        elem_t const part = (elem_t) (urhs % integer_t::modulo);
         if (lhs.data[i] != part)
           ret = lhs.data[i] > part? 1: -1;
         urhs /= integer_t::modulo;
@@ -224,30 +233,51 @@ namespace multi_precision_i1 {
     }
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
     void abs_add(mp_integer<S, C, M>& lhs, I const& rhs) {
-      // ToDo@@
+      using integer_t = mp_integer<S, C, M>;
+      using elem_t = typename integer_t::element_type;
+      using calc_t = typename integer_t::calculation_type;
+
+      typename std::make_unsigned<I>::type urhs = _abs(rhs);
+
+      for (std::size_t i = 0; i < lhs.data.size(); i++) {
+        if (urhs == 0) return;
+        calc_t const sub = (calc_t) (urhs % integer_t::modulo) + (calc_t) lhs.data[i];
+        urhs /= integer_t::modulo;
+        if (sub >= integer_t::modulo) {
+          urhs++;
+          lhs.data[i] = (elem_t) (sub % integer_t::modulo);
+        } else {
+          lhs.data[i] = (elem_t) sub;
+        }
+      }
+
+      while (urhs) {
+        lhs.data.emplace_back((elem_t) (urhs % integer_t::modulo));
+        urhs /= integer_t::modulo;
+      }
     }
 
     template<typename S, typename C, C M>
     void abs_sub(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {
       typedef mp_integer<S, C, M> integer_t;
-      typedef typename integer_t::element_type element_t;
+      typedef typename integer_t::element_type elem_t;
       typedef typename integer_t::calculation_type calc_t;
 
       int const cmp = abs_compare(lhs, rhs);
       if (cmp == 0) {
         lhs.sign = 0;
-        lhs.data.resize(1, (element_t) 0);
+        lhs.data.resize(1, (elem_t) 0);
       } else if (cmp != 0) {
-        element_t carry = 0;
-        element_t      * dst = &lhs.data[0];
-        element_t const* max;
-        element_t const* min;
+        elem_t carry = 0;
+        elem_t      * dst = &lhs.data[0];
+        elem_t const* max;
+        elem_t const* min;
         std::size_t maxN;
         std::size_t minN;
 
         if (cmp < 0) {
           lhs.sign = -lhs.sign;
-          lhs.data.resize(rhs.data.size(), (element_t) 0);
+          lhs.data.resize(rhs.data.size(), (elem_t) 0);
           max = &rhs.data[0];
           min = &lhs.data[0];
           maxN = rhs.data.size();
@@ -262,10 +292,10 @@ namespace multi_precision_i1 {
         for (std::size_t i = 0; i < minN; i++) {
           calc_t const sub = (calc_t) min[i] + carry;
           if (max[i] < sub) {
-            dst[i] = (element_t) (max[i] + (integer_t::modulo - sub));
+            dst[i] = (elem_t) (max[i] + (integer_t::modulo - sub));
             carry = 1;
           } else {
-            dst[i] = (element_t) (max[i] - sub);
+            dst[i] = (elem_t) (max[i] - sub);
             carry = 0;
           }
         }
@@ -287,13 +317,53 @@ namespace multi_precision_i1 {
 
         if (highest + 1 == lhs.data.size()) {
           while (highest > 0 && lhs.data[highest] == 0) highest--;
-          lhs.data.resize(highest + 1, (element_t) 0);
+          lhs.data.resize(highest + 1, (elem_t) 0);
         }
       }
     }
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
     void abs_sub(mp_integer<S, C, M>& lhs, I const& rhs) {
-      // ToDo@@
+      typedef mp_integer<S, C, M> integer_t;
+      typedef typename integer_t::element_type elem_t;
+      typedef typename integer_t::calculation_type calc_t;
+
+      int const cmp = abs_compare(lhs, rhs);
+      if (cmp == 0) {
+        lhs.sign = 0;
+        lhs.data.resize(1, (elem_t) 0);
+        return;
+      }
+
+      typename std::make_unsigned<I>::type urhs = _abs(rhs);
+      if (cmp > 0) {
+        for (std::size_t i = 0; i < lhs.data.size(); i++) {
+          if (urhs == 0) return;
+          elem_t const part = (elem_t) (urhs % integer_t::modulo);
+          urhs /= integer_t::modulo;
+          if (lhs.data[i] >= part)
+            lhs.data[i] -= part;
+          else {
+            urhs++;
+            lhs.data[i] += (elem_t) (integer_t::modulo - part);
+          }
+        }
+      } else {
+        lhs.sign = -lhs.sign;
+        for (std::size_t i = 0; i < lhs.data.size(); i++) {
+          elem_t const part = (elem_t) (urhs % integer_t::modulo);
+          urhs /= integer_t::modulo;
+          if (part >= lhs.data[i])
+            lhs.data[i] = part - lhs.data[i];
+          else {
+            urhs--;
+            lhs.data[i] = part + (elem_t) (integer_t::modulo - lhs.data[i]);
+          }
+        }
+        while (urhs) {
+          lhs.data.emplace_back((elem_t) (urhs % integer_t::modulo));
+          urhs /= integer_t::modulo;
+        }
+      }
     }
 
     template<char Op, typename S, typename C, C M, typename T>
@@ -316,12 +386,12 @@ namespace multi_precision_i1 {
 
     template<typename S, typename C, C M>
     mp_integer<S, C, M>& operator+=(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {return impl_add_eq<'+'>(lhs, rhs);}
-    template<typename S, typename C, C M, typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
-    mp_integer<S, C, M>& operator+=(mp_integer<S, C, M> const& lhs, I const& rhs) {return impl_add_eq<'+'>(lhs, rhs);}
+    template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
+    mp_integer<S, C, M>& operator+=(mp_integer<S, C, M>& lhs, I const& rhs) {return impl_add_eq<'+'>(lhs, rhs);}
     template<typename S, typename C, C M>
     mp_integer<S, C, M>& operator-=(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {return impl_add_eq<'-'>(lhs, rhs);}
-    template<typename S, typename C, C M, typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
-    mp_integer<S, C, M>& operator-=(mp_integer<S, C, M> const& lhs, I const& rhs) {return impl_add_eq<'-'>(lhs, rhs);}
+    template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
+    mp_integer<S, C, M>& operator-=(mp_integer<S, C, M>& lhs, I const& rhs) {return impl_add_eq<'-'>(lhs, rhs);}
 
 
     template<typename S, typename C, C M, typename T, enable_generic_operator_t<mp_integer<S, C, M>, T> = nullptr>
@@ -342,7 +412,7 @@ namespace multi_precision_i1 {
     mp_integer<S, C, M> operator-(mp_integer<S, C, M> const& lhs, T const& rhs) {
       mp_integer<S, C, M> ret;
       if (lhs.sign != 0) _set(ret, lhs);
-      ret += rhs;
+      ret -= rhs;
       return ret;
     }
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
@@ -352,7 +422,7 @@ namespace multi_precision_i1 {
         _set(ret, rhs);
         ret.sign = -ret.sign;
       }
-      ret += lhs;
+      ret -= lhs;
       return ret;
     }
   }
@@ -379,7 +449,7 @@ namespace multi_precision_i1 {
     dump(a);
     for (int i = 0; i <= 100; i++) {
       a += a;
-      a += (decltype(a)) 1;
+      a += 1;
       dump(a);
     }
   }
