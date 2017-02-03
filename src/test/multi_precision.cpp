@@ -48,8 +48,6 @@ namespace multi_precision_i1 {
         data.push_back(uvalue % modulo);
         uvalue = uvalue / modulo;
       }
-
-      std::reverse(data.begin(), data.end());
     }
   };
 
