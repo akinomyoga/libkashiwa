@@ -11,6 +11,21 @@
 // #include <utility>
 namespace kashiwa {
 
+  namespace lambda {
+    template<typename T = void>
+    struct identity {
+      constexpr T& operator()(T& value) const {return value;}
+      constexpr T const& operator()(T const& value) const {return value;}
+    };
+    template<>
+    struct identity<void> {
+      template<typename T>
+      constexpr T& operator()(T& value) const {return value;}
+      template<typename T>
+      constexpr T const& operator()(T const& value) const {return value;}
+    };
+  }
+
   template<typename K>
   constexpr K gcd(K lhs, K rhs) {
     if (lhs < 0) lhs = -lhs;
@@ -33,9 +48,9 @@ namespace kashiwa {
 
   template<typename K>
   struct rational {
-    typedef K value_type;
-    value_type m_num;
-    value_type m_den;
+    typedef K underlying_type;
+    underlying_type m_num;
+    underlying_type m_den;
 
     constexpr rational(K const& num = 0, K const& den = 1): m_num(num), m_den(den) {
       if (m_num == 0 && m_den == 0) return;
@@ -65,7 +80,9 @@ namespace kashiwa {
   template<typename K>
   constexpr bool isinf(rational<K> const& value) {return value.denominator() == 0 && value.numerator() != 0;}
 
+  //
   // rational == rational
+  //
   template<typename K>
   constexpr bool operator==(rational<K> const& lhs, rational<K> const& rhs) {
     return lhs.numerator() == rhs.numerator() && lhs.denominator() == rhs.denominator();
@@ -73,85 +90,94 @@ namespace kashiwa {
   template<typename K>
   constexpr bool operator!=(rational<K> const& lhs, rational<K> const& rhs) {return !(lhs == rhs);}
 
-  // rational == K
-  template<typename K>
-  constexpr bool operator==(rational<K> const& lhs, K const& rhs) {
+  //
+  // rational == scalar
+  //
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator==(rational<K> const& lhs, L const& rhs) {
     return lhs.numerator() == rhs && lhs.denominator() == 1;
   }
-  template<typename K> constexpr bool operator==(K const& lhs, rational<K> const& rhs) {return rhs == lhs;}
-  template<typename K> constexpr bool operator!=(rational<K> const& lhs, K const& rhs) {return !(lhs == rhs);}
-  template<typename K> constexpr bool operator!=(K const& lhs, rational<K> const& rhs) {return !(rhs == lhs);}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator==(L const& lhs, rational<K> const& rhs) {return rhs == lhs;}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator!=(rational<K> const& lhs, L const& rhs) {return !(lhs == rhs);}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator!=(L const& lhs, rational<K> const& rhs) {return !(rhs == lhs);}
 
-  // rational == int
-  namespace rational_detail {
-    template<typename K, typename Int>
-    using enable_int_overloads_t = typename std::enable_if<
-      std::is_same<Int, int>::value && !std::is_same<K, int>::value,
-      std::nullptr_t>::type;
-  }
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator==(rational<K> const& lhs, Int const& rhs) {
-    return lhs.numerator() == rhs && lhs.denominator() == 1;
-  }
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator==(Int const& lhs, rational<K> const& rhs) {return rhs == lhs;}
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator!=(rational<K> const& lhs, Int const& rhs) {return !(lhs == rhs);}
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator!=(Int const& lhs, rational<K> const& rhs) {return !(rhs == lhs);}
-
-  namespace lambda {
-    template<typename T = void>
-    struct identity {
-      constexpr T& operator()(T& value) const {return value;}
-      constexpr T const& operator()(T const& value) const {return value;}
-    };
-    template<>
-    struct identity<void> {
-      template<typename T>
-      constexpr T& operator()(T& value) const {return value;}
-      template<typename T>
-      constexpr T const& operator()(T const& value) const {return value;}
-    };
-  }
-
+  //
   // rational + rational
-  template<typename K, typename Add, typename Neg>
-  constexpr rational<K> _impl_add(rational<K> const& lhs, rational<K> const& rhs, Add add, Neg neg) {
-    K const& a = lhs.numerator();
-    K const& b = rhs.numerator();
-    K const& c = lhs.denominator();
-    K const& d = rhs.denominator();
-    if (c == 0 || d == 0) {
-      if (c == d)
-        return {a == add(0, b)? a: 0, 0, _canonical_tag()};
-      else
-        return c == 0? lhs: neg(rhs);
-    }
+  //
+  namespace rational_detail {
+    template<typename K, typename Add, typename Neg>
+    constexpr rational<K> impl_add(rational<K> const& lhs, rational<K> const& rhs, Add add, Neg neg) {
+      K const& a = lhs.numerator();
+      K const& b = rhs.numerator();
+      K const& c = lhs.denominator();
+      K const& d = rhs.denominator();
+      if (c == 0 || d == 0) {
+        if (c == d)
+          return {a == add(0, b)? a: 0, 0, _canonical_tag()};
+        else
+          return c == 0? lhs: neg(rhs);
+      }
 
-    K const _gcd = gcd(c, d);
-    if (_gcd == 1)
-      return {add(a * d, b * c), c * d};
-    else {
-      K const reducedC = c / _gcd;
-      K const reducedD = d / _gcd;
-      return {add(a * reducedD, b * reducedC), c * reducedD};
+      K const _gcd = gcd(c, d);
+      if (_gcd == 1)
+        return {add(a * d, b * c), c * d};
+      else {
+        K const reducedC = c / _gcd;
+        K const reducedD = d / _gcd;
+        return {add(a * reducedD, b * reducedC), c * reducedD};
+      }
     }
   }
   template<typename K>
   constexpr rational<K> operator+(rational<K> const& lhs, rational<K> const& rhs) {
-    return _impl_add(lhs, rhs, std::plus<K>(), kashiwa::lambda::identity<rational<K>>());
+    return rational_detail::impl_add(lhs, rhs, std::plus<K>(), kashiwa::lambda::identity<rational<K>>());
   }
   template<typename K>
   constexpr rational<K> operator-(rational<K> const& lhs, rational<K> const& rhs) {
-    return _impl_add(lhs, rhs, std::minus<K>(), std::negate<rational<K>>());
+    return rational_detail::impl_add(lhs, rhs, std::minus<K>(), std::negate<rational<K>>());
   }
   template<typename K>
   rational<K> operator+=(rational<K>& lhs, rational<K> const& rhs) {return lhs = lhs + rhs;}
   template<typename K>
   rational<K> operator-=(rational<K>& lhs, rational<K> const& rhs) {return lhs = lhs - rhs;}
 
+  //
+  // rational + scalar
+  //
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr rational<K> operator+(rational<K> const& r1, L const& k2) {
+    K const& n = r1.numerator();
+    K const& d = r1.denominator();
+    if (d == 0) return r1;
+    return {n + k2 * d, d};
+  }
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr rational<K> operator-(rational<K> const& r1, L const& k2) {
+    K const& n = r1.numerator();
+    K const& d = r1.denominator();
+    if (d == 0) return r1;
+    return {n - k2 * d, d};
+  }
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr rational<K> operator+(L const& lhs, rational<K> const& rhs) {return rhs + lhs;}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr rational<K> operator-(L const& k1, rational<K> const& r2) {
+    K const& n = r2.numerator();
+    K const& d = r2.denominator();
+    if (d == 0) return -r2;
+    return {k1 * d - n, d};
+  }
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  rational<K> operator+=(rational<K>& lhs, L const& rhs) {return lhs = lhs + rhs;}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  rational<K> operator-=(rational<K>& lhs, L const& rhs) {return lhs = lhs - rhs;}
+
+  //
   // rational * rational
+  //
   template<typename K>
   constexpr rational<K> operator*(rational<K> const& lhs, rational<K> const& rhs) {
     K a = lhs.numerator();
@@ -189,79 +215,79 @@ namespace kashiwa {
   template<typename K>
   rational<K> operator/=(rational<K>& lhs, rational<K> const& rhs) {return lhs = lhs / rhs;}
 
-
+  //
   // rational * scalar
-  template<typename K>
-  constexpr rational<K> operator*(rational<K> const& lhs, K const& rhs) {
+  //
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr rational<K> operator*(rational<K> const& lhs, L const& rhs) {
     rational<K> const tmp {rhs, lhs.denominator()};
     return {lhs.numerator() * tmp.numerator(), tmp.denominator(), _canonical_tag()};
   }
-  template<typename K>
-  constexpr rational<K> operator/(rational<K> const& lhs, K const& rhs) {
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr rational<K> operator/(rational<K> const& lhs, L const& rhs) {
     rational<K> const tmp {lhs.numerator(), rhs};
     return {tmp.numerator(), lhs.denominator() * tmp.denominator(), _canonical_tag()};
   }
-  template<typename K>
-  constexpr rational<K> operator*(K const& lhs, rational<K> const& rhs) {return rhs * lhs;}
-  template<typename K>
-  constexpr rational<K> operator/(K const& lhs, rational<K> const& rhs) {
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr rational<K> operator*(L const& lhs, rational<K> const& rhs) {return rhs * lhs;}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr rational<K> operator/(L const& lhs, rational<K> const& rhs) {
     rational<K> const tmp {lhs, rhs.numerator()};
     return {tmp.numerator() * rhs.denominator(), tmp.denominator(), _canonical_tag()};
   }
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  rational<K> operator*=(rational<K>& lhs, L const& rhs) {return lhs = lhs * rhs;}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  rational<K> operator/=(rational<K>& lhs, L const& rhs) {return lhs = lhs / rhs;}
 
+  //
   // rational < rational
+  //
   template<typename K> constexpr bool operator<(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() < 0;}
   template<typename K> constexpr bool operator<=(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() < 0;}
   template<typename K> constexpr bool operator>(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() > 0;}
   template<typename K> constexpr bool operator>=(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() >= 0;}
 
+  //
   // rational < scalar
-  template<typename K, typename Compare>
-  constexpr bool _impl_compare(rational<K> const& lhs, K const& rhs, Compare compare, int inf) {
-    if (lhs.denominator() == 0)
-      return lhs.numerator() == inf;
-    else
-      return compare(lhs.numerator(), lhs.denominator() * rhs); // overflow?
+  //
+  namespace rational_detail {
+    template<typename K, typename L, typename Compare>
+    constexpr bool impl_compare(rational<K> const& lhs, L const& rhs, Compare compare, int inf) {
+      if (lhs.denominator() == 0)
+        return lhs.numerator() == inf;
+      else
+        return compare(lhs.numerator(), lhs.denominator() * rhs); // overflow?
+    }
   }
-  template<typename K>
-  constexpr bool operator<(rational<K> const& lhs, K const& rhs) {
-    return _impl_compare(lhs, rhs, std::less<K>(), -1);
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator<(rational<K> const& lhs, L const& rhs) {
+    return rational_detail::impl_compare(lhs, rhs, std::less<K>(), -1);
   }
-  template<typename K>
-  constexpr bool operator<=(rational<K> const& lhs, K const& rhs) {
-    return _impl_compare(lhs, rhs, std::less_equal<K>(), -1);
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator<=(rational<K> const& lhs, L const& rhs) {
+    return rational_detail::impl_compare(lhs, rhs, std::less_equal<K>(), -1);
   }
-  template<typename K>
-  constexpr bool operator>(rational<K> const& lhs, K const& rhs) {
-    return _impl_compare(lhs, rhs, std::greater<K>(), 1);
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator>(rational<K> const& lhs, L const& rhs) {
+    return rational_detail::impl_compare(lhs, rhs, std::greater<K>(), 1);
   }
-  template<typename K>
-  constexpr bool operator>=(rational<K> const& lhs, K const& rhs) {
-    return _impl_compare(lhs, rhs, std::greater_equal<K>(), 1);
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator>=(rational<K> const& lhs, L const& rhs) {
+    return rational_detail::impl_compare(lhs, rhs, std::greater_equal<K>(), 1);
   }
-  template<typename K> constexpr bool operator< (K const& lhs, rational<K> const& rhs) {return rhs > lhs;}
-  template<typename K> constexpr bool operator> (K const& lhs, rational<K> const& rhs) {return rhs < lhs;}
-  template<typename K> constexpr bool operator<=(K const& lhs, rational<K> const& rhs) {return rhs >= lhs;}
-  template<typename K> constexpr bool operator>=(K const& lhs, rational<K> const& rhs) {return rhs <= lhs;}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator< (L const& lhs, rational<K> const& rhs) {return rhs > lhs;}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator> (L const& lhs, rational<K> const& rhs) {return rhs < lhs;}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator<=(L const& lhs, rational<K> const& rhs) {return rhs >= lhs;}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  constexpr bool operator>=(L const& lhs, rational<K> const& rhs) {return rhs <= lhs;}
 
-  // rational < int
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator< (Int const& lhs, rational<K> const& rhs) {return (K) lhs < rhs;}
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator> (Int const& lhs, rational<K> const& rhs) {return (K) lhs > rhs;}
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator<=(Int const& lhs, rational<K> const& rhs) {return (K) lhs <= rhs;}
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator>=(Int const& lhs, rational<K> const& rhs) {return (K) lhs >= rhs;}
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator< (rational<K> const& lhs, Int const& rhs) {return lhs < (K) rhs;}
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator> (rational<K> const& lhs, Int const& rhs) {return lhs > (K) rhs;}
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator<=(rational<K> const& lhs, Int const& rhs) {return lhs <= (K) rhs;}
-  template<typename K, typename Int, rational_detail::enable_int_overloads_t<K, Int> = nullptr>
-  constexpr bool operator>=(rational<K> const& lhs, Int const& rhs) {return lhs >= (K) rhs;}
-
+  //
+  // ostr << rational
+  //
   template<typename K>
   std::ostream& operator<<(std::ostream& ostr, rational<K> const& value) {
     if (value.denominator() == 0)

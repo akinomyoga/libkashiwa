@@ -14,12 +14,12 @@ int main() {
 
   auto const x = poly_t {0, 1};
   for (int n = 1; n < 30; n++) {
-    auto p3 = (rational_t(2 * n + 1) * x * p2 - rational_t(n) * p1) / rational_t(n + 1);
+    auto p3 = ((2 * n + 1) * x * p2 - n * p1) / (n + 1);
 
     int_t lcm = 1;
     for (rational_t const& coeff: p3.data())
       lcm = kashiwa::lcm(lcm, coeff.denominator());
-    std::cout << "P" << n + 1 << " = (1/" << lcm << ")(" << p3 * rational_t(lcm) << ")" << std::endl;
+    std::cout << "P" << n + 1 << " = (1/" << lcm << ")(" << p3 * lcm << ")" << std::endl;
 
     p1 = p2;
     p2 = p3;

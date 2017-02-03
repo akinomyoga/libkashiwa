@@ -1,8 +1,10 @@
 #include <cstdio>
+#include <cstdint>
 #include <iostream>
 #include <sstream>
 #include <mwg/except.h>
 #include <ksh/polynomial.h>
+#include <ksh/rational.h>
 
 namespace ksh = kashiwa;
 
@@ -15,6 +17,24 @@ void check_print(polynomial_t const& poly, const char* expected) {
 }
 
 int main() {
+
+  // comparison operator
+
+  mwg_check((polynomial_t {} == 0));
+  mwg_check((polynomial_t {1} == 1));
+  mwg_check((polynomial_t {} != 1));
+  mwg_check((polynomial_t {1} != 0));
+  mwg_check((ksh::polynomial<ksh::rational<int>> {} == 0));
+  mwg_check((ksh::polynomial<ksh::rational<int>> {1} == 1));
+  mwg_check((ksh::polynomial<ksh::rational<int>> {} != 1));
+  mwg_check((ksh::polynomial<ksh::rational<int>> {1} != 0));
+  mwg_check((ksh::polynomial<ksh::rational<std::uint16_t>> {} == 0));
+  mwg_check((ksh::polynomial<ksh::rational<std::uint16_t>> {1} == 1));
+  mwg_check((ksh::polynomial<ksh::rational<std::uint16_t>> {} != 1));
+  mwg_check((ksh::polynomial<ksh::rational<std::uint16_t>> {1} != 0));
+
+  // initialization
+
   mwg_check((polynomial_t {0, 0} == polynomial_t {}));
   mwg_check((polynomial_t {1, 0} == polynomial_t {1}));
 
@@ -25,14 +45,21 @@ int main() {
   mwg_check((deg(polynomial_t {0, 1, 0}) == 1));
   mwg_check((deg(polynomial_t {2, 1, 1}) == 2));
 
+  // operator: -polynomial
   mwg_check((-polynomial_t {1, 2, 1} == polynomial_t {-1, -2, -1}));
   mwg_check((+polynomial_t {1, 2, 1} == polynomial_t {1, 2, 1}));
 
+  // operator: polynomial + polynomial
   polynomial_t p1 {1, 1};
   mwg_check((p1 * p1 == polynomial_t {1, 2, 1}));
   mwg_check((p1 * p1 + p1 == polynomial_t {2, 3, 1}));
   mwg_check((p1 * p1 - p1 == polynomial_t {0, 1, 1}));
   mwg_check((p1 - p1 == polynomial_t()));
+
+  // operator: polynomial + scalar
+  mwg_check((p1 + 1 == polynomial_t {2, 1}));
+  mwg_check((polynomial_t {2} - 2 == 0));
+
 
   polynomial_t p2 = p1 * p1;
   mwg_check(((p2 -= p1) == polynomial_t {0, 1, 1}));

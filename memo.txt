@@ -17,6 +17,9 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 * polynomial: 割り算 (商と余り)
 
+  現在は係数体による割り算は提供しているが、
+  多項式の割り算については提供していない。
+
 * polynomial, rational: a = -a 最適化。
 
   操作 a = -a については型によって効率の良い実装方法がある筈。
@@ -74,6 +77,40 @@ Author: K. Murase <myoga.murase@gmail.com>
   Done
 -------------------------------------------------------------------------------
 
+2017-02-04
+
+* polynomial, rational: K overloads
+
+  % 現在、元となる型との演算も提供している。
+  % しかし polynomial<rational<int>> などとした場合に、
+  % 元となる型の更に元となる型との演算をできるようにしなければ不便である。
+  %
+  % 係数体の更に元となる型との演算を特別に実装するのは大変である。
+  % 様々な組み合わせが考えられるからである。
+  % 従って、元となる型の更に元となる型の値 value1 との演算は、
+  % 一旦 value1 から元となる型を構築してから行う事になる。
+  %
+  % 実装上の都合から整数 (int) 0 や 1 などとの比較や構築は頻繁に起こる。
+  % これらに関しては特別に直接の比較ができるように実装するのが良い。
+  % また、実際に元になる型の chain に int が含まれていなかったとしても、
+  % int から K への変換は提供して然るべきである。
+
+  或いは、underlying_type からの implicit conversion を義務付ける事にしておけば、
+  判定は is_convertible (implicitly convertible かどうかの判定) でできる。
+  こちらの方が自然な様に思われる…。
+
+  実は実装してみた所 int を用いて直接演算をする場合と、
+  K を用いて直接演算をする場合は処理の形としては全く同じである。
+  int として計算を行うか K として計算を行うかの違いしか無い。
+  考えてみればそれもそのはずである。親クラスは元の型の詳細を知らないのだから、
+  結局できることは、親クラスを構築せずに演算をするということで、
+  int と K を区別する様な記述の仕方はないのである。
+  そして K が int と相互に演算可能である以上は特別な配慮も要らない。
+
+  結果として、K と int の実装は統一する事にする。
+  そして is_convertible で様々な型の値を受け取れる様にする。
+  is_convertible が一方向になっている限りは overload 解決で問題になる事もあるまい。
+
 2017-01-06
 
 * Gauss-Chebyshev を実装した。
@@ -93,7 +130,7 @@ Author: K. Murase <myoga.murase@gmail.com>
   > - Runge-Kutta
   > - 線形方程式解法
   > - Gauss-Legendre quadrature
-  > 
+  >
   > 取り敢えず既存のファイルについては持ってきた。
 
   これらについて使い方を整理する。
@@ -216,7 +253,7 @@ Author: K. Murase <myoga.murase@gmail.com>
     $ g filter-branch --commit-filter 'git_commit_non_empty_tree "$@"'
 
   で良いという事なのだろうか。試してみる事にする。うまく行ったので OK.
- 
+
   改めて repository を観察してみると submodule (ext/getopt) が削除できていない。
   --tree-filter 'rm -rf ext/getopt' では不十分な様だ。検索してみると
 

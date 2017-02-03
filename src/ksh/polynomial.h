@@ -18,6 +18,7 @@ namespace kashiwa {
   //
   template<typename K>
   struct polynomial {
+    typedef K underlying_type;
     std::vector<K> m_data;
 
   public:
@@ -69,6 +70,9 @@ namespace kashiwa {
   template<typename K>
   std::size_t deg(polynomial<K> const& poly) {return std::max(poly.data().size(), (std::size_t) 1) - 1;}
 
+  //
+  // polynomial == polynomial
+  //
   template<typename K>
   bool operator==(polynomial<K> const& lhs, polynomial<K> const& rhs) {
     return lhs.data().size() == rhs.data().size()
@@ -77,9 +81,11 @@ namespace kashiwa {
   template<typename K>
   bool operator!=(polynomial<K> const& lhs, polynomial<K> const& rhs) {return !(lhs == rhs);}
 
-  // overloads compare to K values
-  template<typename K>
-  bool operator==(polynomial<K> const& lhs, K const& rhs) {
+  //
+  // polynomial == scalar
+  //
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  bool operator==(polynomial<K> const& lhs, L const& rhs) {
     std::vector<K> const& data = lhs.data();
     switch (data.size()) {
     case 0: return rhs == 0;
@@ -87,66 +93,76 @@ namespace kashiwa {
     default: return false;
     }
   }
-  template<typename K> bool operator==(K const& lhs, polynomial<K> const& rhs) {return rhs == lhs;}
-  template<typename K> bool operator!=(polynomial<K> const& lhs, K const& rhs) {return !(lhs == rhs);}
-  template<typename K> bool operator!=(K const& lhs, polynomial<K> const& rhs) {return !(rhs == lhs);}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  bool operator==(L const& lhs, polynomial<K> const& rhs) {return rhs == lhs;}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  bool operator!=(polynomial<K> const& lhs, L const& rhs) {return !(lhs == rhs);}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  bool operator!=(L const& lhs, polynomial<K> const& rhs) {return !(rhs == lhs);}
 
-  // overloads compare to int literals
+  //
+  // polynomial + polynomial
+  //
   namespace polynomial_detail {
-    template<typename K, typename Int>
-    using enable_int_overloads_t = typename std::enable_if<
-      std::is_same<Int, int>::value && !std::is_same<K, int>::value,
-      std::nullptr_t>::type;
-  }
-  template<typename K, typename Int, polynomial_detail::enable_int_overloads_t<K, Int> = nullptr>
-  bool operator==(polynomial<K> const& lhs, Int const& rhs) {
-    std::vector<K> const& data = lhs.data();
-    switch (data.size()) {
-    case 0: return rhs == 0;
-    case 1: return rhs == data[0];
-    default: return false;
+    template<typename K, typename F>
+    polynomial<K> merge(polynomial<K> const& lhs, polynomial<K> const& rhs, F f) {
+      std::vector<K> const& ldata = lhs.data();
+      std::vector<K> const& rdata = rhs.data();
+      K const* pL = &ldata[0];
+      K const* pR = &rdata[0];
+
+      K const* p1;
+      std::size_t iN1 = ldata.size();
+      std::size_t iN2 = rdata.size();
+      if (iN1 >= iN2) {
+        p1 = pL;
+      } else {
+        p1 = pR;
+        std::swap(iN1, iN2);
+      }
+
+      polynomial<K> result;
+      result.m_data.reserve(iN1);
+      std::size_t i = 0;
+      for (; i < iN2; i++) result.m_data.emplace_back(f(pL[i], pR[i]));
+      for (; i < iN1; i++) result.m_data.emplace_back(p1[i]);
+      result.normalize();
+      return result;
     }
   }
-  template<typename K, typename Int, polynomial_detail::enable_int_overloads_t<K, Int> = nullptr>
-  bool operator==(Int const& lhs, polynomial<K> const& rhs) {return rhs == lhs;}
-  template<typename K, typename Int, polynomial_detail::enable_int_overloads_t<K, Int> = nullptr>
-  bool operator!=(polynomial<K> const& lhs, Int const& rhs) {return !(lhs == rhs);}
-  template<typename K, typename Int, polynomial_detail::enable_int_overloads_t<K, Int> = nullptr>
-  bool operator!=(Int const& lhs, polynomial<K> const& rhs) {return !(rhs == lhs);}
-
-  template<typename K, typename F>
-  polynomial<K> merge(polynomial<K> const& lhs, polynomial<K> const& rhs, F f) {
-    std::vector<K> const& ldata = lhs.data();
-    std::vector<K> const& rdata = rhs.data();
-    K const* pL = &ldata[0];
-    K const* pR = &rdata[0];
-
-    K const* p1;
-    std::size_t iN1 = ldata.size();
-    std::size_t iN2 = rdata.size();
-    if (iN1 >= iN2) {
-      p1 = pL;
-    } else {
-      p1 = pR;
-      std::swap(iN1, iN2);
-    }
-
-    polynomial<K> result;
-    result.m_data.reserve(iN1);
-    std::size_t i = 0;
-    for (; i < iN2; i++) result.m_data.emplace_back(f(pL[i], pR[i]));
-    for (; i < iN1; i++) result.m_data.emplace_back(p1[i]);
-    result.normalize();
-    return result;
-  }
-
   template<typename K>
   polynomial<K> operator+(polynomial<K> const& lhs, polynomial<K> const& rhs) {
-    return merge(lhs, rhs, [](K const& lhs, K const& rhs) {return lhs + rhs;});
+    return polynomial_detail::merge(lhs, rhs, [](K const& lhs, K const& rhs) {return lhs + rhs;});
   }
   template<typename K>
   polynomial<K> operator-(polynomial<K> const& lhs, polynomial<K> const& rhs) {
-    return merge(lhs, rhs, [](K const& lhs, K const& rhs) {return lhs - rhs;});
+    return polynomial_detail::merge(lhs, rhs, [](K const& lhs, K const& rhs) {return lhs - rhs;});
+  }
+
+  //
+  // polynomial + scalar
+  //
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  polynomial<K> operator+(polynomial<K> const& lhs, L const& rhs) {
+    polynomial<K> ret = lhs;
+    if (ret.m_data.size() == 0) {
+      if (rhs != 0) ret.m_data.emplace_back(rhs);
+    } else {
+      ret.m_data[0] += rhs;
+      if (ret.m_data.size() == 1) ret.normalize();
+    }
+    return ret;
+  }
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  polynomial<K> operator-(polynomial<K> const& lhs, L const& rhs) {
+    polynomial<K> ret = lhs;
+    if (ret.m_data.size() == 0) {
+      if (rhs != 0) ret.m_data.emplace_back(-rhs);
+    } else {
+      ret.m_data[0] -= rhs;
+      if (ret.m_data.size() == 1) ret.normalize();
+    }
+    return ret;
   }
 
   //
@@ -177,35 +193,38 @@ namespace kashiwa {
   //
   // polynomial * scalar
   //
-  template<typename K>
-  polynomial<K>& operator*=(polynomial<K>& lhs, K const& rhs) {
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  polynomial<K>& operator*=(polynomial<K>& lhs, L const& rhs) {
     if (rhs == 0)
       lhs.m_data.clear();
     else
       for (auto& e: lhs.m_data) e *= rhs;
     return lhs;
   }
-  template<typename K>
-  polynomial<K> operator*(polynomial<K> const& lhs, K const& rhs) {
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  polynomial<K> operator*(polynomial<K> const& lhs, L const& rhs) {
     polynomial<K> ret(lhs);
     ret *= rhs;
     return ret;
   }
-  template<typename K>
-  polynomial<K>& operator/=(polynomial<K>& lhs, K const& rhs) {
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  polynomial<K>& operator/=(polynomial<K>& lhs, L const& rhs) {
     for (auto& e: lhs.m_data) e /= rhs;
     lhs.normalize();
     return lhs;
   }
-  template<typename K>
-  polynomial<K> operator/(polynomial<K> const& lhs, K const& rhs) {
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  polynomial<K> operator/(polynomial<K> const& lhs, L const& rhs) {
     polynomial<K> ret(lhs);
     ret /= rhs;
     return ret;
   }
-  template<typename K>
-  polynomial<K> operator*(K const& lhs, polynomial<K> const& rhs) {return rhs * lhs;}
+  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  polynomial<K> operator*(L const& lhs, polynomial<K> const& rhs) {return rhs * lhs;}
 
+  //
+  // pow(polynomial, unsigned)
+  //
   template<typename K>
   polynomial<K> pow(polynomial<K> const& lhs, unsigned exponent) {
     polynomial<K> result {1};
