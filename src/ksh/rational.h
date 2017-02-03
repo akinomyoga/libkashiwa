@@ -41,7 +41,7 @@ namespace kashiwa {
   template<typename K>
   constexpr K lcm(K lhs, K rhs) {return (lhs / gcd(lhs, rhs)) * rhs;}
 
-  struct canonical_tag {};
+  struct already_canonicalized_tag {};
 
   template<typename K>
   struct rational {
@@ -60,7 +60,7 @@ namespace kashiwa {
       }
     }
 
-    constexpr rational(K const& num, K const& den, canonical_tag): m_num(num), m_den(den) {}
+    constexpr rational(K const& num, K const& den, already_canonicalized_tag): m_num(num), m_den(den) {}
 
     constexpr K const& numerator() const {return m_num;}
     constexpr K const& denominator() const {return m_den;}
@@ -115,7 +115,7 @@ namespace kashiwa {
       K const& d = rhs.denominator();
       if (c == 0 || d == 0) {
         if (c == d)
-          return {a == add(0, b)? a: 0, 0, canonical_tag()};
+          return {a == add(0, b)? a: 0, 0, already_canonicalized_tag()};
         else
           return c == 0? lhs: neg(rhs);
       }
@@ -185,11 +185,11 @@ namespace kashiwa {
     K d = rhs.denominator();
     if (c == 0 || d == 0) {
       if (c == d)
-        return {a * b, 0, canonical_tag()}; // {nan, inf} * {nan, inf}
+        return {a * b, 0, already_canonicalized_tag()}; // {nan, inf} * {nan, inf}
       else if (a == 0 || b == 0)
-        return {0, 0, canonical_tag()}; // 0 * {nan, inf} or nonzero * nan -> nan
+        return {0, 0, already_canonicalized_tag()}; // 0 * {nan, inf} or nonzero * nan -> nan
       else
-        return {(a > 0? 1: -1) * (b > 0? 1: -1), 0, canonical_tag()}; // nonzero * inf -> inf
+        return {(a > 0? 1: -1) * (b > 0? 1: -1), 0, already_canonicalized_tag()}; // nonzero * inf -> inf
     }
 
     K const _gcd1 = gcd(a, d);
@@ -203,7 +203,7 @@ namespace kashiwa {
       c /= _gcd2;
     }
 
-    return {a * b, c * d, canonical_tag()};
+    return {a * b, c * d, already_canonicalized_tag()};
   }
   template<typename K>
   constexpr rational<K> operator/(rational<K> const& lhs, rational<K> const& rhs) {
@@ -220,19 +220,19 @@ namespace kashiwa {
   template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
   constexpr rational<K> operator*(rational<K> const& lhs, L const& rhs) {
     rational<K> const tmp {rhs, lhs.denominator()};
-    return {lhs.numerator() * tmp.numerator(), tmp.denominator(), canonical_tag()};
+    return {lhs.numerator() * tmp.numerator(), tmp.denominator(), already_canonicalized_tag()};
   }
   template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
   constexpr rational<K> operator/(rational<K> const& lhs, L const& rhs) {
     rational<K> const tmp {lhs.numerator(), rhs};
-    return {tmp.numerator(), lhs.denominator() * tmp.denominator(), canonical_tag()};
+    return {tmp.numerator(), lhs.denominator() * tmp.denominator(), already_canonicalized_tag()};
   }
   template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
   constexpr rational<K> operator*(L const& lhs, rational<K> const& rhs) {return rhs * lhs;}
   template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
   constexpr rational<K> operator/(L const& lhs, rational<K> const& rhs) {
     rational<K> const tmp {lhs, rhs.numerator()};
-    return {tmp.numerator() * rhs.denominator(), tmp.denominator(), canonical_tag()};
+    return {tmp.numerator() * rhs.denominator(), tmp.denominator(), already_canonicalized_tag()};
   }
   template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
   rational<K> operator*=(rational<K>& lhs, L const& rhs) {return lhs = lhs * rhs;}
