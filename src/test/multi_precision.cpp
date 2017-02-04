@@ -33,9 +33,78 @@ namespace multi_precision_i1 {
     std::vector<element_type> data;
 
     mp_integer(): sign(0) {}
-
     mp_integer(int value) {this->_set_integral_value(value);}
 
+    mp_integer const& operator+() const {return *this;}
+    mp_integer operator-() const {
+      mp_integer ret {*this};
+      ret.sign = -ret.sign;
+      return ret;
+    }
+
+  private:
+    void abs_dec() {
+      for (std::size_t i = 0; i < data.size(); i++) {
+        if (data[i]) {
+          data[i]--;
+          if (i == data.size() - 1 && data[i] == 0) {
+            data.pop_back();
+            if (data.size() == 0) sign = 0;
+          }
+          return;
+        } else {
+          data[i] = element_max;
+        }
+      }
+    }
+    void abs_inc() {
+      for (std::size_t i = 0; i < data.size(); i++) {
+        if (data[i] < element_max) {
+          data[i]++;
+          return;
+        } else {
+          data[i] = 0;
+        }
+      }
+      data.push_back(1);
+    }
+
+  public:
+    mp_integer& operator++() {
+      if (sign == -1)
+        abs_dec();
+      else if (sign == 1)
+        abs_inc();
+      else {
+        sign = 1;
+        data.push_back(1);
+      }
+    }
+
+    mp_integer& operator--() {
+      if (sign == -1)
+        abs_inc();
+      else if (sign == 1)
+        abs_dec();
+      else {
+        sign = -1;
+        data.push_back(1);
+      }
+    }
+
+    mp_integer operator++(int) {
+      mp_integer ret {*this};
+      this->operator++();
+      return ret;
+    }
+
+    mp_integer operator--(int) {
+      mp_integer ret {*this};
+      this->operator--();
+      return ret;
+    }
+
+  public:
     template<typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
     void _set_integral_value(I const& value) {
       data.clear();
@@ -449,7 +518,7 @@ namespace multi_precision_i1 {
     dump(a);
     for (int i = 0; i <= 100; i++) {
       a += a;
-      a += 1;
+      a++;
       dump(a);
     }
   }
