@@ -1,22 +1,22 @@
+// -*- C++ -*-
+#ifndef KASHIWA_BIGINTEGER_H
+#define KASHIWA_BIGINTEGER_H
 #include <cstddef>
-#include <cstdio>
 #include <cstdint>
 #include <limits>
-#include <vector>
-#include <algorithm>
 #include <type_traits>
+#include <vector>
 #include <mwg/except.h>
-
-namespace multi_precision_i1 {
+namespace kashiwa {
 
   template<
     typename StoreInt = std::uint32_t,
     typename CalcInt = std::uint64_t,
     CalcInt modulo = (CalcInt) std::numeric_limits<StoreInt>::max() + 1 >
-  struct mp_integer;
+  struct big_integer;
 
   template<typename StoreInt, typename CalcInt, CalcInt Modulo>
-  struct mp_integer {
+  struct big_integer {
     typedef StoreInt element_type;
     typedef CalcInt calculation_type;
     static constexpr element_type element_max = Modulo - 1;
@@ -32,12 +32,12 @@ namespace multi_precision_i1 {
     int sign;
     std::vector<element_type> data;
 
-    mp_integer(): sign(0) {}
-    mp_integer(int value) {this->_set_integral_value(value);}
+    big_integer(): sign(0) {}
+    big_integer(int value) {this->_set_integral_value(value);}
 
-    mp_integer const& operator+() const {return *this;}
-    mp_integer operator-() const {
-      mp_integer ret {*this};
+    big_integer const& operator+() const {return *this;}
+    big_integer operator-() const {
+      big_integer ret {*this};
       ret.sign = -ret.sign;
       return ret;
     }
@@ -70,7 +70,7 @@ namespace multi_precision_i1 {
     }
 
   public:
-    mp_integer& operator++() {
+    big_integer& operator++() {
       if (sign == -1)
         abs_dec();
       else if (sign == 1)
@@ -81,7 +81,7 @@ namespace multi_precision_i1 {
       }
     }
 
-    mp_integer& operator--() {
+    big_integer& operator--() {
       if (sign == -1)
         abs_inc();
       else if (sign == 1)
@@ -92,14 +92,14 @@ namespace multi_precision_i1 {
       }
     }
 
-    mp_integer operator++(int) {
-      mp_integer ret {*this};
+    big_integer operator++(int) {
+      big_integer ret {*this};
       this->operator++();
       return ret;
     }
 
-    mp_integer operator--(int) {
-      mp_integer ret {*this};
+    big_integer operator--(int) {
+      big_integer ret {*this};
       this->operator--();
       return ret;
     }
@@ -129,7 +129,7 @@ namespace multi_precision_i1 {
     }
   };
 
-  namespace mp_integer_detail {
+  namespace big_integer_detail {
     template<typename MpInteger, typename T>
     using enable_generic_operator_t = typename std::enable_if<
       (std::is_integral<T>::value || std::is_base_of<MpInteger, T>::value), std::nullptr_t>::type;
@@ -138,7 +138,7 @@ namespace multi_precision_i1 {
       std::is_integral<T>::value, std::nullptr_t>::type;
 
     template<typename S, typename C, C M>
-    int _sign(mp_integer<S, C, M> const&  arg) {return arg.sign;}
+    int _sign(big_integer<S, C, M> const&  arg) {return arg.sign;}
     template<typename I, enable_scalar_operator_t<I> = nullptr>
     int _sign(I const&  arg) {
       if (arg > 0)
@@ -150,11 +150,11 @@ namespace multi_precision_i1 {
     }
 
     template<typename S, typename C, C M>
-    void _set(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {
+    void _set(big_integer<S, C, M>& lhs, big_integer<S, C, M> const& rhs) {
       lhs = rhs;
     }
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    void _set(mp_integer<S, C, M>& lhs, I const& rhs) {
+    void _set(big_integer<S, C, M>& lhs, I const& rhs) {
       lhs._set_integral_value(rhs);
     }
   }
@@ -162,7 +162,7 @@ namespace multi_precision_i1 {
   //
   // compare(a, b)
   //
-  namespace mp_integer_detail {
+  namespace big_integer_detail {
     template<typename I, typename std::enable_if<std::is_integral<I>::value && std::is_signed<I>::value, std::nullptr_t>::type = nullptr>
     typename std::make_unsigned<I>::type _abs(I const& value) {
       typename std::make_unsigned<I>::type uvalue = value;
@@ -173,7 +173,7 @@ namespace multi_precision_i1 {
     U const& _abs(U const& value) {return value;}
 
     template<typename S, typename C, C M>
-    int abs_compare(mp_integer<S, C, M> const& lhs, mp_integer<S, C, M> const& rhs) {
+    int abs_compare(big_integer<S, C, M> const& lhs, big_integer<S, C, M> const& rhs) {
       if (lhs.data.size() != rhs.data.size())
         return lhs.data.size() < rhs.data.size()? -1: 1;
 
@@ -184,8 +184,8 @@ namespace multi_precision_i1 {
       return 0;
     }
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int abs_compare(mp_integer<S, C, M> const& lhs, I const& rhs) {
-      using integer_t = mp_integer<S, C, M>;
+    int abs_compare(big_integer<S, C, M> const& lhs, I const& rhs) {
+      using integer_t = big_integer<S, C, M>;
       using elem_t = typename integer_t::element_type;
 
       typename std::make_unsigned<I>::type urhs = _abs(rhs);
@@ -202,7 +202,7 @@ namespace multi_precision_i1 {
     }
 
     template<typename S, typename C, C M, typename T>
-    int impl_compare(mp_integer<S, C, M> const& lhs, T const& rhs) {
+    int impl_compare(big_integer<S, C, M> const& lhs, T const& rhs) {
       int const rsign = _sign(rhs);
       if (rsign > 0) {
         if (lhs.sign <= 0) return -1;
@@ -213,71 +213,71 @@ namespace multi_precision_i1 {
       return rsign * abs_compare(lhs, rhs);
     }
     template<typename S, typename C, C M>
-    int compare(mp_integer<S, C, M> const& lhs, mp_integer<S, C, M> const& rhs) {return impl_compare(lhs, rhs);}
+    int compare(big_integer<S, C, M> const& lhs, big_integer<S, C, M> const& rhs) {return impl_compare(lhs, rhs);}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int compare(mp_integer<S, C, M> const& lhs, I const& rhs) {return impl_compare(lhs, rhs);}
+    int compare(big_integer<S, C, M> const& lhs, I const& rhs) {return impl_compare(lhs, rhs);}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int compare(I const& lhs, mp_integer<S, C, M> const& rhs) {return -impl_compare(rhs, lhs);}
+    int compare(I const& lhs, big_integer<S, C, M> const& rhs) {return -impl_compare(rhs, lhs);}
   }
 
-  using mp_integer_detail::compare;
+  using big_integer_detail::compare;
 
   //
   // a == b, a < b, etc.
   //
-  namespace mp_integer_detail {
+  namespace big_integer_detail {
     template<typename S, typename C, C M>
-    int operator==(mp_integer<S, C, M> const& lhs, mp_integer<S, C, M> const& rhs) {return compare(lhs, rhs) == 0;}
+    int operator==(big_integer<S, C, M> const& lhs, big_integer<S, C, M> const& rhs) {return compare(lhs, rhs) == 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator==(mp_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) == 0;}
+    int operator==(big_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) == 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator==(I const& lhs, mp_integer<S, C, M> const& rhs) {return compare(rhs, lhs) == 0;}
+    int operator==(I const& lhs, big_integer<S, C, M> const& rhs) {return compare(rhs, lhs) == 0;}
     template<typename S, typename C, C M>
-    int operator!=(mp_integer<S, C, M> const& lhs, mp_integer<S, C, M> const& rhs) {return compare(lhs, rhs) != 0;}
+    int operator!=(big_integer<S, C, M> const& lhs, big_integer<S, C, M> const& rhs) {return compare(lhs, rhs) != 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator!=(mp_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) != 0;}
+    int operator!=(big_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) != 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator!=(I const& lhs, mp_integer<S, C, M> const& rhs) {return compare(rhs, lhs) != 0;}
+    int operator!=(I const& lhs, big_integer<S, C, M> const& rhs) {return compare(rhs, lhs) != 0;}
     template<typename S, typename C, C M>
-    int operator<(mp_integer<S, C, M> const& lhs, mp_integer<S, C, M> const& rhs) {return compare(lhs, rhs) < 0;}
+    int operator<(big_integer<S, C, M> const& lhs, big_integer<S, C, M> const& rhs) {return compare(lhs, rhs) < 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator<(mp_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) < 0;}
+    int operator<(big_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) < 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator<(I const& lhs, mp_integer<S, C, M> const& rhs) {return compare(rhs, lhs) < 0;}
+    int operator<(I const& lhs, big_integer<S, C, M> const& rhs) {return compare(rhs, lhs) < 0;}
     template<typename S, typename C, C M>
-    int operator>(mp_integer<S, C, M> const& lhs, mp_integer<S, C, M> const& rhs) {return compare(lhs, rhs) > 0;}
+    int operator>(big_integer<S, C, M> const& lhs, big_integer<S, C, M> const& rhs) {return compare(lhs, rhs) > 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator>(mp_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) > 0;}
+    int operator>(big_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) > 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator>(I const& lhs, mp_integer<S, C, M> const& rhs) {return compare(rhs, lhs) > 0;}
+    int operator>(I const& lhs, big_integer<S, C, M> const& rhs) {return compare(rhs, lhs) > 0;}
     template<typename S, typename C, C M>
-    int operator<=(mp_integer<S, C, M> const& lhs, mp_integer<S, C, M> const& rhs) {return compare(lhs, rhs) <= 0;}
+    int operator<=(big_integer<S, C, M> const& lhs, big_integer<S, C, M> const& rhs) {return compare(lhs, rhs) <= 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator<=(mp_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) <= 0;}
+    int operator<=(big_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) <= 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator<=(I const& lhs, mp_integer<S, C, M> const& rhs) {return compare(rhs, lhs) <= 0;}
+    int operator<=(I const& lhs, big_integer<S, C, M> const& rhs) {return compare(rhs, lhs) <= 0;}
     template<typename S, typename C, C M>
-    int operator>=(mp_integer<S, C, M> const& lhs, mp_integer<S, C, M> const& rhs) {return compare(lhs, rhs) >= 0;}
+    int operator>=(big_integer<S, C, M> const& lhs, big_integer<S, C, M> const& rhs) {return compare(lhs, rhs) >= 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator>=(mp_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) >= 0;}
+    int operator>=(big_integer<S, C, M> const& lhs, I const& rhs) {return compare(lhs, rhs) >= 0;}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int operator>=(I const& lhs, mp_integer<S, C, M> const& rhs) {return compare(rhs, lhs) >= 0;}
+    int operator>=(I const& lhs, big_integer<S, C, M> const& rhs) {return compare(rhs, lhs) >= 0;}
   }
-  using mp_integer_detail::operator==;
-  using mp_integer_detail::operator!=;
-  using mp_integer_detail::operator> ;
-  using mp_integer_detail::operator< ;
-  using mp_integer_detail::operator>=;
-  using mp_integer_detail::operator<=;
+  using big_integer_detail::operator==;
+  using big_integer_detail::operator!=;
+  using big_integer_detail::operator> ;
+  using big_integer_detail::operator< ;
+  using big_integer_detail::operator>=;
+  using big_integer_detail::operator<=;
 
   //
   // a += b, a -= b, a + b, a - b
   //
-  namespace mp_integer_detail {
+  namespace big_integer_detail {
 
     template<typename S, typename C, C M>
-    void abs_add(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {
-      typedef mp_integer<S, C, M> integer_t;
+    void abs_add(big_integer<S, C, M>& lhs, big_integer<S, C, M> const& rhs) {
+      typedef big_integer<S, C, M> integer_t;
       typedef typename integer_t::element_type  element_t;
       typedef typename integer_t::calculation_type  calc_t;
 
@@ -301,8 +301,8 @@ namespace multi_precision_i1 {
       }
     }
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    void abs_add(mp_integer<S, C, M>& lhs, I const& rhs) {
-      using integer_t = mp_integer<S, C, M>;
+    void abs_add(big_integer<S, C, M>& lhs, I const& rhs) {
+      using integer_t = big_integer<S, C, M>;
       using elem_t = typename integer_t::element_type;
       using calc_t = typename integer_t::calculation_type;
 
@@ -327,8 +327,8 @@ namespace multi_precision_i1 {
     }
 
     template<typename S, typename C, C M>
-    void abs_sub(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {
-      typedef mp_integer<S, C, M> integer_t;
+    void abs_sub(big_integer<S, C, M>& lhs, big_integer<S, C, M> const& rhs) {
+      typedef big_integer<S, C, M> integer_t;
       typedef typename integer_t::element_type elem_t;
       typedef typename integer_t::calculation_type calc_t;
 
@@ -391,8 +391,8 @@ namespace multi_precision_i1 {
       }
     }
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    void abs_sub(mp_integer<S, C, M>& lhs, I const& rhs) {
-      typedef mp_integer<S, C, M> integer_t;
+    void abs_sub(big_integer<S, C, M>& lhs, I const& rhs) {
+      typedef big_integer<S, C, M> integer_t;
       typedef typename integer_t::element_type elem_t;
       typedef typename integer_t::calculation_type calc_t;
 
@@ -436,7 +436,7 @@ namespace multi_precision_i1 {
     }
 
     template<char Op, typename S, typename C, C M, typename T>
-    mp_integer<S, C, M>& impl_add_eq(mp_integer<S, C, M>& lhs, T const& rhs) {
+    big_integer<S, C, M>& impl_add_eq(big_integer<S, C, M>& lhs, T const& rhs) {
       int const rsign = _sign(rhs);
       if (rsign == 0) return lhs;
       if (lhs.sign == 0) {
@@ -454,39 +454,39 @@ namespace multi_precision_i1 {
     }
 
     template<typename S, typename C, C M>
-    mp_integer<S, C, M>& operator+=(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {return impl_add_eq<'+'>(lhs, rhs);}
+    big_integer<S, C, M>& operator+=(big_integer<S, C, M>& lhs, big_integer<S, C, M> const& rhs) {return impl_add_eq<'+'>(lhs, rhs);}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    mp_integer<S, C, M>& operator+=(mp_integer<S, C, M>& lhs, I const& rhs) {return impl_add_eq<'+'>(lhs, rhs);}
+    big_integer<S, C, M>& operator+=(big_integer<S, C, M>& lhs, I const& rhs) {return impl_add_eq<'+'>(lhs, rhs);}
     template<typename S, typename C, C M>
-    mp_integer<S, C, M>& operator-=(mp_integer<S, C, M>& lhs, mp_integer<S, C, M> const& rhs) {return impl_add_eq<'-'>(lhs, rhs);}
+    big_integer<S, C, M>& operator-=(big_integer<S, C, M>& lhs, big_integer<S, C, M> const& rhs) {return impl_add_eq<'-'>(lhs, rhs);}
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    mp_integer<S, C, M>& operator-=(mp_integer<S, C, M>& lhs, I const& rhs) {return impl_add_eq<'-'>(lhs, rhs);}
+    big_integer<S, C, M>& operator-=(big_integer<S, C, M>& lhs, I const& rhs) {return impl_add_eq<'-'>(lhs, rhs);}
 
 
-    template<typename S, typename C, C M, typename T, enable_generic_operator_t<mp_integer<S, C, M>, T> = nullptr>
-    mp_integer<S, C, M> operator+(mp_integer<S, C, M> const& lhs, T const& rhs) {
-      mp_integer<S, C, M> ret;
+    template<typename S, typename C, C M, typename T, enable_generic_operator_t<big_integer<S, C, M>, T> = nullptr>
+    big_integer<S, C, M> operator+(big_integer<S, C, M> const& lhs, T const& rhs) {
+      big_integer<S, C, M> ret;
       if (lhs.sign != 0) _set(ret, lhs);
       ret += rhs;
       return ret;
     }
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    mp_integer<S, C, M> operator+(I const& lhs, mp_integer<S, C, M> const& rhs) {
-      mp_integer<S, C, M> ret;
+    big_integer<S, C, M> operator+(I const& lhs, big_integer<S, C, M> const& rhs) {
+      big_integer<S, C, M> ret;
       if (rhs.sign != 0) _set(ret, rhs);
       ret += lhs;
       return ret;
     }
-    template<typename S, typename C, C M, typename T, enable_generic_operator_t<mp_integer<S, C, M>, T> = nullptr>
-    mp_integer<S, C, M> operator-(mp_integer<S, C, M> const& lhs, T const& rhs) {
-      mp_integer<S, C, M> ret;
+    template<typename S, typename C, C M, typename T, enable_generic_operator_t<big_integer<S, C, M>, T> = nullptr>
+    big_integer<S, C, M> operator-(big_integer<S, C, M> const& lhs, T const& rhs) {
+      big_integer<S, C, M> ret;
       if (lhs.sign != 0) _set(ret, lhs);
       ret -= rhs;
       return ret;
     }
     template<typename S, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    mp_integer<S, C, M> operator-(I const& lhs, mp_integer<S, C, M> const& rhs) {
-      mp_integer<S, C, M> ret;
+    big_integer<S, C, M> operator-(I const& lhs, big_integer<S, C, M> const& rhs) {
+      big_integer<S, C, M> ret;
       if (rhs.sign != 0) {
         _set(ret, rhs);
         ret.sign = -ret.sign;
@@ -496,38 +496,37 @@ namespace multi_precision_i1 {
     }
   }
 
-  using mp_integer_detail::operator+=;
-  using mp_integer_detail::operator-=;
-  using mp_integer_detail::operator+;
-  using mp_integer_detail::operator-;
+  using big_integer_detail::operator+=;
+  using big_integer_detail::operator-=;
+  using big_integer_detail::operator+;
+  using big_integer_detail::operator-;
 
-  template<typename S, typename C, C M>
-  void dump(mp_integer<S, C, M> const& value) {
-    std::printf("sign = %d, data = [ ", value.sign);
-    for (std::size_t i = value.data.size(); i--; ) {
-      std::printf("%llx", (unsigned long long) value.data[i]);
-      if (i != 0) std::printf(", ");
-    }
-    std::printf(" ]\n");
+}
+#endif
+
+#include <cstdio>
+
+template<typename S, typename C, C M>
+void dump(kashiwa::big_integer<S, C, M> const& value) {
+  std::printf("sign = %d, data = [ ", value.sign);
+  for (std::size_t i = value.data.size(); i--; ) {
+    std::printf("%llx", (unsigned long long) value.data[i]);
+    if (i != 0) std::printf(", ");
   }
+  std::printf(" ]\n");
 }
 
-namespace multi_precision_i1 {
-  void test1() {
-    mp_integer<std::uint32_t, std::uint64_t, 0x100> a = 1234;
+void test1() {
+  kashiwa::big_integer<std::uint32_t, std::uint64_t, 0x100> a = 1234;
+  dump(a);
+  for (int i = 0; i <= 100; i++) {
+    a += a;
+    a++;
     dump(a);
-    for (int i = 0; i <= 100; i++) {
-      a += a;
-      a++;
-      dump(a);
-    }
   }
 }
 
 int main() {
-  std::printf("hello\n");
-
-  multi_precision_i1::test1();
-
+  test1();
   return 0;
 }
