@@ -79,6 +79,7 @@ namespace kashiwa {
         sign = 1;
         data.push_back(1);
       }
+      return *this;
     }
 
     big_integer& operator--() {
@@ -90,6 +91,7 @@ namespace kashiwa {
         sign = -1;
         data.push_back(1);
       }
+      return *this;
     }
 
     big_integer operator++(int) {
@@ -394,7 +396,6 @@ namespace kashiwa {
     void abs_sub(big_integer<S, C, M>& lhs, I const& rhs) {
       typedef big_integer<S, C, M> integer_t;
       typedef typename integer_t::element_type elem_t;
-      typedef typename integer_t::calculation_type calc_t;
 
       int const cmp = abs_compare(lhs, rhs);
       if (cmp == 0) {
