@@ -6,6 +6,8 @@
 #include <limits>
 #include <type_traits>
 #include <vector>
+#include <ostream>
+#include <algorithm>
 #include <mwg/except.h>
 namespace kashiwa {
 
@@ -501,6 +503,161 @@ namespace kashiwa {
   using big_integer_detail::operator-=;
   using big_integer_detail::operator+;
   using big_integer_detail::operator-;
+
+  //
+  // a * b
+  //
+  // ToDo: Karatsuba, Toom-Cook, Schonhage-Strassen, Furer + 実測比較
+  //
+  namespace big_integer_detail {
+    template<typename S, typename C, C M>
+    void add_digit(big_integer<S, C, M>& num, std::size_t pos, typename big_integer<S, C, M>::calculation_type value) {
+      using integer_t = big_integer<S, C, M>;
+      using calc_t = typename integer_t::calculation_type;
+
+      if (num.data.size() <= pos) num.data.resize(pos, 0);
+      for (std::size_t const posN = num.data.size(); pos < posN; pos++) {
+        if (value == 0) return;
+        calc_t const elem = num.data[pos] + value % integer_t::modulo;
+        value /= integer_t::modulo;
+        num.data[pos] = elem % integer_t::modulo;
+        value += elem / integer_t::modulo;
+      }
+      while (value) {
+        num.data.emplace_back(value % integer_t::modulo);
+        value /= integer_t::modulo;
+      }
+    }
+
+    template<typename S, typename C, C M>
+    big_integer<S, C, M> operator*(big_integer<S, C, M> const& lhs, big_integer<S, C, M> const& rhs) {
+      typedef big_integer<S, C, M> integer_t;
+      using calc_t = typename integer_t::calculation_type;
+
+      big_integer<S, C, M> ret;
+      if (lhs.sign == 0 || rhs.sign == 0) return ret;
+      ret.sign = lhs.sign * rhs.sign;
+
+      std::size_t reservedSize = lhs.data.size() + rhs.data.size() - 1;
+      if (((calc_t) lhs.back() + 1) * ((calc_t) rhs.back() + 1) > integer_t::modulo)
+        reservedSize++;
+      ret.data.reserve(reservedSize);
+
+      std::size_t const rN = rhs.data.size();
+      std::size_t const lN = lhs.data.size();
+      for (std::size_t r = 0; r < rN; r++)
+        for (std::size_t l = 0; l < lN; l++)
+          add_digit(ret, l + r, (calc_t) lhs.data[l] * (calc_t) rhs.data[r]);
+
+      return ret;
+    }
+
+    template<typename Integer, typename Modulo>
+    constexpr int integral_log(Integer value, Modulo const& modulo) {
+      int count = 0;
+      while (value) {
+        value /= modulo;
+        count++;
+      }
+      return count;
+    }
+
+    template<typename S, typename C, C M, typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
+    big_integer<S, C, M> operator*(big_integer<S, C, M> const& lhs, I const& rhs) {
+      typedef big_integer<S, C, M> integer_t;
+      using calc_t = typename integer_t::calculation_type;
+      using urhs_t = typename std::make_unsigned<I>::type;
+
+      big_integer<S, C, M> ret;
+      if (lhs.sign == 0 || rhs == 0) return ret;
+      ret.sign = lhs.sign;
+
+      urhs_t urhs = rhs;
+      if (std::is_signed<I>::value && rhs < 0) {
+        ret.sign = -ret.sign;
+        urhs = -urhs;
+      }
+
+      constexpr int offset = integral_log(std::numeric_limits<urhs_t>::max(), integer_t::modulo);
+      ret.data.reserve(lhs.data.size() + offset);
+
+      std::size_t const lN = lhs.data.size();
+      for (std::size_t r = 0; urhs; r++) {
+        calc_t const elem = urhs % integer_t::modulo;
+        urhs /= integer_t::modulo;
+        for (std::size_t l = 0; l < lN; l++)
+          add_digit(ret, l + r, (calc_t) lhs.data[l] * elem);
+      }
+
+      return ret;
+    }
+    template<typename S, typename C, C M, typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
+    big_integer<S, C, M> operator*(I const& lhs, big_integer<S, C, M> const& rhs) {return rhs * lhs;}
+    template<typename S, typename C, C M>
+    big_integer<S, C, M> operator*=(big_integer<S, C, M>& lhs, big_integer<S, C, M> const& rhs) {return lhs = lhs * rhs;}
+    template<typename S, typename C, C M, typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
+    big_integer<S, C, M> operator*=(big_integer<S, C, M>& lhs, I const& rhs) {return lhs = lhs * rhs;}
+  }
+
+  using big_integer_detail::operator*;
+  using big_integer_detail::operator*=;
+
+  //
+  // pow(a, u)
+  //
+  template<typename S, typename C, C M>
+  big_integer<S, C, M> pow(big_integer<S, C, M> const& lhs, unsigned exponent) {
+    big_integer<S, C, M> result {1};
+    if (!exponent) return result;
+
+    big_integer<S, C, M> pow2 = lhs;
+    for (;;) {
+      unsigned const digit = exponent & 1;
+      exponent >>= 1;
+      if (digit) {
+        result *= pow2;
+        if (!exponent) break;
+      }
+      pow2 *= pow2;
+    }
+
+    return result;
+  }
+
+
+  namespace big_integer_detail {
+    template<typename S, typename C, C M>
+    std::ostream& operator<<(std::ostream& ostr, big_integer<S, C, M> const& value) {
+      if (value.sign == 0) return ostr << '0';
+      if (value.sign == -1) ostr << '-';
+
+      using integer_t = big_integer<S, C, M>;
+      using elem_t = typename integer_t::element_type;
+      using calc_t = typename integer_t::calculation_type;
+
+      std::vector<elem_t> tmp = value.data;
+      std::vector<char> digits;
+      digits.reserve(tmp.size() * integral_log(integer_t::modulo, 10));
+      while (tmp.size()) {
+        calc_t carry = 0;
+        for (std::size_t i = tmp.size(); i--; ) {
+          calc_t const elem = carry * integer_t::modulo + tmp[i];
+          tmp[i] = elem / 10;
+          carry = elem % 10;
+        }
+        if (tmp.back() == 0) tmp.pop_back();
+        digits.push_back((char)('0' + carry));
+      }
+
+      std::reverse(digits.begin(), digits.end());
+      ostr.write(&digits[0], digits.size());
+      return ostr;
+    }
+  }
+
+  using big_integer_detail::operator<<;
+
+  typedef big_integer<> bigint;
 
 }
 #endif
