@@ -4,6 +4,7 @@ all:
 .PHONY: all
 
 Makefile: Makefile.pp
+	mwg_pp.awk $< > $@
 
 #------------------------------------------------------------------------------
 # Host Configurations
@@ -61,25 +62,22 @@ directories := $(OUTDIR) $(OBJDIR)
 
 # ksh
 
-directories += $(OBJDIR)/ksh
-
-objectfiles += $(OBJDIR)/ksh/embedded_runge_kutta.o
--include $(OBJDIR)/ksh/embedded_runge_kutta.d
-$(OBJDIR)/ksh/embedded_runge_kutta.o: ksh/embedded_runge_kutta.cpp | $(OBJDIR)/ksh
+#%m register_object
+#%%x
+$"target"_objects += $(OBJDIR)/%name%.o
+-include $(OBJDIR)/%name%.d
+$(OBJDIR)/%name%.o: %name%.cpp | $(OBJDIR)/ksh
 	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ $<
-
-objectfiles += $(OBJDIR)/ksh/integrator.o
--include $(OBJDIR)/ksh/integrator.d
-$(OBJDIR)/ksh/integrator.o: ksh/integrator.cpp | $(OBJDIR)/ksh
-	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ -I ksh $<
-
-objectfiles += $(OBJDIR)/ksh/linear_lu.o
--include $(OBJDIR)/ksh/linear_lu.d
-$(OBJDIR)/ksh/linear_lu.o: ksh/linear_lu.cpp | $(OBJDIR)/ksh
-	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ -I ksh $<
+#%%end.i
+#%end
 
 all: $(OUTDIR)/libksh.a
-$(OUTDIR)/libksh.a: $(objectfiles) | $(OUTDIR)
+directories += $(OBJDIR)/ksh
+#%[target="libksh"]
+#%x register_object.r|%name%|ksh/embedded_runge_kutta|
+#%x register_object.r|%name%|ksh/integrator|
+#%x register_object.r|%name%|ksh/linear_lu|
+$(OUTDIR)/libksh.a: $(libksh_objects) | $(OUTDIR)
 	ar crs $@ $^
 
 #
@@ -87,23 +85,18 @@ $(OUTDIR)/libksh.a: $(objectfiles) | $(OUTDIR)
 #
 
 all: rktest.exe
--include $(OBJDIR)/rktest.d
--include $(OBJDIR)/rktest_erk.d
-$(OBJDIR)/rktest.o: rktest.cpp ksh/embedded_runge_kutta.h | $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ $<
-$(OBJDIR)/rktest_erk.o: rktest_erk.cpp | $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ $<
-rktest.exe: $(OBJDIR)/rktest.o $(OBJDIR)/rktest_erk.o $(OBJDIR)/ksh/embedded_runge_kutta.o
+#%[target="rktest"]
+#%x register_object.r|%name%|rktest|
+#%x register_object.r|%name%|rktest_erk|
+rktest.exe: $(rktest_objects) $(OBJDIR)/ksh/embedded_runge_kutta.o
 	$(CXX) $(LDFLAGS) -o $@ $^
 
+directories += $(OUTDIR)/rk
 $(OUTDIR)/rk/rkeuler.txt: | $(OUTDIR)/rk
 	./rktest.exe
-
-directories += $(OUTDIR)/rk
 all: $(OUTDIR)/rk/rktest.pdf
 $(OUTDIR)/rk/rktest.pdf: rktest.gp $(OUTDIR)/rk/rkeuler.txt | $(OUTDIR)/rk
 	gnuplot rktest.gp
-
 
 #------------------------------------------------------------------------------
 #
@@ -171,6 +164,17 @@ sample: $(sample-names:%=%.sample)
 
 clean:
 	-find $(OBJDIR) -name \*.d -o -name \*.o | xargs rm -f
+
+experiment: multi_precision
+.PHONY: experiment
+multi_precision: test/multi_precision.exe
+
+#%[target="test_multi_precision"]
+#%x register_object.r|%name%|test/multi_precision|
+test/multi_precision.exe: $(test_multi_precision_objects)
+	$(CXX) $(LDFLAGS) -o $@ $^
+
+#------------------------------------------------------------------------------
 
 $(directories):
 	mkdir -p $@
