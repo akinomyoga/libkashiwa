@@ -1,4 +1,8 @@
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
+#include <ksh/big_integer.h>
+#include <mwg/except.h>
 
 template<typename S, typename C, C M>
 void dump(kashiwa::big_integer<S, C, M> const& value) {

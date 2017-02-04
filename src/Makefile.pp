@@ -70,6 +70,13 @@ $(OBJDIR)/%name%.o: %name%.cpp | $(OBJDIR)/ksh
 	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ $<
 #%%end.i
 #%end
+#%m register_binary
+##%x
+%target%.exe: $($"target"_objects)
+	$(CXX) $(LDFLAGS) -o $@ $^
+##%end.i
+#%end
+
 
 all: $(OUTDIR)/libksh.a
 directories += $(OBJDIR)/ksh
@@ -133,6 +140,14 @@ test/test_%name%.exe: $(OBJDIR)/test/test_%name%.o $(OUTDIR)/libksh.a
 #%x register_test.r/%name%/integrator/
 #%x register_test.r/%name%/polynomial/
 #%x register_test.r/%name%/rational/
+#%x register_test.r/%name%/big_integer/
+
+experiment: multi_precision
+.PHONY: experiment
+
+#%[target="test_multi_precision"]
+#%x register_object.r|%name%|test/multi_precision|
+#%x register_binary.r|%out%|test/multi_precision|
 
 #------------------------------------------------------------------------------
 #
@@ -164,17 +179,6 @@ sample: $(sample-names:%=%.sample)
 
 clean:
 	-find $(OBJDIR) -name \*.d -o -name \*.o | xargs rm -f
-
-experiment: multi_precision
-.PHONY: experiment
-multi_precision: test/multi_precision.exe
-
-#%[target="test_multi_precision"]
-#%x register_object.r|%name%|test/multi_precision|
-test/multi_precision.exe: $(test_multi_precision_objects)
-	$(CXX) $(LDFLAGS) -o $@ $^
-
-#------------------------------------------------------------------------------
 
 $(directories):
 	mkdir -p $@

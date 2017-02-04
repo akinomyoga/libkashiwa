@@ -20,14 +20,7 @@ Author: K. Murase <myoga.murase@gmail.com>
   現在は係数体による割り算は提供しているが、
   多項式の割り算については提供していない。
 
-* polynomial, rational: a = -a 最適化。
-
-  操作 a = -a については型によって効率の良い実装方法がある筈。
-
 * checked: overflow を検知して整数の演算を行うクラス?
-
-* polynomial, rational: 共通の演算子について自動で定義する方法を考える。
-
 
 2017-01-06
 
@@ -78,6 +71,14 @@ Author: K. Murase <myoga.murase@gmail.com>
 -------------------------------------------------------------------------------
 
 2017-02-04
+
+* polynomial, rational: a = -a 最適化。
+
+  操作 a = -a については型によって効率の良い実装方法がある筈。
+
+  → ksh/def.h に kashiwa::destructive_negate を用意した。
+
+* polynomial, rational: 共通の演算子について自動で定義する方法を考える。
 
 * polynomial, rational: K overloads
 
