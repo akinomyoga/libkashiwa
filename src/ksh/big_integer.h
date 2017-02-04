@@ -35,7 +35,9 @@ namespace kashiwa {
     std::vector<element_type> data;
 
     big_integer(): sign(0) {}
-    big_integer(int value) {this->_set_integral_value(value);}
+
+    template<typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
+    big_integer(I const& value) {this->operator=(value);}
 
     big_integer const& operator+() const {return *this;}
     big_integer operator-() const {
@@ -110,12 +112,11 @@ namespace kashiwa {
 
   public:
     template<typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
-    void _set_integral_value(I const& value) {
+    big_integer& operator=(I const& value) {
       data.clear();
-
       if (value == 0) {
         sign = 0;
-        return;
+        return *this;
       }
 
       typename std::make_unsigned<I>::type uvalue = value;
@@ -130,6 +131,7 @@ namespace kashiwa {
         data.emplace_back((element_type) (uvalue % modulo));
         uvalue /= modulo;
       }
+      return *this;
     }
   };
 
@@ -151,15 +153,6 @@ namespace kashiwa {
         return -1;
       else
         return 0;
-    }
-
-    template<typename E, typename C, C M>
-    void _set(big_integer<E, C, M>& lhs, big_integer<E, C, M> const& rhs) {
-      lhs = rhs;
-    }
-    template<typename E, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    void _set(big_integer<E, C, M>& lhs, I const& rhs) {
-      lhs._set_integral_value(rhs);
     }
   }
 
@@ -443,7 +436,7 @@ namespace kashiwa {
       int const rsign = _sign(rhs);
       if (rsign == 0) return lhs;
       if (lhs.sign == 0) {
-        _set(lhs, rhs);
+        lhs = rhs;
         if (Op == '-')
           lhs.sign = -lhs.sign;
         return lhs;
@@ -469,21 +462,21 @@ namespace kashiwa {
     template<typename E, typename C, C M, typename T, enable_generic_operator_t<big_integer<E, C, M>, T> = nullptr>
     big_integer<E, C, M> operator+(big_integer<E, C, M> const& lhs, T const& rhs) {
       big_integer<E, C, M> ret;
-      if (lhs.sign != 0) _set(ret, lhs);
+      if (lhs.sign != 0) ret = lhs;
       ret += rhs;
       return ret;
     }
     template<typename E, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
     big_integer<E, C, M> operator+(I const& lhs, big_integer<E, C, M> const& rhs) {
       big_integer<E, C, M> ret;
-      if (rhs.sign != 0) _set(ret, rhs);
+      if (rhs.sign != 0) ret = rhs;
       ret += lhs;
       return ret;
     }
     template<typename E, typename C, C M, typename T, enable_generic_operator_t<big_integer<E, C, M>, T> = nullptr>
     big_integer<E, C, M> operator-(big_integer<E, C, M> const& lhs, T const& rhs) {
       big_integer<E, C, M> ret;
-      if (lhs.sign != 0) _set(ret, lhs);
+      if (lhs.sign != 0) ret = lhs;
       ret -= rhs;
       return ret;
     }
@@ -491,7 +484,7 @@ namespace kashiwa {
     big_integer<E, C, M> operator-(I const& lhs, big_integer<E, C, M> const& rhs) {
       big_integer<E, C, M> ret;
       if (rhs.sign != 0) {
-        _set(ret, rhs);
+        ret = rhs;
         ret.sign = -ret.sign;
       }
       ret -= lhs;
@@ -539,7 +532,7 @@ namespace kashiwa {
       ret.sign = lhs.sign * rhs.sign;
 
       std::size_t reservedSize = lhs.data.size() + rhs.data.size() - 1;
-      if (((calc_t) lhs.back() + 1) * ((calc_t) rhs.back() + 1) > integer_t::modulo)
+      if (((calc_t) lhs.data.back() + 1) * ((calc_t) rhs.data.back() + 1) > integer_t::modulo)
         reservedSize++;
       ret.data.reserve(reservedSize);
 
@@ -623,6 +616,74 @@ namespace kashiwa {
 
     return result;
   }
+
+  namespace big_integer_detail {
+
+    template<typename E, typename C, C M>
+    E divide(big_integer<E, C, M> const& lhs, E const& rhs, big_integer<E, C, M>& quot) {
+      typedef big_integer<E, C, M> integer_t;
+      using calc_t = typename integer_t::calculation_type;
+      using elem_t = typename integer_t::element_type;
+
+      if (rhs == 0) {
+        throw mwg::except("big_integer: division by zero", mwg::ecode::EArgRange);
+      } else if (rhs == 1) {
+        if (&lhs != &quot) quot.data = lhs.data;
+        return 0;
+      }
+
+      std::vector<elem_t>& data = quot.data;
+      if (&quot != &lhs) data.resize(lhs.data.size());
+      calc_t carry = 0;
+      for (std::size_t i = lhs.data.size(); i--; ) {
+        calc_t const elem = carry * integer_t::modulo + lhs.data[i];
+        data[i] = elem / 10;
+        carry = elem % 10;
+      }
+      if (data.back() == 0) data.pop_back();
+      return carry;
+    }
+    template<typename E, typename C, C M>
+    E divide(big_integer<E, C, M> const& lhs, E const& rhs) {
+      typedef big_integer<E, C, M> integer_t;
+      using calc_t = typename integer_t::calculation_type;
+
+      if (rhs == 0)
+        throw mwg::except("big_integer: division by zero", mwg::ecode::EArgRange);
+      else if (rhs == 1)
+        return 0;
+
+      calc_t carry = 0;
+      for (std::size_t i = lhs.data.size(); i--; )
+        carry = (carry * integer_t::modulo + lhs.data[i]) % 10;
+      return carry;
+    }
+    template<typename E, typename C, C M>
+    E operator%(big_integer<E, C, M> const& lhs, E const& rhs) {
+      return divide(lhs, rhs);
+    }
+    template<typename E, typename C, C M>
+    big_integer<E, C, M> operator/(big_integer<E, C, M> const& lhs, E const& rhs) {
+      big_integer<E, C, M> ret;
+      divide(lhs, rhs, ret);
+      return ret;
+    }
+    template<typename E, typename C, C M>
+    big_integer<E, C, M>& operator%=(big_integer<E, C, M>& lhs, E const& rhs) {
+      lhs = divide(lhs, rhs);
+      return lhs;
+    }
+    template<typename E, typename C, C M>
+    big_integer<E, C, M>& operator/=(big_integer<E, C, M>& lhs, E const& rhs) {
+      divide(lhs, rhs, lhs);
+      return lhs;
+    }
+  }
+
+  using big_integer_detail::operator%;
+  using big_integer_detail::operator/;
+  using big_integer_detail::operator%=;
+  using big_integer_detail::operator/=;
 
   namespace big_integer_detail {
     template<typename E, typename C, C M>
