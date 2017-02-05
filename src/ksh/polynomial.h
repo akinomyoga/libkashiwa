@@ -85,7 +85,7 @@ namespace kashiwa {
   //
   // polynomial == scalar
   //
-  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   bool operator==(polynomial<K> const& lhs, L const& rhs) {
     std::vector<K> const& data = lhs.data();
     switch (data.size()) {
@@ -94,11 +94,11 @@ namespace kashiwa {
     default: return false;
     }
   }
-  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   bool operator==(L const& lhs, polynomial<K> const& rhs) {return rhs == lhs;}
-  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   bool operator!=(polynomial<K> const& lhs, L const& rhs) {return !(lhs == rhs);}
-  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   bool operator!=(L const& lhs, polynomial<K> const& rhs) {return !(rhs == lhs);}
 
   //
@@ -143,7 +143,7 @@ namespace kashiwa {
   //
   // polynomial + scalar
   //
-  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   polynomial<K> operator+(polynomial<K> const& lhs, L const& rhs) {
     polynomial<K> ret = lhs;
     if (ret.m_data.size() == 0) {
@@ -154,7 +154,7 @@ namespace kashiwa {
     }
     return ret;
   }
-  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   polynomial<K> operator-(polynomial<K> const& lhs, L const& rhs) {
     polynomial<K> ret = lhs;
     if (ret.m_data.size() == 0) {
@@ -194,7 +194,7 @@ namespace kashiwa {
   //
   // polynomial * scalar
   //
-  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   polynomial<K>& operator*=(polynomial<K>& lhs, L const& rhs) {
     if (rhs == 0)
       lhs.m_data.clear();
@@ -202,25 +202,25 @@ namespace kashiwa {
       for (auto& e: lhs.m_data) e *= rhs;
     return lhs;
   }
-  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   polynomial<K> operator*(polynomial<K> const& lhs, L const& rhs) {
     polynomial<K> ret(lhs);
     ret *= rhs;
     return ret;
   }
-  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   polynomial<K>& operator/=(polynomial<K>& lhs, L const& rhs) {
     for (auto& e: lhs.m_data) e /= rhs;
     lhs.normalize();
     return lhs;
   }
-  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   polynomial<K> operator/(polynomial<K> const& lhs, L const& rhs) {
     polynomial<K> ret(lhs);
     ret /= rhs;
     return ret;
   }
-  template<typename K, typename L, typename std::enable_if<std::is_convertible<L, K>::value, std::nullptr_t>::type = nullptr>
+  template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   polynomial<K> operator*(L const& lhs, polynomial<K> const& rhs) {return rhs * lhs;}
 
   //

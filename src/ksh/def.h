@@ -13,6 +13,39 @@ namespace kashiwa {
     struct adl_inducer {};
   }
 
+  template<typename T> struct identity {typedef T type;};
+  template<typename T> using identity_t = typename identity<T>::type;
+
+  //
+  // For std::nullptr_t trick (http://qiita.com/kazatsuyu/items/203584ef4cb8b9e52462 by kazatsuyu)
+  //
+  template<bool B> using nullptr_if_t = typename std::enable_if<B, std::nullptr_t>::type;
+
+  // std::void_t (n3911, C++17) + 変種
+  //
+  //   std::void_t について思うこと。意味的には void_t は以下の様な定義であるべきではないか。
+  //   もしくは態々 void_t を使わずに以下の様に記述するべきだったのではないか。
+  //   template<typename... Types> using void_t = std::enable_if_t<std::is_valid_v<Types...>>
+  //
+  //   ※と思ったが、gcc でコンパイルできない。gcc-6.3.0 以下のバグの様だ。
+  //
+  template<typename...> using void_t = void;
+  template<typename...> using is_valid = std::true_type;
+  template<typename...> constexpr bool is_valid_v = true;
+
+  //
+  // is_instantiatable (n4502 is_detected 変種)
+  //
+  namespace detail {
+    template<typename Accept, template<typename...> class Template, typename... Args>
+    struct instantiater: std::false_type {};
+    template<template<typename...> class Template, typename... Args>
+    struct instantiater<is_valid<Template<Args...>>, Template, Args...>:
+      std::true_type, kashiwa::identity<Template<Args...>> {};
+  }
+  template<template<typename...> class Template, typename... Args>
+  using is_instantiatable = detail::instantiater<std::true_type, Template, Args...>;
+
   //
   // destructive_negate
   //
@@ -22,21 +55,12 @@ namespace kashiwa {
   // kashiwa::overloads の下に多重定義を用意する。
   //
   namespace overloads {
-#define kashiwa_define_is_valid_expression(Name,T,X,Expr) \
-    struct Name { \
-      using invalid_type = ::kashiwa::invalid_type; \
-      template<typename X> static constexpr invalid_type check(...); \
-      template<typename X> static constexpr auto check(int) -> decltype((Expr)); \
-      using return_type = decltype(check<T>(0)); \
-      enum {value = !std::is_same<return_type, invalid_type>::value}; \
-    };
+    template<typename T> using result_of_destructive_negate = decltype(std::declval<T>().destructive_negate());
+    template<typename T> using has_destructive_negate = is_instantiatable<result_of_destructive_negate, T>;
 
-    template<typename T>
-    kashiwa_define_is_valid_expression(has_destructive_negate, T, X, (std::declval<X>().destructive_negate()));
-
-    template<typename K, typename std::enable_if<!has_destructive_negate<K>::value, std::nullptr_t>::type = nullptr>
+    template<typename K, nullptr_if_t<!has_destructive_negate<K>::value> = nullptr>
     constexpr void destructive_negate(K& value, adl_inducer) {value = -value;}
-    template<typename K, typename std::enable_if<has_destructive_negate<K>::value, std::nullptr_t>::type = nullptr>
+    template<typename K, nullptr_if_t<has_destructive_negate<K>::value> = nullptr>
     constexpr void destructive_negate(K& value, adl_inducer) {value.destructive_negate();}
   }
 

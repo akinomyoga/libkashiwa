@@ -9,6 +9,7 @@
 #include <ostream>
 #include <algorithm>
 #include <mwg/except.h>
+#include "def.h"
 namespace kashiwa {
 
   template<
@@ -36,7 +37,7 @@ namespace kashiwa {
 
     big_integer(): sign(0) {}
 
-    template<typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
+    template<typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
     big_integer(I const& value) {this->operator=(value);}
 
     big_integer const& operator+() const {return *this;}
@@ -111,7 +112,7 @@ namespace kashiwa {
     }
 
   public:
-    template<typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
+    template<typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
     big_integer& operator=(I const& value) {
       data.clear();
       if (value == 0) {
@@ -137,11 +138,9 @@ namespace kashiwa {
 
   namespace big_integer_detail {
     template<typename MpInteger, typename T>
-    using enable_generic_operator_t = typename std::enable_if<
-      (std::is_integral<T>::value || std::is_base_of<MpInteger, T>::value), std::nullptr_t>::type;
+    using enable_generic_operator_t = nullptr_if_t<(std::is_integral<T>::value || std::is_base_of<MpInteger, T>::value)>;
     template<typename T>
-    using enable_scalar_operator_t = typename std::enable_if<
-      std::is_integral<T>::value, std::nullptr_t>::type;
+    using enable_scalar_operator_t = nullptr_if_t<std::is_integral<T>::value>;
 
     template<typename E, typename C, C M>
     int _sign(big_integer<E, C, M> const&  arg) {return arg.sign;}
@@ -160,13 +159,13 @@ namespace kashiwa {
   // compare(a, b)
   //
   namespace big_integer_detail {
-    template<typename I, typename std::enable_if<std::is_integral<I>::value && std::is_signed<I>::value, std::nullptr_t>::type = nullptr>
+    template<typename I, nullptr_if_t<std::is_integral<I>::value && std::is_signed<I>::value> = nullptr>
     typename std::make_unsigned<I>::type _abs(I const& value) {
       typename std::make_unsigned<I>::type uvalue = value;
       if (value < 0) uvalue = -uvalue;
       return uvalue;
     }
-    template<typename U, typename std::enable_if<std::is_integral<U>::value && std::is_unsigned<U>::value, std::nullptr_t>::type = nullptr>
+    template<typename U, nullptr_if_t<std::is_integral<U>::value && std::is_unsigned<U>::value> = nullptr>
     U const& _abs(U const& value) {return value;}
 
     template<typename E, typename C, C M>
@@ -565,7 +564,7 @@ namespace kashiwa {
       return count;
     }
 
-    template<typename E, typename C, C M, typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
+    template<typename E, typename C, C M, typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
     big_integer<E, C, M> operator*(big_integer<E, C, M> const& lhs, I const& rhs) {
       typedef big_integer<E, C, M> integer_t;
       using calc_t = typename integer_t::calculation_type;
@@ -594,11 +593,11 @@ namespace kashiwa {
 
       return ret;
     }
-    template<typename E, typename C, C M, typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
+    template<typename E, typename C, C M, typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
     big_integer<E, C, M> operator*(I const& lhs, big_integer<E, C, M> const& rhs) {return rhs * lhs;}
     template<typename E, typename C, C M>
     big_integer<E, C, M> operator*=(big_integer<E, C, M>& lhs, big_integer<E, C, M> const& rhs) {return lhs = lhs * rhs;}
-    template<typename E, typename C, C M, typename I, typename std::enable_if<std::is_integral<I>::value, std::nullptr_t>::type = nullptr>
+    template<typename E, typename C, C M, typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
     big_integer<E, C, M> operator*=(big_integer<E, C, M>& lhs, I const& rhs) {return lhs = lhs * rhs;}
   }
 
