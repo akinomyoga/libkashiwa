@@ -27,6 +27,10 @@ namespace kashiwa {
   constexpr K gcd(K lhs, K rhs) {
     if (lhs < 0) destructive_negate(lhs);
     if (rhs < 0) destructive_negate(rhs);
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wswitch-bool"
+#endif
     switch (lhs > rhs)
       for (;;) {
       case true:
@@ -36,6 +40,9 @@ namespace kashiwa {
         if (lhs == 0) return rhs;
         rhs %= lhs;
       }
+#ifdef __clang__
+# pragma clang diagnostic pop
+#endif
   }
 
   template<typename K>
