@@ -713,23 +713,56 @@ namespace kashiwa {
       using elem_t = typename integer_t::element_type;
       using calc_t = typename integer_t::calculation_type;
 
-      integer_t tmp = value;
-      //std::vector<elem_t> tmp = value.data;
-      std::vector<char> digits;
-      digits.reserve(tmp.data.size() * integral_ceil_log(integer_t::modulo, 10u));
-
       constexpr int wgroup = integral_floor_log(integer_t::modulo, 10u);
       constexpr elem_t mod10 = integral_pow((elem_t) 10, wgroup);
-      while (tmp.data.size()) {
-        calc_t carry = big_integer_detail::divide(tmp, mod10, tmp);
-        for (int i = 0; i < wgroup; i++) {
-          digits.push_back((char)('0' + carry % 10));
-          carry /= 10;
+      if (mod10 == integer_t::modulo) {
+        // 元から 10^n の基数の場合には変換は不要
+        std::vector<char> digits;
+        digits.resize(wgroup);
+
+        // 最初の桁
+        std::size_t i = value.data.size() - 1;
+        elem_t elem = value.data[i];
+        int k = wgroup;
+        while (elem && k--) {
+          digits[k] = '0' + elem % 10;
+          elem /= 10;
         }
+        ostr.write(&digits[k], wgroup - k);
+
+        // 残りの桁
+        while (i--) {
+          elem_t elem = value.data[i];
+          for (int k = wgroup; k--; ) {
+            digits[k] = '0' + elem % 10;
+            elem /= 10;
+          }
+          ostr.write(&digits[0], digits.size());
+        }
+      } else {
+        integer_t tmp = value;
+        std::vector<char> digits;
+        digits.reserve(tmp.data.size() * integral_ceil_log(integer_t::modulo, 10u));
+        for (;;) {
+          calc_t carry = big_integer_detail::divide(tmp, mod10, tmp);
+          if (tmp.data.size() != 0) {
+            for (int i = 0; i < wgroup; i++) {
+              digits.push_back((char)('0' + carry % 10));
+              carry /= 10;
+            }
+          } else {
+            while (carry) {
+              digits.push_back((char)('0' + carry % 10));
+              carry /= 10;
+            }
+            break;
+          }
+        }
+
+        std::reverse(digits.begin(), digits.end());
+        ostr.write(&digits[0], digits.size());
       }
 
-      std::reverse(digits.begin(), digits.end());
-      ostr.write(&digits[0], digits.size());
       return ostr;
     }
   }
