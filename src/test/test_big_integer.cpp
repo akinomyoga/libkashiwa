@@ -5,6 +5,12 @@
 #include <ksh/big_integer.h>
 #include <mwg/except.h>
 
+void test() {
+  using bigint = kashiwa::bigint;
+  mwg_check((bigint {1234} == 1234));
+  mwg_check((bigint {1234} == bigint {1200} + bigint {34}));
+}
+
 template<typename S, typename C, C M>
 void dump(kashiwa::big_integer<S, C, M> const& value) {
   std::printf("sign = %d, data = [ ", value.sign);
@@ -39,14 +45,17 @@ void test3() {
   // 基数10^nで計算すると遅い (2017-02-05)
   //auto result = pow(kashiwa::big_integer<std::uint32_t, std::uint64_t, 1000000000> {5}, 100000);
 
-  //auto result = pow(kashiwa::bigint {5}, 30000);
-  auto result = pow(kashiwa::bigint {5}, 100000);
-  //auto result = pow(kashiwa::bigint {5}, 300000);
-  //auto result = pow(kashiwa::bigint {5}, 1000000);
-  std::cout << "result = " << result << std::endl;
+  int const n = 10000;
+  // int const n = 30000;
+  // int const n = 100000;
+  // int const n = 300000;
+  // int const n = 1000000;
+  auto result = pow(kashiwa::bigint {5}, n);
+  std::cout << "5 ** " << n << " = " << result << std::endl;
 }
 
 int main() {
+  test();
   // test1();
   // test2();
   test3();
