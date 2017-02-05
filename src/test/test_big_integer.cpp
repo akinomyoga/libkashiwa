@@ -34,8 +34,18 @@ void test2() {
   }
 }
 
+// http://d.hatena.ne.jp/ku-ma-me/20080116/p1
+void test3() {
+  auto result = pow(kashiwa::bigint {5}, 30000);
+  //auto result = pow(kashiwa::bigint {5}, 100000);
+  //auto result = pow(kashiwa::bigint {5}, 300000);
+  //auto result = pow(kashiwa::bigint {5}, 1000000);
+  std::cout << "result = " << result << std::endl;
+}
+
 int main() {
-  test1();
-  test2();
+  // test1();
+  // test2();
+  test3();
   return 0;
 }

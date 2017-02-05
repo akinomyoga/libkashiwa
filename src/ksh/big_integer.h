@@ -546,9 +546,19 @@ namespace kashiwa {
     }
 
     template<typename Integer, typename Modulo>
-    constexpr int integral_log(Integer value, Modulo const& modulo) {
+    constexpr int integral_ceil_log(Integer value, Modulo const& modulo) {
       int count = 0;
       while (value) {
+        value /= modulo;
+        count++;
+      }
+      return count;
+    }
+
+    template<typename Integer, typename Modulo>
+    constexpr int integral_floor_log(Integer value, Modulo const& modulo) {
+      int count = 0;
+      while (value >= modulo) {
         value /= modulo;
         count++;
       }
@@ -571,7 +581,7 @@ namespace kashiwa {
         urhs = -urhs;
       }
 
-      constexpr int offset = integral_log(std::numeric_limits<urhs_t>::max(), integer_t::modulo);
+      constexpr int offset = integral_ceil_log(std::numeric_limits<urhs_t>::max(), integer_t::modulo);
       ret.data.reserve(lhs.data.size() + offset);
 
       std::size_t const lN = lhs.data.size();
@@ -637,8 +647,8 @@ namespace kashiwa {
       calc_t carry = 0;
       for (std::size_t i = lhs.data.size(); i--; ) {
         calc_t const elem = carry * integer_t::modulo + lhs.data[i];
-        data[i] = elem / 10;
-        carry = elem % 10;
+        data[i] = elem / rhs;
+        carry = elem % rhs;
       }
       if (data.back() == 0) data.pop_back();
       return carry;
@@ -655,7 +665,7 @@ namespace kashiwa {
 
       calc_t carry = 0;
       for (std::size_t i = lhs.data.size(); i--; )
-        carry = (carry * integer_t::modulo + lhs.data[i]) % 10;
+        carry = (carry * integer_t::modulo + lhs.data[i]) % rhs;
       return carry;
     }
     template<typename E, typename C, C M>
@@ -686,6 +696,14 @@ namespace kashiwa {
   using big_integer_detail::operator/=;
 
   namespace big_integer_detail {
+
+    template<typename E>
+    constexpr E integral_pow(E base, unsigned index) {
+      E result = 1;
+      while (index--) result *= base;
+      return result;
+    }
+
     template<typename E, typename C, C M>
     std::ostream& operator<<(std::ostream& ostr, big_integer<E, C, M> const& value) {
       if (value.sign == 0) return ostr << '0';
@@ -695,18 +713,19 @@ namespace kashiwa {
       using elem_t = typename integer_t::element_type;
       using calc_t = typename integer_t::calculation_type;
 
-      std::vector<elem_t> tmp = value.data;
+      integer_t tmp = value;
+      //std::vector<elem_t> tmp = value.data;
       std::vector<char> digits;
-      digits.reserve(tmp.size() * integral_log(integer_t::modulo, 10));
-      while (tmp.size()) {
-        calc_t carry = 0;
-        for (std::size_t i = tmp.size(); i--; ) {
-          calc_t const elem = carry * integer_t::modulo + tmp[i];
-          tmp[i] = elem / 10;
-          carry = elem % 10;
+      digits.reserve(tmp.data.size() * integral_ceil_log(integer_t::modulo, 10u));
+
+      constexpr int wgroup = integral_floor_log(integer_t::modulo, 10u);
+      constexpr elem_t mod10 = integral_pow((elem_t) 10, wgroup);
+      while (tmp.data.size()) {
+        calc_t carry = big_integer_detail::divide(tmp, mod10, tmp);
+        for (int i = 0; i < wgroup; i++) {
+          digits.push_back((char)('0' + carry % 10));
+          carry /= 10;
         }
-        if (tmp.back() == 0) tmp.pop_back();
-        digits.push_back((char)('0' + carry));
       }
 
       std::reverse(digits.begin(), digits.end());
