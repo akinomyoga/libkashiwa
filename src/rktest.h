@@ -12,6 +12,7 @@
 #include <numeric>
 #include <utility>
 #include <mwg/except.h>
+#include "ksh/def.h"
 
 template<typename F>
 double binary_search_function(double lowerBound,double upperBound,double value,double tolerance,F func){
@@ -46,7 +47,7 @@ double binary_search_function(double lowerBound,double upperBound,double value,d
 
 // static const double initialCondition = 1.0;
 // static const double finalTime = 1.0;
-// static void f(double* __restrict__ slope,double t,double const* __restrict__ value){
+// static void f(double* ksh_restrict slope,double t,double const* ksh_restrict value){
 //   slope[0] = 1.0/value[0];
 // }
 // static double exactSolution(double t){
@@ -65,7 +66,7 @@ double binary_search_function(double lowerBound,double upperBound,double value,d
 static const double initialCondition = 1.0;
 static const double initialTime = 1.0 + std::log(std::sin(1.0)+std::cos(1.0)); // = 1.3233676675153825
 static const double finalTime = initialTime + 0.2; // ~ 1.52
-static void f(double* __restrict__ slope,double t,double const* __restrict__ value){
+static void f(double* ksh_restrict slope,double t,double const* ksh_restrict value){
   slope[0] = (std::tan(value[0])+1.0)/2;
 }
 static double exactSolution(double t){

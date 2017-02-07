@@ -30,7 +30,7 @@ namespace runge_kutta {
 
   public:
     virtual void get_values_at(
-      double* __restrict__ interpolated, double time,
+      double* ksh_restrict interpolated, double time,
       std::size_t const* icomp, std::size_t _ncomp
     ) override {
       this->initialize_data();
@@ -60,23 +60,23 @@ namespace runge_kutta {
   };
 
   void dop853_integrator::_integrate8(
-    double& time, double* __restrict__ value, std::size_t size,
+    double& time, double* ksh_restrict value, std::size_t size,
     iequation_for_erk& eq, double h,
     double atol, double rtol, double& _err, double& _stf
   ) const {
-    double* __restrict__  x  = buffer.ptr<double>();
-    double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
-    double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
-    double* __restrict__& k3 = k2;
-    double* __restrict__  k4 = buffer.ptr<double>() + size * 3;
-    double* __restrict__& k5 = k3;
-    double* __restrict__  k6 = buffer.ptr<double>() + size * 4;
-    double* __restrict__  k7 = buffer.ptr<double>() + size * 5;
-    double* __restrict__  k8 = buffer.ptr<double>() + size * 6;
-    double* __restrict__  k9 = buffer.ptr<double>() + size * 7;
-    double* __restrict__  kA = buffer.ptr<double>() + size * 8;
-    double* __restrict__  kB = buffer.ptr<double>() + size * 9;
-    double* __restrict__& kC = k4;
+    double* ksh_restrict  x  = buffer.ptr<double>();
+    double* ksh_restrict  k1 = buffer.ptr<double>() + size * 1;
+    double* ksh_restrict  k2 = buffer.ptr<double>() + size * 2;
+    double* ksh_restrict& k3 = k2;
+    double* ksh_restrict  k4 = buffer.ptr<double>() + size * 3;
+    double* ksh_restrict& k5 = k3;
+    double* ksh_restrict  k6 = buffer.ptr<double>() + size * 4;
+    double* ksh_restrict  k7 = buffer.ptr<double>() + size * 5;
+    double* ksh_restrict  k8 = buffer.ptr<double>() + size * 6;
+    double* ksh_restrict  k9 = buffer.ptr<double>() + size * 7;
+    double* ksh_restrict  kA = buffer.ptr<double>() + size * 8;
+    double* ksh_restrict  kB = buffer.ptr<double>() + size * 9;
+    double* ksh_restrict& kC = k4;
 
     static constexpr double c2 = 0.526001519587677318785587544488E-01;
     static constexpr double c3 = 0.789002279381515978178381316732E-01;
@@ -245,13 +245,13 @@ namespace runge_kutta {
   }
 
   double dop853_integrator::_determine_initial_step(
-    double time, double* __restrict__ value, std::size_t size,
+    double time, double* ksh_restrict value, std::size_t size,
     iequation_for_erk& eq,
     int bwd, double atol, double rtol, double hmax
   ) const {
-    double* __restrict__ const x  = buffer.ptr<double>();
-    double* __restrict__ const k1 = buffer.ptr<double>() + size * 1;
-    double* __restrict__ const k2 = buffer.ptr<double>() + size * 2;
+    double* ksh_restrict const x  = buffer.ptr<double>();
+    double* ksh_restrict const k1 = buffer.ptr<double>() + size * 1;
+    double* ksh_restrict const k2 = buffer.ptr<double>() + size * 2;
 
     // compute a first guess for explicit euler as:
     //   h1 = 0.01 * NORM(value) / NORM(k1).
@@ -295,7 +295,7 @@ namespace runge_kutta {
   }
 
   void dop853_integrator::integrate(
-    double& time, double* __restrict__ value, std::size_t size,
+    double& time, double* ksh_restrict value, std::size_t size,
     iequation_for_erk& eq,
     double timeN, stat_t& stat, param_t const& params
   ) const {
@@ -312,10 +312,10 @@ namespace runge_kutta {
     int    const nstif = std::abs(params.nstif == 0?10: params.nstif);
     std::ptrdiff_t const nmax = params.nmax;
 
-    double* __restrict__ const x  = buffer.ptr<double>();
-    double* __restrict__ const k1 = buffer.ptr<double>() + size * 1; // 最初の微分評価 (c = 0.0) を入れる場所
-    double* __restrict__ const kD = buffer.ptr<double>() + size * 2; // 次のステップの最初の微分 (FSAL) を入れる場所
-    double* __restrict__ const kC = buffer.ptr<double>() + size * 3; // 最後の微分評価 (c = 1.0) の入る場所
+    double* ksh_restrict const x  = buffer.ptr<double>();
+    double* ksh_restrict const k1 = buffer.ptr<double>() + size * 1; // 最初の微分評価 (c = 0.0) を入れる場所
+    double* ksh_restrict const kD = buffer.ptr<double>() + size * 2; // 次のステップの最初の微分 (FSAL) を入れる場所
+    double* ksh_restrict const kC = buffer.ptr<double>() + size * 3; // 最後の微分評価 (c = 1.0) の入る場所
 
     eq.eval_f(k1, time, value);
     stat.nfcn++;
@@ -422,30 +422,30 @@ namespace runge_kutta {
   void dop853_integrator::_dense_output_initialize(
     working_buffer& interpBuffer, stat_t& stat, int* icomp, std::size_t nrd
   ) const {
-    double* __restrict__             cont  = interpBuffer.ptr<double>();
+    double* ksh_restrict             cont  = interpBuffer.ptr<double>();
     iequation_for_erk&               eq    = *stat.eq;
     double const                     time  = stat.previousTime;
-    double const* __restrict__ const value = stat.previousValue;
+    double const* ksh_restrict const value = stat.previousValue;
     std::size_t const                size  = stat.previousSize;
     double const                     h     = stat.previousStep;
 
-    double* __restrict__  x  = buffer.ptr<double>();
-    double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
-    double* __restrict__  k6 = buffer.ptr<double>() + size * 4;
-    double* __restrict__  k7 = buffer.ptr<double>() + size * 5;
-    double* __restrict__  k8 = buffer.ptr<double>() + size * 6;
-    double* __restrict__  k9 = buffer.ptr<double>() + size * 7;
-    double* __restrict__  kA = buffer.ptr<double>() + size * 8;
-    double* __restrict__  kB = buffer.ptr<double>() + size * 9;
-    double* __restrict__  kC = buffer.ptr<double>() + size * 3;
-    double* __restrict__  kD = buffer.ptr<double>() + size * 2;
+    double* ksh_restrict  x  = buffer.ptr<double>();
+    double* ksh_restrict  k1 = buffer.ptr<double>() + size * 1;
+    double* ksh_restrict  k6 = buffer.ptr<double>() + size * 4;
+    double* ksh_restrict  k7 = buffer.ptr<double>() + size * 5;
+    double* ksh_restrict  k8 = buffer.ptr<double>() + size * 6;
+    double* ksh_restrict  k9 = buffer.ptr<double>() + size * 7;
+    double* ksh_restrict  kA = buffer.ptr<double>() + size * 8;
+    double* ksh_restrict  kB = buffer.ptr<double>() + size * 9;
+    double* ksh_restrict  kC = buffer.ptr<double>() + size * 3;
+    double* ksh_restrict  kD = buffer.ptr<double>() + size * 2;
 
-    double* __restrict__& xE = k6;
-    double* __restrict__& xF = k7;
-    double* __restrict__& xG = k8;
-    double* __restrict__& kE = k9;
-    double* __restrict__& kF = kA;
-    double* __restrict__& kG = kB;
+    double* ksh_restrict& xE = k6;
+    double* ksh_restrict& xF = k7;
+    double* ksh_restrict& xG = k8;
+    double* ksh_restrict& kE = k9;
+    double* ksh_restrict& kF = kA;
+    double* ksh_restrict& kG = kB;
 
     static constexpr double cE  = 0.1E+00;
     static constexpr double cF  = 0.2E+00;

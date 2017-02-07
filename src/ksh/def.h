@@ -4,7 +4,19 @@
 #include <cstddef>
 #include <type_traits>
 #include <utility>
+
+#ifndef ksh_restrict
+# if defined(_MSC_VER) && _MSC_VER >= 1400
+#  define ksh_restrict __restrict
+# elif defined(__GNUC__)
+#  define ksh_restrict __restrict__
+# else
+#  define ksh_restrict
+# endif
+#endif
+
 namespace kashiwa {
+
   typedef unsigned char byte;
 
   struct invalid_type {};

@@ -6,6 +6,7 @@
 #endif
 #include <cstddef>
 #include <cmath>
+#include "def.h"
 #include "buffer.h"
 
 namespace kashiwa {
@@ -20,7 +21,7 @@ namespace runge_kutta {
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(size);
-      double* __restrict__ knode = buffer.ptr<double>();
+      double* ksh_restrict knode = buffer.ptr<double>();
       f(knode, time, value);
       for (std::size_t i = 0; i < size; i++)
         value[i] += h * knode[i];
@@ -42,8 +43,8 @@ namespace runge_kutta {
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(2 * size);
-      double* __restrict__ knode = buffer.ptr<double>();
-      double* __restrict__ xnode = buffer.ptr<double>() + size;
+      double* ksh_restrict knode = buffer.ptr<double>();
+      double* ksh_restrict xnode = buffer.ptr<double>() + size;
 
       f(knode, time, value);
       for (std::size_t i = 0; i < size; i++)
@@ -70,8 +71,8 @@ namespace runge_kutta {
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(2 * size);
-      double* __restrict__ k = buffer.ptr<double>();
-      double* __restrict__ x = buffer.ptr<double>() + size;
+      double* ksh_restrict k = buffer.ptr<double>();
+      double* ksh_restrict x = buffer.ptr<double>() + size;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -95,8 +96,8 @@ namespace runge_kutta {
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(2 * size);
-      double* __restrict__ k = buffer.ptr<double>();
-      double* __restrict__ x = buffer.ptr<double>() + size;
+      double* ksh_restrict k = buffer.ptr<double>();
+      double* ksh_restrict x = buffer.ptr<double>() + size;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -126,9 +127,9 @@ namespace runge_kutta {
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(3 * size);
-      double* __restrict__ k = buffer.ptr<double>();
-      double* __restrict__ x = buffer.ptr<double>() + size;
-      double* __restrict__ y = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict k = buffer.ptr<double>();
+      double* ksh_restrict x = buffer.ptr<double>() + size;
+      double* ksh_restrict y = buffer.ptr<double>() + size * 2;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -168,8 +169,8 @@ namespace runge_kutta {
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(2 * size);
-      double* __restrict__ k = buffer.ptr<double>();
-      double* __restrict__ x = buffer.ptr<double>() + size;
+      double* ksh_restrict k = buffer.ptr<double>();
+      double* ksh_restrict x = buffer.ptr<double>() + size;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -200,8 +201,8 @@ namespace runge_kutta {
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(2 * size);
-      double* __restrict__ k = buffer.ptr<double>();
-      double* __restrict__ x = buffer.ptr<double>() + size;
+      double* ksh_restrict k = buffer.ptr<double>();
+      double* ksh_restrict x = buffer.ptr<double>() + size;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -239,8 +240,8 @@ namespace runge_kutta {
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(2 * size);
-      double* __restrict__ k = buffer.ptr<double>();
-      double* __restrict__ x = buffer.ptr<double>() + size;
+      double* ksh_restrict k = buffer.ptr<double>();
+      double* ksh_restrict x = buffer.ptr<double>() + size;
 
       f(k, time, value);
       for (std::size_t i = 0; i < size; i++) {
@@ -274,9 +275,9 @@ namespace runge_kutta {
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(3 * size);
-      double* __restrict__ knode = buffer.ptr<double>();
-      double* __restrict__ xnode = buffer.ptr<double>() + size;
-      double* __restrict__ delta = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict knode = buffer.ptr<double>();
+      double* ksh_restrict xnode = buffer.ptr<double>() + size;
+      double* ksh_restrict delta = buffer.ptr<double>() + size * 2;
 
       // k1
       f(knode, time, value);
@@ -319,9 +320,9 @@ namespace runge_kutta {
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(3 * size);
-      double* __restrict__ k  = buffer.ptr<double>();
-      double* __restrict__ xi = buffer.ptr<double>() + size;
-      double* __restrict__ x4 = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict k  = buffer.ptr<double>();
+      double* ksh_restrict xi = buffer.ptr<double>() + size;
+      double* ksh_restrict x4 = buffer.ptr<double>() + size * 2;
 
       // k1
       f(k, time, value);
@@ -366,8 +367,8 @@ namespace runge_kutta {
     template<typename F>
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(2 * size);
-      double* __restrict__ k  = buffer.ptr<double>();
-      double* __restrict__ q  = buffer.ptr<double>() + size;
+      double* ksh_restrict k  = buffer.ptr<double>();
+      double* ksh_restrict q  = buffer.ptr<double>() + size;
 
       static constexpr double alpha1 = 1.0 / 2.0;
       static constexpr double alpha2 = 1.0 - std::sqrt(1.0 / 2.0);
@@ -431,15 +432,15 @@ namespace runge_kutta {
     mutable working_buffer buffer;
 
     template<typename F>
-    void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
+    void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(6 * size);
-      double* __restrict__  x  = buffer.ptr<double>();
-      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
-      double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
-      double* __restrict__  k3 = buffer.ptr<double>() + size * 3;
-      double* __restrict__  k4 = buffer.ptr<double>() + size * 4;
-      double* __restrict__  k5 = buffer.ptr<double>() + size * 5;
-      double* __restrict__& k6 = k2;
+      double* ksh_restrict  x  = buffer.ptr<double>();
+      double* ksh_restrict  k1 = buffer.ptr<double>() + size * 1;
+      double* ksh_restrict  k2 = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict  k3 = buffer.ptr<double>() + size * 3;
+      double* ksh_restrict  k4 = buffer.ptr<double>() + size * 4;
+      double* ksh_restrict  k5 = buffer.ptr<double>() + size * 5;
+      double* ksh_restrict& k6 = k2;
 
       // k1
       f(k1, time, value);
@@ -506,16 +507,16 @@ namespace runge_kutta {
     mutable working_buffer buffer;
 
     template<typename F>
-    void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
+    void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(5 * size);
-      double* __restrict__  x  = buffer.ptr<double>();
-      double* __restrict__  y  = buffer.ptr<double>() + size * 1;
-      double* __restrict__  k1 = buffer.ptr<double>() + size * 2;
-      double* __restrict__  k2 = buffer.ptr<double>() + size * 3;
-      double* __restrict__& k3 = k2;
-      double* __restrict__& k4 = k2;
-      double* __restrict__& k5 = k2;
-      double* __restrict__  k6 = buffer.ptr<double>() + size * 4;
+      double* ksh_restrict  x  = buffer.ptr<double>();
+      double* ksh_restrict  y  = buffer.ptr<double>() + size * 1;
+      double* ksh_restrict  k1 = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict  k2 = buffer.ptr<double>() + size * 3;
+      double* ksh_restrict& k3 = k2;
+      double* ksh_restrict& k4 = k2;
+      double* ksh_restrict& k5 = k2;
+      double* ksh_restrict  k6 = buffer.ptr<double>() + size * 4;
 
       static constexpr double a21 = 1.0 / 4.0;
       static constexpr double c2  = 1.0 / 4.0;
@@ -602,15 +603,15 @@ namespace runge_kutta {
     mutable working_buffer buffer;
 
     template<typename F>
-    void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
+    void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(6 * size);
-      double* __restrict__  x  = buffer.ptr<double>();
-      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
-      double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
-      double* __restrict__  k3 = buffer.ptr<double>() + size * 3;
-      double* __restrict__  k4 = buffer.ptr<double>() + size * 4;
-      double* __restrict__  k5 = buffer.ptr<double>() + size * 5;
-      double* __restrict__& k6 = k2;
+      double* ksh_restrict  x  = buffer.ptr<double>();
+      double* ksh_restrict  k1 = buffer.ptr<double>() + size * 1;
+      double* ksh_restrict  k2 = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict  k3 = buffer.ptr<double>() + size * 3;
+      double* ksh_restrict  k4 = buffer.ptr<double>() + size * 4;
+      double* ksh_restrict  k5 = buffer.ptr<double>() + size * 5;
+      double* ksh_restrict& k6 = k2;
 
       // k1
       f(k1, time, value);
@@ -682,16 +683,16 @@ namespace runge_kutta {
     static constexpr double sqrt21 = std::sqrt(21.0); // Ref [cv8.2] では -sqrt(21.0). どちらでも OK.
 
     template<typename F>
-    void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
+    void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(7 * size);
-      double* __restrict__  x  = buffer.ptr<double>();
-      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
-      double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
-      double* __restrict__  k3 = buffer.ptr<double>() + size * 3;
-      double* __restrict__  k4 = buffer.ptr<double>() + size * 4;
-      double* __restrict__  k5 = buffer.ptr<double>() + size * 5;
-      double* __restrict__  k6 = buffer.ptr<double>() + size * 6;
-      double* __restrict__& k7 = k2;
+      double* ksh_restrict  x  = buffer.ptr<double>();
+      double* ksh_restrict  k1 = buffer.ptr<double>() + size * 1;
+      double* ksh_restrict  k2 = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict  k3 = buffer.ptr<double>() + size * 3;
+      double* ksh_restrict  k4 = buffer.ptr<double>() + size * 4;
+      double* ksh_restrict  k5 = buffer.ptr<double>() + size * 5;
+      double* ksh_restrict  k6 = buffer.ptr<double>() + size * 6;
+      double* ksh_restrict& k7 = k2;
 
       static constexpr double sqrt5 = std::sqrt(5);
       static constexpr double b1 = 1.0 / 12.0;
@@ -777,18 +778,18 @@ namespace runge_kutta {
     static constexpr double sqrt21 = std::sqrt(21.0); // Ref [cv8.2] では -sqrt(21.0). どちらでも OK.
 
     template<typename F>
-    void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
+    void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(9 * size);
-      double* __restrict__  x  = buffer.ptr<double>();
-      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
-      double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
-      double* __restrict__& k3 = k2;
-      double* __restrict__  k4 = buffer.ptr<double>() + size * 4;
-      double* __restrict__  k5 = buffer.ptr<double>() + size * 5;
-      double* __restrict__  k6 = buffer.ptr<double>() + size * 6;
-      double* __restrict__  k7 = buffer.ptr<double>() + size * 7;
-      double* __restrict__  k8 = buffer.ptr<double>() + size * 8;
-      double* __restrict__& k9 = k2;
+      double* ksh_restrict  x  = buffer.ptr<double>();
+      double* ksh_restrict  k1 = buffer.ptr<double>() + size * 1;
+      double* ksh_restrict  k2 = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict& k3 = k2;
+      double* ksh_restrict  k4 = buffer.ptr<double>() + size * 4;
+      double* ksh_restrict  k5 = buffer.ptr<double>() + size * 5;
+      double* ksh_restrict  k6 = buffer.ptr<double>() + size * 6;
+      double* ksh_restrict  k7 = buffer.ptr<double>() + size * 7;
+      double* ksh_restrict  k8 = buffer.ptr<double>() + size * 8;
+      double* ksh_restrict& k9 = k2;
 
       // k1
       f(k1, time, value);
@@ -895,18 +896,18 @@ namespace runge_kutta {
     static constexpr double sqrt21 = std::sqrt(21.0);
 
     template<typename F>
-    void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
+    void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(9 * size);
-      double* __restrict__  x  = buffer.ptr<double>();
-      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
-      double* __restrict__  k2 = buffer.ptr<double>() + size * 2;
-      double* __restrict__& k3 = k2;
-      double* __restrict__  k4 = buffer.ptr<double>() + size * 4;
-      double* __restrict__  k5 = buffer.ptr<double>() + size * 5;
-      double* __restrict__  k6 = buffer.ptr<double>() + size * 6;
-      double* __restrict__  k7 = buffer.ptr<double>() + size * 7;
-      double* __restrict__  k8 = buffer.ptr<double>() + size * 8;
-      double* __restrict__& k9 = k2;
+      double* ksh_restrict  x  = buffer.ptr<double>();
+      double* ksh_restrict  k1 = buffer.ptr<double>() + size * 1;
+      double* ksh_restrict  k2 = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict& k3 = k2;
+      double* ksh_restrict  k4 = buffer.ptr<double>() + size * 4;
+      double* ksh_restrict  k5 = buffer.ptr<double>() + size * 5;
+      double* ksh_restrict  k6 = buffer.ptr<double>() + size * 6;
+      double* ksh_restrict  k7 = buffer.ptr<double>() + size * 7;
+      double* ksh_restrict  k8 = buffer.ptr<double>() + size * 8;
+      double* ksh_restrict& k9 = k2;
 
       // k1
       f(k1, time, value);
@@ -1015,21 +1016,21 @@ namespace runge_kutta {
     static constexpr double sqrt21 = std::sqrt(21.0); // Ref [cv8.2] では -sqrt(21.0). どちらでも OK.
 
     template<typename F>
-    void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
+    void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(8 * size);
-      double* __restrict__  delta = buffer.ptr<double>();
-      double* __restrict__  xnode = buffer.ptr<double>() + size;
-      double* __restrict__  k1    = buffer.ptr<double>() + size * 2;
-      double* __restrict__  k2    = buffer.ptr<double>() + size * 3;
-      double* __restrict__  k3    = buffer.ptr<double>() + size * 4;
-      double* __restrict__& k4    = k2;
-      double* __restrict__  k5    = buffer.ptr<double>() + size * 5;
-      double* __restrict__  k6    = buffer.ptr<double>() + size * 6;
-      double* __restrict__& k7    = k3;
-      double* __restrict__& k8    = k4;
-      double* __restrict__  k9    = buffer.ptr<double>() + size * 7;
-      double* __restrict__& kA    = k1;
-      double* __restrict__& kB    = k5;
+      double* ksh_restrict  delta = buffer.ptr<double>();
+      double* ksh_restrict  xnode = buffer.ptr<double>() + size;
+      double* ksh_restrict  k1    = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict  k2    = buffer.ptr<double>() + size * 3;
+      double* ksh_restrict  k3    = buffer.ptr<double>() + size * 4;
+      double* ksh_restrict& k4    = k2;
+      double* ksh_restrict  k5    = buffer.ptr<double>() + size * 5;
+      double* ksh_restrict  k6    = buffer.ptr<double>() + size * 6;
+      double* ksh_restrict& k7    = k3;
+      double* ksh_restrict& k8    = k4;
+      double* ksh_restrict  k9    = buffer.ptr<double>() + size * 7;
+      double* ksh_restrict& kA    = k1;
+      double* ksh_restrict& kB    = k5;
 
       static constexpr double b1 =  1.0 /  20.0;
       static constexpr double b8 = 49.0 /  180.0;

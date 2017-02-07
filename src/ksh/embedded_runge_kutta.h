@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cfloat>
 #include <mwg/except.h>
+#include "def.h"
 #include "buffer.h"
 
 namespace kashiwa {
@@ -26,17 +27,17 @@ namespace runge_kutta {
 
   struct idense_output {
     virtual void get_values_at(
-      double* __restrict__ interpolated, double time,
+      double* ksh_restrict interpolated, double time,
       std::size_t const* icomp, std::size_t ncomp
     ) = 0;
 
-    void get_values_at(double* __restrict__ interpolated, double time) {
+    void get_values_at(double* ksh_restrict interpolated, double time) {
       return get_values_at(interpolated, time, nullptr, 0);
     }
   };
 
   struct iequation_for_erk {
-    virtual void eval_f(double* __restrict__ slope, double t, double const* __restrict__ value) = 0;
+    virtual void eval_f(double* ksh_restrict slope, double t, double const* ksh_restrict value) = 0;
     virtual void onstep() {}
     virtual void ondense(stat_t const&, idense_output&) {}
     virtual ~iequation_for_erk() {}
@@ -54,7 +55,7 @@ namespace runge_kutta {
     //   after  [  x | k1 | k5 | kC | x6 | x7 | x8 | k9 | kA | kB ]
     //   但し x は次の step の値である。
     void _integrate8(
-      double& time, double* __restrict__ value, std::size_t size,
+      double& time, double* ksh_restrict value, std::size_t size,
       iequation_for_erk& eq, double h,
       double atol, double rtol, double& _err, double& _stf
     ) const;
@@ -77,7 +78,7 @@ namespace runge_kutta {
     ) const;
 
     double _determine_initial_step(
-      double time, double* __restrict__ value, std::size_t size,
+      double time, double* ksh_restrict value, std::size_t size,
       iequation_for_erk& eq,
       int bwd, double atol, double rtol, double hmax
     ) const;
@@ -87,7 +88,7 @@ namespace runge_kutta {
     struct eq_by_f:iequation_for_erk {
       F const& f;
       eq_by_f(F const& f):f(f) {}
-      virtual void eval_f(double* __restrict__ slope, double t, double const* __restrict__ value) override {
+      virtual void eval_f(double* ksh_restrict slope, double t, double const* ksh_restrict value) override {
         f(slope, t, value);
       }
     };
@@ -98,7 +99,7 @@ namespace runge_kutta {
       CB const& stepCallback;
 
       eq_by_f_and_cb(F const& f, CB const& stepCallback):f(f), stepCallback(stepCallback) {}
-      virtual void eval_f(double* __restrict__ slope, double t, double const* __restrict__ value) override {
+      virtual void eval_f(double* ksh_restrict slope, double t, double const* ksh_restrict value) override {
         f(slope, t, value);
       }
       virtual void onstep() {
@@ -108,7 +109,7 @@ namespace runge_kutta {
 
   public:
     template<typename F>
-    void operator()(double& time, double* __restrict__ value, std::size_t size, F const& f, double h) const {
+    void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
       eq_by_f<F> eq(f);
 
       buffer.ensure<double>(10 * size);
@@ -117,8 +118,8 @@ namespace runge_kutta {
       double const rtol = 1e-12;
       double err, stf;
 
-      double* __restrict__  x  = buffer.ptr<double>();
-      double* __restrict__  k1 = buffer.ptr<double>() + size * 1;
+      double* ksh_restrict  x  = buffer.ptr<double>();
+      double* ksh_restrict  k1 = buffer.ptr<double>() + size * 1;
       eq.eval_f(k1, time, value);
       this->_integrate8(
         time, value, size, eq, h,
@@ -133,7 +134,7 @@ namespace runge_kutta {
     template<typename F>
     typename std::enable_if<!std::is_base_of<iequation_for_erk, F>::value, void>::type
     integrate(
-      double& time, double* __restrict__ value, std::size_t size, F const& f,
+      double& time, double* ksh_restrict value, std::size_t size, F const& f,
       double timeN, stat_t& stat, param_t const& params
     ) const {
       eq_by_f<F> eq(f);
@@ -142,7 +143,7 @@ namespace runge_kutta {
 
     template<typename F, typename CB>
     void integrate(
-      double& time, double* __restrict__ value, std::size_t size, F const& f,
+      double& time, double* ksh_restrict value, std::size_t size, F const& f,
       double timeN, stat_t& stat, param_t const& params, CB const& stepCallback
     ) const {
       eq_by_f_and_cb<F, CB> eq(f, stepCallback);
@@ -151,7 +152,7 @@ namespace runge_kutta {
 
   public:
     void integrate(
-      double& time, double* __restrict__ value, std::size_t size,
+      double& time, double* ksh_restrict value, std::size_t size,
       iequation_for_erk& eq,
       double timeN, stat_t& stat, param_t const& params
     ) const;
