@@ -54,10 +54,21 @@ void test3() {
   std::cout << "5 ** " << n << " = " << result << std::endl;
 }
 
+void test_div() {
+  int const n = 100;
+  auto a = pow(kashiwa::bigint {5}, n);
+  auto b = a * a;
+  auto c = b / a;
+  mwg_check(a == c);
+  mwg_check(b == pow(kashiwa::bigint {5}, 2 * n));
+  mwg_check(a / (uint32_t) 25 == pow(kashiwa::bigint {5}, n - 2));
+}
+
 int main() {
   test();
   // test1();
   // test2();
   test3();
+  test_div();
   return 0;
 }

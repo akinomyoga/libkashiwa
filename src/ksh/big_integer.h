@@ -179,6 +179,19 @@ namespace kashiwa {
 
       return 0;
     }
+    // lhs と rhs * M^exp を比較
+    template<typename E, typename C, C M>
+    int abs_compare(big_integer<E, C, M> const& lhs, big_integer<E, C, M> const& rhs, std::size_t exp) {
+      if (lhs.data.size() != rhs.data.size() + exp)
+        return lhs.data.size() < rhs.data.size() + exp? -1: 1;
+
+      for (std::size_t i = rhs.data.size(); i--; )
+        if (lhs.data[i + exp] != rhs.data[i])
+          return lhs.data[i + exp] < rhs.data[i]? -1: 1;
+
+      return 0;
+    }
+
     template<typename E, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
     int abs_compare(big_integer<E, C, M> const& lhs, I const& rhs) {
       using integer_t = big_integer<E, C, M>;
@@ -476,18 +489,52 @@ namespace kashiwa {
     void add_digit(big_integer<E, C, M>& num, std::size_t pos, typename big_integer<E, C, M>::calculation_type value) {
       using integer_t = big_integer<E, C, M>;
       using calc_t = typename integer_t::calculation_type;
+      using elem_t = typename integer_t::element_type;
 
       if (num.data.size() <= pos) num.data.resize(pos, 0);
       for (std::size_t const posN = num.data.size(); pos < posN; pos++) {
         if (value == 0) return;
         calc_t const elem = num.data[pos] + value % integer_t::modulo;
         value /= integer_t::modulo;
-        num.data[pos] = elem % integer_t::modulo;
+        num.data[pos] = (elem_t) (elem % integer_t::modulo);
         value += elem / integer_t::modulo;
       }
       while (value) {
         num.data.emplace_back(value % integer_t::modulo);
         value /= integer_t::modulo;
+      }
+    }
+
+    // 絶対値について num -= value * M^pos を計算する。
+    // 前提: M^{pos-1} <= num
+    template<typename E, typename C, C M>
+    void sub_digit(big_integer<E, C, M>& num, std::size_t pos, typename big_integer<E, C, M>::calculation_type value) {
+      using integer_t = big_integer<E, C, M>;
+      using calc_t = typename integer_t::calculation_type;
+      using elem_t = typename integer_t::element_type;
+
+      mwg_check(pos < num.data.size());
+      for (std::size_t const posN = num.data.size(); pos < posN; pos++) {
+        if (value == 0) return;
+        calc_t const elem = value % integer_t::modulo;
+        value = value / integer_t::modulo;
+        if (num.data[pos] >= elem) {
+          num.data[pos] -= elem;
+        } else {
+          value++;
+          num.data[pos] += (elem_t) (integer_t::modulo - elem);
+        }
+      }
+
+      if (value != 0) {
+        num.sign = -num.sign;
+        if (--value) num.data.emplace_back((elem_t) value);
+        for (std::size_t i = num.data.size(); --i > 0; )
+          num.data[i] = (elem_t) (integer_t::modulo - 1 - num.data[i]);
+        num.data[0] = (elem_t) (integer_t::modulo - num.data[0]);
+      } else {
+        while (num.data.back() == 0) num.data.pop_back();
+        if (num.data.size() == 0) num.sign = 0;
       }
     }
 
@@ -607,10 +654,11 @@ namespace kashiwa {
       if (rhs == 0) {
         throw mwg::except("big_integer: division by zero", mwg::ecode::EArgRange);
       } else if (rhs == 1) {
-        if (&lhs != &quot) quot.data = lhs.data;
+        if (&lhs != &quot) quot = lhs;
         return 0;
       }
 
+      quot.sign = lhs.sign;
       std::vector<elem_t>& data = quot.data;
       if (&quot != &lhs) data.resize(lhs.data.size());
       calc_t carry = 0;
@@ -639,7 +687,7 @@ namespace kashiwa {
     }
     template<typename E, typename C, C M>
     E operator%(big_integer<E, C, M> const& lhs, E const& rhs) {
-      return divide(lhs, rhs);
+      return lhs.sign * divide(lhs, rhs);
     }
     template<typename E, typename C, C M>
     big_integer<E, C, M> operator/(big_integer<E, C, M> const& lhs, E const& rhs) {
@@ -649,7 +697,8 @@ namespace kashiwa {
     }
     template<typename E, typename C, C M>
     big_integer<E, C, M>& operator%=(big_integer<E, C, M>& lhs, E const& rhs) {
-      lhs = divide(lhs, rhs);
+      E const rem = divide(lhs, rhs);
+      lhs = lhs.sign * rem;
       return lhs;
     }
     template<typename E, typename C, C M>
@@ -657,8 +706,113 @@ namespace kashiwa {
       divide(lhs, rhs, lhs);
       return lhs;
     }
-  }
 
+    // num - div * M^exp * factor を計算する
+    // 前提: 結果は正である。
+    template<typename E, typename C, C M>
+    void abs_submul(
+      big_integer<E, C, M>& num, big_integer<E, C, M> const& div,
+      std::size_t exp, typename big_integer<E, C, M>::calculation_type factor
+    ) {
+      for (std::size_t i = div.data.size(); i--; )
+        sub_digit(num, i + exp, factor * div.data[i]);
+    }
+
+    // Knuth の方法
+    template<typename E, typename C, C M>
+    bool divide(
+      big_integer<E, C, M> const& lhs, big_integer<E, C, M> const& rhs,
+      big_integer<E, C, M>* pquo, big_integer<E, C, M>* prem
+    ) {
+      typedef big_integer<E, C, M> integer_t;
+      using calc_t = typename integer_t::calculation_type;
+      using elem_t = typename integer_t::element_type;
+
+      if (rhs.sign == 0) {
+        throw mwg::except("big_integer: division by zero", mwg::ecode::EArgRange);
+      } else if (lhs.sign == 0 || abs_compare(lhs, rhs) < 0) {
+        bool const ret = lhs.sign == 0;
+        if (prem && prem != &lhs) *prem = lhs;
+        if (pquo) *pquo = 0;
+        return ret;
+      } else if (rhs.data.size() == 1) {
+        elem_t const rem = pquo? divide(lhs, rhs.data[0], *pquo): divide(lhs, rhs.data[0]);
+        if (prem) *prem = rem;
+        return rem == 0;
+      }
+
+      std::vector<E> const& rhsdata = rhs.data;
+      std::size_t const rhssize = rhs.data.size();
+      calc_t const factor = (integer_t::modulo * integer_t::modulo - (calc_t) 1)
+        / (rhsdata[rhssize - 1] * integer_t::modulo + rhsdata[rhssize - 2] + 1);
+      mwg_assert(factor < integer_t::modulo);
+
+      // Note: prem == &lhs/&rhs の場合、
+      //   以下の ※ の操作で lhs/rhs が破壊される。
+      //   従って ※ より後では lhs/rhs には触れない事に注意する。
+      integer_t _rem, div;
+      integer_t& rem = prem? *prem: _rem;
+      div = rhs * factor;
+      rem = lhs * factor; // ※
+
+      std::vector<E> const& ddata = div.data;
+      std::vector<E>      & ndata = rem.data;
+      calc_t const arhs = ddata.back() + 1;
+      std::size_t rpos = ndata.size() - 1;
+      std::size_t qpos = ndata.size() - ddata.size();
+
+      // 最上位の桁
+      if (pquo) pquo->sign = div.sign * rem.sign;
+      if (ndata[rpos] >= arhs) {
+        if (pquo) {
+          pquo->data.resize(qpos + 1, 0);
+          pquo->data[qpos] = 1;
+        }
+        abs_submul(rem, div, qpos, 1);
+      } else {
+        if (pquo) pquo->data.resize(qpos, 0);
+      }
+
+      // 残りの桁
+      while (rpos--, qpos--) {
+        calc_t const aquot = (ndata[rpos + 1] * integer_t::modulo + ndata[rpos]) / arhs;
+        if (pquo) add_digit(*pquo, qpos, aquot);
+        abs_submul(rem, div, qpos, aquot);
+
+        // 誤差修正
+        if (abs_compare(rem, div, qpos) >= 0) {
+          if (pquo) add_digit(*pquo, qpos, 1);
+          abs_submul(rem, div, qpos, 1);
+        }
+      }
+
+      if (prem) rem /= (elem_t) factor;
+      return rem == 0;
+    }
+
+    template<typename E, typename C, C M>
+    big_integer<E, C, M> operator%(big_integer<E, C, M> const& lhs, big_integer<E, C, M> const& rhs) {
+      big_integer<E, C, M> ret;
+      divide(lhs, rhs, (big_integer<E, C, M>*) nullptr, &ret);
+      return ret;
+    }
+    template<typename E, typename C, C M>
+    big_integer<E, C, M> operator/(big_integer<E, C, M> const& lhs, big_integer<E, C, M> const& rhs) {
+      big_integer<E, C, M> ret;
+      divide(lhs, rhs, &ret, (big_integer<E, C, M>*) nullptr);
+      return ret;
+    }
+    template<typename E, typename C, C M>
+    big_integer<E, C, M>& operator%=(big_integer<E, C, M>& lhs, big_integer<E, C, M> const& rhs) {
+      divide(lhs, rhs, (big_integer<E, C, M>*) nullptr, &lhs);
+      return lhs;
+    }
+    template<typename E, typename C, C M>
+    big_integer<E, C, M>& operator/=(big_integer<E, C, M>& lhs, big_integer<E, C, M> const& rhs) {
+      divide(lhs, rhs, &lhs, (big_integer<E, C, M>*) nullptr);
+      return lhs;
+    }
+  }
   using big_integer_detail::operator%;
   using big_integer_detail::operator/;
   using big_integer_detail::operator%=;
