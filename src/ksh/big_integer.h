@@ -646,7 +646,7 @@ namespace kashiwa {
   namespace big_integer_detail {
 
     template<typename E, typename C, C M>
-    E divide(big_integer<E, C, M> const& lhs, E const& rhs, big_integer<E, C, M>& quot) {
+    E divide(big_integer<E, C, M> const& lhs, E const& rhs, big_integer<E, C, M>* pquo) {
       typedef big_integer<E, C, M> integer_t;
       using calc_t = typename integer_t::calculation_type;
       using elem_t = typename integer_t::element_type;
@@ -654,56 +654,46 @@ namespace kashiwa {
       if (rhs == 0) {
         throw mwg::except("big_integer: division by zero", mwg::ecode::EArgRange);
       } else if (rhs == 1) {
-        if (&lhs != &quot) quot = lhs;
+        if (pquo && pquo != &lhs) *pquo = lhs;
         return 0;
       }
 
-      quot.sign = lhs.sign;
-      std::vector<elem_t>& data = quot.data;
-      if (&quot != &lhs) data.resize(lhs.data.size());
       calc_t carry = 0;
-      for (std::size_t i = lhs.data.size(); i--; ) {
-        calc_t const elem = carry * integer_t::modulo + lhs.data[i];
-        data[i] = elem / rhs;
-        carry = elem % rhs;
+      if (pquo) {
+        pquo->sign = lhs.sign;
+        std::vector<elem_t>& data = pquo->data;
+        data.resize(lhs.data.size());
+        for (std::size_t i = lhs.data.size(); i--; ) {
+          calc_t const elem = carry * integer_t::modulo + lhs.data[i];
+          data[i] = elem / rhs;
+          carry = elem % rhs;
+        }
+        if (data.back() == 0) data.pop_back();
+      } else {
+        for (std::size_t i = lhs.data.size(); i--; )
+          carry = (carry * integer_t::modulo + lhs.data[i]) % rhs;
       }
-      if (data.back() == 0) data.pop_back();
-      return carry;
-    }
-    template<typename E, typename C, C M>
-    E divide(big_integer<E, C, M> const& lhs, E const& rhs) {
-      typedef big_integer<E, C, M> integer_t;
-      using calc_t = typename integer_t::calculation_type;
-
-      if (rhs == 0)
-        throw mwg::except("big_integer: division by zero", mwg::ecode::EArgRange);
-      else if (rhs == 1)
-        return 0;
-
-      calc_t carry = 0;
-      for (std::size_t i = lhs.data.size(); i--; )
-        carry = (carry * integer_t::modulo + lhs.data[i]) % rhs;
       return carry;
     }
     template<typename E, typename C, C M>
     E operator%(big_integer<E, C, M> const& lhs, E const& rhs) {
-      return lhs.sign * divide(lhs, rhs);
+      return lhs.sign * divide(lhs, rhs, (big_integer<E, C, M>*) nullptr);
     }
     template<typename E, typename C, C M>
     big_integer<E, C, M> operator/(big_integer<E, C, M> const& lhs, E const& rhs) {
       big_integer<E, C, M> ret;
-      divide(lhs, rhs, ret);
+      divide(lhs, rhs, &ret);
       return ret;
     }
     template<typename E, typename C, C M>
     big_integer<E, C, M>& operator%=(big_integer<E, C, M>& lhs, E const& rhs) {
-      E const rem = divide(lhs, rhs);
+      E const rem = divide(lhs, rhs, (big_integer<E, C, M>*) nullptr);
       lhs = lhs.sign * rem;
       return lhs;
     }
     template<typename E, typename C, C M>
     big_integer<E, C, M>& operator/=(big_integer<E, C, M>& lhs, E const& rhs) {
-      divide(lhs, rhs, lhs);
+      divide(lhs, rhs, &lhs);
       return lhs;
     }
 
@@ -736,7 +726,7 @@ namespace kashiwa {
         if (pquo) *pquo = 0;
         return ret;
       } else if (rhs.data.size() == 1) {
-        elem_t const rem = pquo? divide(lhs, rhs.data[0], *pquo): divide(lhs, rhs.data[0]);
+        elem_t const rem = divide(lhs, rhs.data[0], pquo);
         if (prem) *prem = rem;
         return rem == 0;
       }
@@ -867,7 +857,7 @@ namespace kashiwa {
         std::vector<char> digits;
         digits.reserve(tmp.data.size() * integral_ceil_log(integer_t::modulo, 10u));
         for (;;) {
-          calc_t carry = big_integer_detail::divide(tmp, mod10, tmp);
+          calc_t carry = big_integer_detail::divide(tmp, mod10, &tmp);
           if (tmp.data.size() != 0) {
             for (int i = 0; i < wgroup; i++) {
               digits.push_back((char)('0' + carry % 10));

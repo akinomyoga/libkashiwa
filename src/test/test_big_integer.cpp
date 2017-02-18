@@ -42,7 +42,7 @@ void test2() {
 
 // http://d.hatena.ne.jp/ku-ma-me/20080116/p1
 void test3() {
-  // 基数10^nで計算すると遅い (2017-02-05)
+  // Note: 基数10^nで計算すると遅い (2017-02-05)
   //auto result = pow(kashiwa::big_integer<std::uint32_t, std::uint64_t, 1000000000> {5}, 100000);
 
   int const n = 10000;
@@ -58,10 +58,11 @@ void test_div() {
   int const n = 100;
   auto a = pow(kashiwa::bigint {5}, n);
   auto b = a * a;
-  auto c = b / a;
-  mwg_check(a == c);
   mwg_check(b == pow(kashiwa::bigint {5}, 2 * n));
+  mwg_check(b / a == a);
+  mwg_check(b % a == 0);
   mwg_check(a / (uint32_t) 25 == pow(kashiwa::bigint {5}, n - 2));
+  mwg_check(a % (uint32_t) 25 == 0);
 }
 
 int main() {
