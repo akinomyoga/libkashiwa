@@ -791,6 +791,15 @@ namespace kashiwa {
         }
       }
 
+      // Note: roundup(div) を使って引き算していくので、
+      //   div <= rem < roundup(div) なる rem が残ることがある。
+      //   但し roundup() は有効数字第二位で切り上げ。
+      //   残っていたら引き算する。
+      if (abs_compare(rem, div) >= 0) {
+        if (pquo) add_digit(*pquo, 0, 1);
+        rem -= div;
+      }
+
       if (prem && factor > 1) rem /= (elem_t) factor;
       return rem == 0;
     }
