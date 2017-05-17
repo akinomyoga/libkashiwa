@@ -20,7 +20,7 @@ namespace runge_kutta {
 
   private:
     void initialize_data() {
-      if (this->bufferId == stat.nstep)return;
+      if (this->bufferId == stat.nstep) return;
       this->bufferId = stat.nstep;
 
       std::size_t const size = stat.previousSize;
@@ -416,7 +416,7 @@ namespace runge_kutta {
   //   after  [  x | k1 | kD | kC | xE | xF | xG | kE | kF | kG ]
   //
   // 但し x は次の step の値である。
-  // xE, xF, xG はみつ出力のデータを生成する為に内部で使用した変数である。
+  // xE, xF, xG は蜜出力のデータを生成する為に内部で使用した変数である。
   // この関数を呼び出すと内部の情報を破壊するため、この関数は 1 回限りしか呼び出せない。
   //
   void dop853_integrator::_dense_output_initialize(
@@ -567,7 +567,7 @@ namespace runge_kutta {
       cont[j + nrd * 4] = h * (cont[j + nrd * 4] + d4D * kD[i] + d4E * kE[i] + d4F * kF[i] + d4G * kG[i]);
       cont[j + nrd * 5] = h * (cont[j + nrd * 5] + d5D * kD[i] + d5E * kE[i] + d5F * kF[i] + d5G * kG[i]);
       cont[j + nrd * 6] = h * (cont[j + nrd * 6] + d6D * kD[i] + d6E * kE[i] + d6F * kF[i] + d6G * kG[i]);
-      cont[j + nrd * 7] = h * (cont[j + nrd * 7] + d7D * kD[i] + d7E * kE[i] + d7F * kF[i] + d7G *  kG[i]);
+      cont[j + nrd * 7] = h * (cont[j + nrd * 7] + d7D * kD[i] + d7E * kE[i] + d7F * kF[i] + d7G * kG[i]);
     }
   }
 

@@ -44,7 +44,10 @@ namespace runge_kutta {
   };
 
   // DOP853: Dormand-Prince 8(5, 3)
-  //   from http://www.unige.ch/~hairer/prog/nonstiff/dop853.f (ハイラーの本の附録)
+  //
+  //   The coefficients are taken from the supplementary material of the Heirer's book:
+  //   from http://www.unige.ch/~hairer/prog/nonstiff/dop853.f
+  //
   struct dop853_integrator {
     static const int stage = 12;
     static const int order = 8;

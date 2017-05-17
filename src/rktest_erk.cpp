@@ -5,7 +5,7 @@
 #include "rktest.h"
 #include "ksh/explicit_runge_kutta.h"
 
-void test_erk1(){
+void test_erk1() {
   std::FILE* file;
 
   mwg_printd("euler");
