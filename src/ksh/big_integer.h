@@ -383,17 +383,24 @@ namespace kashiwa {
 
       typename std::make_unsigned<I>::type urhs = _abs(rhs);
       if (cmp > 0) {
-        for (std::size_t i = 0; i < lhs.data.size(); i++) {
+        std::vector<E>& ldata = lhs.data;
+        std::size_t const lsize = ldata.size();
+        for (std::size_t i = 0; i < lsize; i++) {
           if (urhs == 0) return;
           elem_t const part = (elem_t) (urhs % integer_t::modulo);
           urhs /= integer_t::modulo;
-          if (lhs.data[i] >= part)
-            lhs.data[i] -= part;
+          if (ldata[i] >= part)
+            ldata[i] -= part;
           else {
             urhs++;
-            lhs.data[i] += (elem_t) (integer_t::modulo - part);
+            ldata[i] += (elem_t) (integer_t::modulo - part);
           }
         }
+
+        // Note: cmp > 0 なので非ゼロの要素が必ず見つかるはず。
+        std::size_t i = lsize;
+        while (ldata[i - 1] == 0) i--;
+        if (i < lsize) ldata.resize(i);
       } else {
         lhs.sign = -lhs.sign;
         for (std::size_t i = 0; i < lhs.data.size(); i++) {
