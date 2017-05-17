@@ -76,9 +76,9 @@ int main() {
   mwg_check((pow(p3, 6) == polynomial_t {1, 6, 15, 20, 15, 6, 1}));
   mwg_check((pow(p3, 7) == polynomial_t {1, 7, 21, 35, 35, 21, 7, 1}));
 
-  check_print(p2, "x^3 + 3x^2 + 3x + 1");
+  check_print(p2, "x^3 + 3 x^2 + 3 x + 1");
   check_print(polynomial_t {1, 1, 1} , "x^2 + x + 1");
-  check_print(polynomial_t {0, -1, 2}, "2x^2 - x");
+  check_print(polynomial_t {0, -1, 2}, "2 x^2 - x");
   check_print(polynomial_t {1, -1}   , "-x + 1");
   check_print(polynomial_t {3}       , "3");
 

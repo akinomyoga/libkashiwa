@@ -266,7 +266,7 @@ namespace kashiwa {
           if (coefficient == -1)
             ostr << '-';
           else if (coefficient != 1)
-            ostr << coefficient;
+            ostr << coefficient << ' ';
           ostr << 'x';
           if (i > 1) ostr << '^' << i;
         }
@@ -286,7 +286,7 @@ namespace kashiwa {
             return ostr << coefficient;
           else {
             if (coefficient != 1)
-              ostr << coefficient;
+              ostr << coefficient << ' ';
             ostr << 'x';
             if (i > 1) ostr << '^' << i;
           }

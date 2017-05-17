@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <functional>
 #include <ostream>
+#include <utility>
 #include "def.h"
 namespace kashiwa {
 
@@ -56,7 +57,17 @@ namespace kashiwa {
     underlying_type m_num;
     underlying_type m_den;
 
-    constexpr rational(K const& num = 0, K const& den = 1): m_num(num), m_den(den) {
+    constexpr rational(): m_num(0), m_den(1) {}
+
+    template<typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
+    constexpr rational(L&& num): m_num(std::forward<L>(num)), m_den(1) {}
+
+    template<typename L, nullptr_if_t<!std::is_convertible<L, K>::value && std::is_constructible<K, L>::value> = nullptr>
+    explicit constexpr rational(L&& num): m_num(std::forward<L>(num)), m_den(1) {}
+
+    template<typename L, typename M,
+      nullptr_if_t<std::is_constructible<K, L>::value && std::is_constructible<K, M>::value> = nullptr>
+    constexpr rational(L&& num, M&& den): m_num(std::forward<L>(num)), m_den(std::forward<M>(den)) {
       if (m_num == 0 && m_den == 0) return;
       K const _gcd = gcd(m_num, m_den);
       m_num /= _gcd;
@@ -67,7 +78,9 @@ namespace kashiwa {
       }
     }
 
-    constexpr rational(K const& num, K const& den, already_canonicalized_tag): m_num(num), m_den(den) {}
+    template<typename L, typename M,
+      nullptr_if_t<std::is_constructible<K, L>::value && std::is_constructible<K, M>::value> = nullptr>
+    constexpr rational(L&& num, M&& den, already_canonicalized_tag): m_num(std::forward<L>(num)), m_den(std::forward<M>(den)) {}
 
     constexpr K const& numerator() const {return m_num;}
     constexpr K const& denominator() const {return m_den;}

@@ -2,8 +2,10 @@
 #include <cstdint>
 #include <ksh/rational.h>
 #include <ksh/polynomial.h>
+#include <ksh/big_integer.h>
 
 int main() {
+  //using int_t = kashiwa::bigint;
   using int_t = std::int64_t;
   using rational_t = kashiwa::rational<int_t>;
   using poly_t = kashiwa::polynomial<rational_t>;
@@ -13,7 +15,7 @@ int main() {
   std::cout << "P1 = " << p2 << std::endl;
 
   auto const x = poly_t {0, 1};
-  for (int n = 1; n < 30; n++) {
+  for (int n = 1; n < 40; n++) {
     auto p3 = ((2 * n + 1) * x * p2 - n * p1) / (n + 1);
 
     int_t lcm = 1;
