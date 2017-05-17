@@ -66,7 +66,8 @@ double binary_search_function(double lowerBound, double upperBound, double value
 static const double initialCondition = 1.0;
 static const double initialTime = 1.0 + std::log(std::sin(1.0) + std::cos(1.0)); // = 1.3233676675153825
 static const double finalTime = initialTime + 0.2; // ~ 1.52
-static void f(double* ksh_restrict slope, double t, double const* ksh_restrict value) {
+static void f(double* ksh_restrict slope, std::size_t size, double t, double const* ksh_restrict value) {
+  ksh_unused(size);
   slope[0] = (std::tan(value[0]) + 1.0) / 2;
 }
 static double exactSolution(double t) {

@@ -168,57 +168,57 @@ namespace runge_kutta {
     // k2
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + h * (a21 * k1[i]);
-    eq.eval_f(k2, time + c2 * h, x);
+    eq.eval_derivative(k2, size, time + c2 * h, x);
 
     // k3 := k2
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + h * (a31 * k1[i] + a32 * k2[i]);
-    eq.eval_f(k3, time + c3 * h, x);
+    eq.eval_derivative(k3, size, time + c3 * h, x);
 
     // k4
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + h * (a41 * k1[i] + a43 * k3[i]);
-    eq.eval_f(k4, time + c4 * h, x);
+    eq.eval_derivative(k4, size, time + c4 * h, x);
 
     // k5 := k3
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + h * (a51 * k1[i] + a53 * k3[i] + a54 * k4[i]);
-    eq.eval_f(k5, time + c5 * h, x);
+    eq.eval_derivative(k5, size, time + c5 * h, x);
 
     // k6
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + h * (a61 * k1[i] + a64 * k4[i] + a65 * k5[i]);
-    eq.eval_f(k6, time + c6 * h, x);
+    eq.eval_derivative(k6, size, time + c6 * h, x);
 
     // k7
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + h * (a71 * k1[i] + a74 * k4[i] + a75 * k5[i] + a76 * k6[i]);
-    eq.eval_f(k7, time + c7 * h, x);
+    eq.eval_derivative(k7, size, time + c7 * h, x);
 
     // k8
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + h * (a81 * k1[i] + a84 * k4[i] + a85 * k5[i] + a86 * k6[i] + a87 * k7[i]);
-    eq.eval_f(k8, time + c8 * h, x);
+    eq.eval_derivative(k8, size, time + c8 * h, x);
 
     // k9
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + h * (a91 * k1[i] + a94 * k4[i] + a95 * k5[i] + a96 * k6[i] + a97 * k7[i] + a98 * k8[i]);
-    eq.eval_f(k9, time + c9 * h, x);
+    eq.eval_derivative(k9, size, time + c9 * h, x);
 
     // kA
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + h * (aA1 * k1[i] + aA4 * k4[i] + aA5 * k5[i] + aA6 * k6[i] + aA7 * k7[i] + aA8 * k8[i] + aA9 * k9[i]);
-    eq.eval_f(kA, time + cA * h, x);
+    eq.eval_derivative(kA, size, time + cA * h, x);
 
     // kB
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + h * (aB1 * k1[i] + aB4 * k4[i] + aB5 * k5[i] + aB6 * k6[i] + aB7 * k7[i] + aB8 * k8[i] + aB9 * k9[i] + aBA * kA[i]);
-    eq.eval_f(kB, time + cB * h, x);
+    eq.eval_derivative(kB, size, time + cB * h, x);
 
     // kC
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + h * (aC1 * k1[i] + aC4 * k4[i] + aC5 * k5[i] + aC6 * k6[i] + aC7 * k7[i] + aC8 * k8[i] + aC9 * k9[i] + aCA * kA[i] + aCB * kB[i]);
-    eq.eval_f(kC, time + cC * h, x);
+    eq.eval_derivative(kC, size, time + cC * h, x);
 
     // increment
     double err1 = 0.0, err2 = 0.0, err3 = 0.0;
@@ -271,7 +271,7 @@ namespace runge_kutta {
 
     for (std::size_t i = 0; i < size; i++)
       x[i] = value[i] + bwd * h1 * k1[i];
-    eq.eval_f(k2, time + bwd * h1, x);
+    eq.eval_derivative(k2, size, time + bwd * h1, x);
 
     // 二階微分ノルム |f'|
     double norm2 = 0.0;
@@ -317,7 +317,7 @@ namespace runge_kutta {
     double* ksh_restrict const kD = buffer.ptr<double>() + size * 2; // 次のステップの最初の微分 (FSAL) を入れる場所
     double* ksh_restrict const kC = buffer.ptr<double>() + size * 3; // 最後の微分評価 (c = 1.0) の入る場所
 
-    eq.eval_f(k1, time, value);
+    eq.eval_derivative(k1, size, time, value);
     stat.nfcn++;
 
     double h = bwd * std::abs(params.step);
@@ -360,7 +360,7 @@ namespace runge_kutta {
       } else {
         stat.naccpt++;
         facold = std::max(err, 1e-4);
-        eq.eval_f(kD, time + h, x);
+        eq.eval_derivative(kD, size, time + h, x);
         stat.nfcn++;
 
         // stiffness detection
@@ -553,13 +553,13 @@ namespace runge_kutta {
       /* xG == k8 */ k8[i] = _xG;
     }
 
-    eq.eval_f(kE, time + cE * h, xE);
+    eq.eval_derivative(kE, size, time + cE * h, xE);
 
     for (std::size_t i = 0; i < size; i++) xF[i] += h * aFE * kE[i];
-    eq.eval_f(kF, time + cF * h, xF);
+    eq.eval_derivative(kF, size, time + cF * h, xF);
 
     for (std::size_t i = 0; i < size; i++) xG[i] += h * (aGE * kE[i] + aGF * kF[i]);
-    eq.eval_f(kG, time + cG * h, xG);
+    eq.eval_derivative(kG, size, time + cG * h, xG);
 
     stat.nfcn += 3;
     for (std::size_t j = 0; j < nrd; j++) {

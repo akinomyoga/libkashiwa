@@ -15,6 +15,10 @@
 # endif
 #endif
 
+#ifndef ksh_unused
+# define ksh_unused(var) ((void) var)
+#endif
+
 namespace kashiwa {
 
   typedef unsigned char byte;

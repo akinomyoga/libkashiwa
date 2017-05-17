@@ -88,7 +88,7 @@ $(OUTDIR)/libksh.a: $(libksh_objects) | $(OUTDIR)
 	ar crs $@ $^
 
 #
-# Binaries
+# rktest
 #
 
 all: rktest.exe
@@ -99,10 +99,15 @@ rktest.exe: $(rktest_objects) $(OBJDIR)/ksh/embedded_runge_kutta.o
 	$(CXX) $(LDFLAGS) -o $@ $^
 
 directories += $(OUTDIR)/rk
-$(OUTDIR)/rk/rkeuler.txt: | $(OUTDIR)/rk
+$(OUTDIR)/rk/rkeuler.txt: rktest.exe | $(OUTDIR)/rk
 	./rktest.exe
 all: $(OUTDIR)/rk/rktest.pdf
 $(OUTDIR)/rk/rktest.pdf: rktest.gp $(OUTDIR)/rk/rkeuler.txt | $(OUTDIR)/rk
+	gnuplot rktest.gp
+
+.PHONY: rktest
+rktest: rktest.gp rktest.exe | $(OUTDIR)/rk
+	./rktest.exe
 	gnuplot rktest.gp
 
 #------------------------------------------------------------------------------

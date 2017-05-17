@@ -37,7 +37,7 @@ namespace runge_kutta {
   };
 
   struct iequation_for_erk {
-    virtual void eval_f(double* ksh_restrict slope, double t, double const* ksh_restrict value) = 0;
+    virtual void eval_derivative(double* ksh_restrict slope, std::size_t size, double t, double const* ksh_restrict value) = 0;
     virtual void onstep() {}
     virtual void ondense(stat_t const&, idense_output&) {}
     virtual ~iequation_for_erk() {}
@@ -88,22 +88,22 @@ namespace runge_kutta {
 
   private:
     template<typename F>
-    struct eq_by_f:iequation_for_erk {
+    struct _equation_from_f: iequation_for_erk {
       F const& f;
-      eq_by_f(F const& f):f(f) {}
-      virtual void eval_f(double* ksh_restrict slope, double t, double const* ksh_restrict value) override {
-        f(slope, t, value);
+      _equation_from_f(F const& f): f(f) {}
+      virtual void eval_derivative(double* ksh_restrict slope, std::size_t size, double t, double const* ksh_restrict value) override {
+        f(slope, size, t, value);
       }
     };
 
     template<typename F, typename CB>
-    struct eq_by_f_and_cb:iequation_for_erk {
+    struct _equation_from_f_and_callback: iequation_for_erk {
       F const& f;
       CB const& stepCallback;
 
-      eq_by_f_and_cb(F const& f, CB const& stepCallback):f(f), stepCallback(stepCallback) {}
-      virtual void eval_f(double* ksh_restrict slope, double t, double const* ksh_restrict value) override {
-        f(slope, t, value);
+      _equation_from_f_and_callback(F const& f, CB const& stepCallback): f(f), stepCallback(stepCallback) {}
+      virtual void eval_derivative(double* ksh_restrict slope, std::size_t size, double t, double const* ksh_restrict value) override {
+        f(slope, size, t, value);
       }
       virtual void onstep() {
         stepCallback();
@@ -113,7 +113,7 @@ namespace runge_kutta {
   public:
     template<typename F>
     void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
-      eq_by_f<F> eq(f);
+      _equation_from_f<F> eq(f);
 
       buffer.ensure<double>(10 * size);
 
@@ -123,7 +123,7 @@ namespace runge_kutta {
 
       double* ksh_restrict  x  = buffer.ptr<double>();
       double* ksh_restrict  k1 = buffer.ptr<double>() + size * 1;
-      eq.eval_f(k1, time, value);
+      eq.eval_derivative(k1, size, time, value);
       this->_integrate8(
         time, value, size, eq, h,
         atol, rtol, err, stf
@@ -140,7 +140,7 @@ namespace runge_kutta {
       double& time, double* ksh_restrict value, std::size_t size, F const& f,
       double timeN, stat_t& stat, param_t const& params
     ) const {
-      eq_by_f<F> eq(f);
+      _equation_from_f<F> eq(f);
       this->integrate(time, value, size, eq, timeN, stat, params);
     }
 
@@ -149,7 +149,7 @@ namespace runge_kutta {
       double& time, double* ksh_restrict value, std::size_t size, F const& f,
       double timeN, stat_t& stat, param_t const& params, CB const& stepCallback
     ) const {
-      eq_by_f_and_cb<F, CB> eq(f, stepCallback);
+      _equation_from_f_and_callback<F, CB> eq(f, stepCallback);
       this->integrate(time, value, size, eq, timeN, stat, params);
     }
 

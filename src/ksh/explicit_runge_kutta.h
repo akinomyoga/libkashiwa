@@ -22,7 +22,7 @@ namespace runge_kutta {
     void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(size);
       double* ksh_restrict knode = buffer.ptr<double>();
-      f(knode, time, value);
+      f(knode, size, time, value);
       for (std::size_t i = 0; i < size; i++)
         value[i] += h * knode[i];
 
@@ -46,11 +46,11 @@ namespace runge_kutta {
       double* ksh_restrict knode = buffer.ptr<double>();
       double* ksh_restrict xnode = buffer.ptr<double>() + size;
 
-      f(knode, time, value);
+      f(knode, size, time, value);
       for (std::size_t i = 0; i < size; i++)
         xnode[i] = value[i] + 0.5 * h * knode[i];
 
-      f(knode, time + 0.5 * h, xnode);
+      f(knode, size, time + 0.5 * h, xnode);
       for (std::size_t i = 0; i < size; i++)
         value[i] += h * knode[i];
 
@@ -74,13 +74,13 @@ namespace runge_kutta {
       double* ksh_restrict k = buffer.ptr<double>();
       double* ksh_restrict x = buffer.ptr<double>() + size;
 
-      f(k, time, value);
+      f(k, size, time, value);
       for (std::size_t i = 0; i < size; i++) {
         x[i] = value[i] + h * k[i];
         value[i] += (1.0 / 2.0) * h * k[i];
       }
 
-      f(k, time + h, x);
+      f(k, size, time + h, x);
       for (std::size_t i = 0; i < size; i++)
         value[i] += (1.0 / 2.0) * h * k[i];
 
@@ -99,13 +99,13 @@ namespace runge_kutta {
       double* ksh_restrict k = buffer.ptr<double>();
       double* ksh_restrict x = buffer.ptr<double>() + size;
 
-      f(k, time, value);
+      f(k, size, time, value);
       for (std::size_t i = 0; i < size; i++) {
         x[i] = value[i] + (2.0 / 3.0) * h * k[i];
         value[i] += (1.0 / 4.0) * h * k[i];
       }
 
-      f(k, time + (2.0 / 3.0) * h, x);
+      f(k, size, time + (2.0 / 3.0) * h, x);
       for (std::size_t i = 0; i < size; i++)
         value[i] += (3.0 / 4.0) * h * k[i];
 
@@ -131,23 +131,23 @@ namespace runge_kutta {
       double* ksh_restrict x = buffer.ptr<double>() + size;
       double* ksh_restrict y = buffer.ptr<double>() + size * 2;
 
-      f(k, time, value);
+      f(k, size, time, value);
       for (std::size_t i = 0; i < size; i++) {
         x[i] = value[i] + (1.0 / 2.0) * h * k[i];
         y[i] = value[i] + (1.0 / 6.0) * h * k[i];
       }
 
-      f(k, time + (1.0 / 2.0) * h, x);
+      f(k, size, time + (1.0 / 2.0) * h, x);
       for (std::size_t i = 0; i < size; i++) {
         x[i] = value[i] + h * k[i];
         y[i] += (2.0 / 3.0) * h * k[i];
       }
 
-      f(k, time + h, x);
+      f(k, size, time + h, x);
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * k[i];
 
-      f(k, time + h, x);
+      f(k, size, time + h, x);
       for (std::size_t i = 0; i < size; i++)
         value[i] = y[i] + (1.0 / 6.0) * h * k[i];
 
@@ -172,17 +172,17 @@ namespace runge_kutta {
       double* ksh_restrict k = buffer.ptr<double>();
       double* ksh_restrict x = buffer.ptr<double>() + size;
 
-      f(k, time, value);
+      f(k, size, time, value);
       for (std::size_t i = 0; i < size; i++) {
         x[i] = value[i] + (1.0 / 3.0) * h * k[i];
         value[i] += (1.0 / 4.0) * h * k[i];
       }
 
-      f(k, time + (1.0 / 3.0) * h, x);
+      f(k, size, time + (1.0 / 3.0) * h, x);
       for (std::size_t i = 0; i < size; i++)
         x[i] = 4.0 * value[i] - 3.0 * x[i] + (2.0 / 3.0) * h * k[i];
 
-      f(k, time + (2.0 / 3.0) * h, x);
+      f(k, size, time + (2.0 / 3.0) * h, x);
       for (std::size_t i = 0; i < size; i++)
         value[i] += (3.0 / 4.0) * h * k[i];
 
@@ -204,19 +204,19 @@ namespace runge_kutta {
       double* ksh_restrict k = buffer.ptr<double>();
       double* ksh_restrict x = buffer.ptr<double>() + size;
 
-      f(k, time, value);
+      f(k, size, time, value);
       for (std::size_t i = 0; i < size; i++) {
         x[i] = value[i] + (1.0 / 2.0) * h * k[i];
         value[i] += (2.0 / 9.0) * h * k[i];
       }
 
-      f(k, time + (1.0 / 2.0) * h, x);
+      f(k, size, time + (1.0 / 2.0) * h, x);
       for (std::size_t i = 0; i < size; i++) {
         x[i] = (-4.0 / 5.0) * x[i] + (9.0 / 5.0) * value[i] + (3.0 / 4.0) * h * k[i];
         value[i] += (1.0 / 3.0) * h * k[i];
       }
 
-      f(k, time + (3.0 / 4.0) * h, x);
+      f(k, size, time + (3.0 / 4.0) * h, x);
       for (std::size_t i = 0; i < size; i++)
         value[i] += (4.0 / 9.0) * h * k[i];
 
@@ -243,19 +243,19 @@ namespace runge_kutta {
       double* ksh_restrict k = buffer.ptr<double>();
       double* ksh_restrict x = buffer.ptr<double>() + size;
 
-      f(k, time, value);
+      f(k, size, time, value);
       for (std::size_t i = 0; i < size; i++) {
         x[i] = value[i] + (1.0 / 2.0) * h * k[i];
         value[i] += (1.0 / 6.0) * h * k[i];
       }
 
-      f(k, time + (1.0 / 2.0) * h, x);
+      f(k, size, time + (1.0 / 2.0) * h, x);
       for (std::size_t i = 0; i < size; i++) {
         x[i] = (-7.0 / 2.0) * x[i] + (9.0 / 2.0) * value[i] + 2.0 * h * k[i];
         value[i] += (2.0 / 3.0) * h * k[i];
       }
 
-      f(k, time + h, x);
+      f(k, size, time + h, x);
       for (std::size_t i = 0; i < size; i++)
         value[i] += (1.0 / 6.0) * h * k[i];
 
@@ -280,28 +280,28 @@ namespace runge_kutta {
       double* ksh_restrict delta = buffer.ptr<double>() + size * 2;
 
       // k1
-      f(knode, time, value);
+      f(knode, size, time, value);
       for (std::size_t i = 0; i < size; i++) {
         delta[i] = (1.0 / 6.0) * h * knode[i];
         xnode[i] = value[i] + 0.5 * h * knode[i];
       }
 
       // k2
-      f(knode, time + 0.5 * h, xnode);
+      f(knode, size, time + 0.5 * h, xnode);
       for (std::size_t i = 0; i < size; i++) {
         delta[i] += (2.0 / 6.0) * h * knode[i];
         xnode[i] = value[i] + 0.5 * h * knode[i];
       }
 
       // k3
-      f(knode, time + 0.5 * h, xnode);
+      f(knode, size, time + 0.5 * h, xnode);
       for (std::size_t i = 0; i < size; i++) {
         delta[i] += (2.0 / 6.0) * h * knode[i];
         xnode[i] = value[i] + h * knode[i];
       }
 
       // k4
-      f(knode, time + h, xnode);
+      f(knode, size, time + h, xnode);
       for (std::size_t i = 0; i < size; i++) {
         double const a = delta[i] + (1.0 / 6.0) * h * knode[i];
         value[i] += a;
@@ -325,7 +325,7 @@ namespace runge_kutta {
       double* ksh_restrict x4 = buffer.ptr<double>() + size * 2;
 
       // k1
-      f(k, time, value);
+      f(k, size, time, value);
       for (std::size_t i = 0; i < size; i++) {
         xi[i] = value[i] + (1.0 / 3.0) * h * k[i];
         x4[i] = value[i] + h * k[i];
@@ -333,7 +333,7 @@ namespace runge_kutta {
       }
 
       // k2
-      f(k, time + (1.0 / 3.0) * h, xi);
+      f(k, size, time + (1.0 / 3.0) * h, xi);
       for (std::size_t i = 0; i < size; i++) {
         xi[i] = 2.0 * xi[i] - x4[i] + h * k[i];
         x4[i] -= h * k[i];
@@ -341,14 +341,14 @@ namespace runge_kutta {
       }
 
       // k3
-      f(k, time + (2.0 / 3.0) * h, xi);
+      f(k, size, time + (2.0 / 3.0) * h, xi);
       for (std::size_t i = 0; i < size; i++) {
         x4[i] += h * k[i];
         value[i] += (3.0 / 8.0) * h * k[i];
       }
 
       // k4
-      f(k, time + h, x4);
+      f(k, size, time + h, x4);
       for (std::size_t i = 0; i < size; i++)
         value[i] += (1.0 / 8.0) * h * k[i];
 
@@ -376,7 +376,7 @@ namespace runge_kutta {
       static constexpr double alpha4 = 1.0 / 2.0;
 
       // k1
-      f(k, time, value);
+      f(k, size, time, value);
       for (std::size_t i = 0; i < size; i++) {
         double const y = value[i] + alpha1 * (h * k[i] - 2.0 * q[i]);
 
@@ -391,7 +391,7 @@ namespace runge_kutta {
       }
 
       // k2
-      f(k, time + 0.5 * h, value);
+      f(k, size, time + 0.5 * h, value);
       for (std::size_t i = 0; i < size; i++) {
         double const y = value[i] + alpha2 * (h * k[i] - q[i]);
         double const r = y - value[i];
@@ -400,7 +400,7 @@ namespace runge_kutta {
       }
 
       // k3
-      f(k, time + 0.5 * h, value);
+      f(k, size, time + 0.5 * h, value);
       for (std::size_t i = 0; i < size; i++) {
         double const y = value[i] + alpha3 * (h * k[i] - q[i]);
         double const r = y - value[i];
@@ -409,7 +409,7 @@ namespace runge_kutta {
       }
 
       // k4
-      f(k, time + h, value);
+      f(k, size, time + h, value);
       for (std::size_t i = 0; i < size; i++) {
         double const y = value[i] + (alpha4 / 3.0) * (h * k[i] - 2.0 * q[i]);
         double const r = y - value[i];
@@ -443,21 +443,21 @@ namespace runge_kutta {
       double* ksh_restrict& k6 = k2;
 
       // k1
-      f(k1, time, value);
+      f(k1, size, time, value);
 
       // k2
       static constexpr double a21 = 1.0 / 8.0;
       static constexpr double c2  = 1.0 / 8.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + a21 * h * k1[i];
-      f(k2, time + c2 * h, x);
+      f(k2, size, time + c2 * h, x);
 
       // k3
       static constexpr double a32 = 1.0 / 4.0;
       static constexpr double c3  = 1.0 / 4.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + a32 * h * k2[i];
-      f(k3, time + c3 * h, x);
+      f(k3, size, time + c3 * h, x);
 
       // k4
       static constexpr double a41 = -1.0 / 2.0;
@@ -465,7 +465,7 @@ namespace runge_kutta {
       static constexpr double c4  =  1.0 / 2.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a41 * k1[i] + a42 * k2[i]);
-      f(k4, time + c4 * h, x);
+      f(k4, size, time + c4 * h, x);
 
       // k5
       static constexpr double a51 = 15.0 / 16.0;
@@ -475,7 +475,7 @@ namespace runge_kutta {
       static constexpr double c5  =  3.0 /  4.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a51 * k1[i] + a52 * k2[i] + a53 * k3[i] + a54 * k4[i]);
-      f(k5, time + c5 * h, x);
+      f(k5, size, time + c5 * h, x);
 
       // k6
       static constexpr double a61 = -17.0 / 7.0;
@@ -485,7 +485,7 @@ namespace runge_kutta {
       static constexpr double c6  =   1.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a61 * k1[i] + a62 * k2[i] + a64 * k4[i] + a65 * k5[i]);
-      f(k6, time + c6 * h, x);
+      f(k6, size, time + c6 * h, x);
 
       // increment
       static constexpr double b1  =  7.0 / 90.0;
@@ -547,7 +547,7 @@ namespace runge_kutta {
       static constexpr double b6  =  7.0 / 90.0;
 
       // k1
-      f(k1, time, value);
+      f(k1, size, time, value);
 
       // k2
       for (std::size_t i = 0; i < size; i++) {
@@ -555,14 +555,14 @@ namespace runge_kutta {
         k6[i] = value[i] + a61 * h * k1[i];
         y[i]  = value[i] + b1 * h * k1[i];
       }
-      f(k2, time + c2 * h, x);
+      f(k2, size, time + c2 * h, x);
 
       // k3
       for (std::size_t i = 0; i < size; i++) {
         x[i] = value[i] + h * (a31 * k1[i] + a32 * k2[i]);
         k6[i] += a62 * h * k2[i];
       }
-      f(k3, time + c3 * h, x);
+      f(k3, size, time + c3 * h, x);
 
       // k4
       for (std::size_t i = 0; i < size; i++) {
@@ -570,7 +570,7 @@ namespace runge_kutta {
         k6[i] += a63 * h * k3[i];
         y[i] += b3 * h * k3[i];
       }
-      f(k4, time + c4 * h, x);
+      f(k4, size, time + c4 * h, x);
 
       // k5
       for (std::size_t i = 0; i < size; i++) {
@@ -578,14 +578,14 @@ namespace runge_kutta {
         k6[i] += a64 * h * k4[i];
         y[i] += b4 * h * k4[i];
       }
-      f(k5, time + c5 * h, x);
+      f(k5, size, time + c5 * h, x);
 
       // k6
       for (std::size_t i = 0; i < size; i++) {
         x[i] = k6[i] + a65 * h * k5[i];
         y[i] += b5 * h * k5[i];
       }
-      f(k6, time + c6 * h, x);
+      f(k6, size, time + c6 * h, x);
 
       // increment
       for (std::size_t i = 0; i < size; i++)
@@ -614,14 +614,14 @@ namespace runge_kutta {
       double* ksh_restrict& k6 = k2;
 
       // k1
-      f(k1, time, value);
+      f(k1, size, time, value);
 
       // k2
       static constexpr double a21 = -1.0 / 2.0;
       static constexpr double c2  = -1.0 / 2.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + a21 * h * k1[i];
-      f(k2, time + c2 * h, x);
+      f(k2, size, time + c2 * h, x);
 
       // k3
       static constexpr double a31 =  5.0 / 16.0;
@@ -629,7 +629,7 @@ namespace runge_kutta {
       static constexpr double c3  =  1.0 /  4.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a31 * k1[i] + a32 * k2[i]);
-      f(k3, time + c3 * h, x);
+      f(k3, size, time + c3 * h, x);
 
       // k4
       static constexpr double a41 = -3.0 / 4.0;
@@ -638,7 +638,7 @@ namespace runge_kutta {
       static constexpr double c4  =  1.0 / 2.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a41 * k1[i] + a42 * k2[i] + a43 * k3[i]);
-      f(k4, time + c4 * h, x);
+      f(k4, size, time + c4 * h, x);
 
       // k5
       static constexpr double a51 = 3.0 / 16.0;
@@ -646,7 +646,7 @@ namespace runge_kutta {
       static constexpr double c5  = 3.0 /  4.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a51 * k1[i] + a54 * k4[i]);
-      f(k5, time + c5 * h, x);
+      f(k5, size, time + c5 * h, x);
 
       // k6
       static constexpr double a62 =  -1.0 / 7.0;
@@ -656,7 +656,7 @@ namespace runge_kutta {
       static constexpr double c6  = 1.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a62 * k2[i] + a63 * k3[i] + a64 * k4[i] + a65 * k5[i]);
-      f(k6, time + c6 * h, x);
+      f(k6, size, time + c6 * h, x);
 
       // increment
       static constexpr double b1  =  7.0 / 90.0;
@@ -702,14 +702,14 @@ namespace runge_kutta {
 
 
       // k1
-      f(k1, time, value);
+      f(k1, size, time, value);
 
       // k2
       static constexpr double a21 = 4.0 / 7.0;
       static constexpr double c2  = 4.0 / 7.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + a21 * h * k1[i];
-      f(k2, time + c2 * h, x);
+      f(k2, size, time + c2 * h, x);
 
       // k3
       static constexpr double a31 = 115.0 / 112.0;
@@ -717,7 +717,7 @@ namespace runge_kutta {
       static constexpr double c3  =   5.0 /   7.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a31 * k1[i] + a32 * k2[i]);
-      f(k3, time + c3 * h, x);
+      f(k3, size, time + c3 * h, x);
 
       // k4
       static constexpr double a41 = 589.0 / 630.0;
@@ -726,7 +726,7 @@ namespace runge_kutta {
       static constexpr double c4  =   6.0 /   7.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a41 * k1[i] + a42 * k2[i] + a43 * k3[i]);
-      f(k4, time + c4 * h, x);
+      f(k4, size, time + c4 * h, x);
 
       // k5
       static constexpr double a51 = 229.0 / 1200.0 -  29.0 * sqrt5 / 6000.0;
@@ -736,7 +736,7 @@ namespace runge_kutta {
       static constexpr double c5  = (5.0 - sqrt5) / 10.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a51 * k1[i] + a52 * k2[i] + a53 * k3[i] + a54 * k4[i]);
-      f(k5, time + c5 * h, x);
+      f(k5, size, time + c5 * h, x);
 
       // k6
       static constexpr double a61 =  71.0 / 2400.0 - 587.0 * sqrt5 / 12000.0;
@@ -747,7 +747,7 @@ namespace runge_kutta {
       static constexpr double c6  = (5.0 + sqrt5) / 10.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a61 * k1[i] + a62 * k2[i] + a63 * k3[i] + a64 * k4[i] + a65 * k5[i]);
-      f(k6, time + c6 * h, x);
+      f(k6, size, time + c6 * h, x);
 
       // k7 <= k2
       static constexpr double a71 = -49.0 / 480.0 + 43.0 * sqrt5 / 160.0;
@@ -759,7 +759,7 @@ namespace runge_kutta {
       static constexpr double c7 = 1.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a71 * k1[i] + a72 * k2[i] + a73 * k3[i] + a74 * k4[i] + a75 * k5[i] + a76 * k6[i]);
-      f(k7, time + c7 * h, x);
+      f(k7, size, time + c7 * h, x);
 
       // increment
       for (std::size_t i = 0; i < size; i++)
@@ -792,14 +792,14 @@ namespace runge_kutta {
       double* ksh_restrict& k9 = k2;
 
       // k1
-      f(k1, time, value);
+      f(k1, size, time, value);
 
       // k2
       static constexpr double a21 = 2.0 / 9.0;
       static constexpr double c2  = 2.0 / 9.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + a21 * h * k1[i];
-      f(k2, time + c2 * h, x);
+      f(k2, size, time + c2 * h, x);
 
       // k3
       static constexpr double a31 = 1.0 / 12.0;
@@ -807,7 +807,7 @@ namespace runge_kutta {
       static constexpr double c3  = 1.0 / 3.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a31 * k1[i] + a32 * k2[i]);
-      f(k3, time + c3 * h, x);
+      f(k3, size, time + c3 * h, x);
 
       // k4
       static constexpr double a41 = 1.0 / 8.0;
@@ -815,7 +815,7 @@ namespace runge_kutta {
       static constexpr double c4  = 1.0 / 2.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a41 * k1[i] + a43 * k3[i]);
-      f(k4, time + c4 * h, x);
+      f(k4, size, time + c4 * h, x);
 
       // k5
       static constexpr double a51 = 23.0 / 216.0;
@@ -824,7 +824,7 @@ namespace runge_kutta {
       static constexpr double c5  =  1.0 / 6.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a51 * k1[i] + a53 * k3[i] + a54 * k4[i]);
-      f(k5, time + c5 * h, x);
+      f(k5, size, time + c5 * h, x);
 
       // k6
       static constexpr double a61 = -4136.0 / 729.0;
@@ -834,7 +834,7 @@ namespace runge_kutta {
       static constexpr double c6  =     8.0 / 9.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a61 * k1[i] + a63 * k3[i] + a64 * k4[i] + a65 * k5[i]);
-      f(k6, time + c6 * h, x);
+      f(k6, size, time + c6 * h, x);
 
       // k7
       static constexpr double a71 = 8087.0 / 11664.0;
@@ -845,7 +845,7 @@ namespace runge_kutta {
       static constexpr double c7  =    1.0 / 9.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a71 * k1[i] + a73 * k3[i] + a74 * k4[i] + a75 * k5[i] + a76 * k6[i]);
-      f(k7, time + c7 * h, x);
+      f(k7, size, time + c7 * h, x);
 
       // k8
       static constexpr double a81 = -1217.0 / 2160.0;
@@ -857,7 +857,7 @@ namespace runge_kutta {
       static constexpr double c8  =     5.0 / 6.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a81 * k1[i] + a83 * k3[i] + a84 * k4[i] + a85 * k5[i] + a86 * k6[i] + a87 * k7[i]);
-      f(k8, time + c8 * h, x);
+      f(k8, size, time + c8 * h, x);
 
       // k9
       static constexpr double a91 =    259.0 / 2768.0;
@@ -870,7 +870,7 @@ namespace runge_kutta {
       static constexpr double c9  = 1.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a91 * k1[i] + a93 * k3[i] + a94 * k4[i] + a95 * k5[i] + a96 * k6[i] + a97 * k7[i] + a98 * k8[i]);
-      f(k9, time + c9 * h, x);
+      f(k9, size, time + c9 * h, x);
 
       // increment
       static constexpr double b1 =    173.0 / 3360.0;
@@ -910,21 +910,21 @@ namespace runge_kutta {
       double* ksh_restrict& k9 = k2;
 
       // k1
-      f(k1, time, value);
+      f(k1, size, time, value);
 
       // k2
       static constexpr double a21 = (7.0 + 1.0 * sqrt21) / 42.0;
       static constexpr double c2  = (7.0 +       sqrt21) / 42.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + a21 * h * k1[i];
-      f(k2, time + c2 * h, x);
+      f(k2, size, time + c2 * h, x);
 
       // k3
       static constexpr double a32 = (7.0 + 1.0 * sqrt21) / 21.0;
       static constexpr double c3  = (7.0 +       sqrt21) / 21.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + a32 * h * k2[i];
-      f(k3, time + c3 * h, x);
+      f(k3, size, time + c3 * h, x);
 
       // k4
       static constexpr double a41 = ( 7.0 + 1.0 * sqrt21) / 56.0;
@@ -932,7 +932,7 @@ namespace runge_kutta {
       static constexpr double c4  = ( 7.0 +       sqrt21) / 14.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a41 * k1[i] + a43 * k3[i]);
-      f(k4, time + c4 * h, x);
+      f(k4, size, time + c4 * h, x);
 
       // k5
       static constexpr double a51 = (  8.0 - 1.0 * sqrt21) / 16.0;
@@ -941,7 +941,7 @@ namespace runge_kutta {
       static constexpr double c5 = 1.0 / 2.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a51 * k1[i] + a53 * k3[i] + a54 * k4[i]);
-      f(k5, time + c5 * h, x);
+      f(k5, size, time + c5 * h, x);
 
       // k6
       static constexpr double a61 = (-1687.0 + 374.0 * sqrt21) / 196.0;
@@ -951,7 +951,7 @@ namespace runge_kutta {
       static constexpr double c6  = (    7.0 -         sqrt21) /  14.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a61 * k1[i] + a63 * k3[i] + a64 * k4[i] + a65 * k5[i]);
-      f(k6, time + c6 * h, x);
+      f(k6, size, time + c6 * h, x);
 
       // k7
       static constexpr double a71 = (  583.0 - 131.0 * sqrt21) / 128.0;
@@ -962,7 +962,7 @@ namespace runge_kutta {
       static constexpr double c7 = 1.0 / 2.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a71 * k1[i] + a73 * k3[i] + a74 * k4[i] + a75 * k5[i] + a76 * k6[i]);
-      f(k7, time + c7 * h, x);
+      f(k7, size, time + c7 * h, x);
 
       // k8
       static constexpr double a81 = ( -623.0 +  169.0 * sqrt21) /  392.0;
@@ -974,7 +974,7 @@ namespace runge_kutta {
       static constexpr double c8  = (    7.0 +          sqrt21) /   14.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a81 * k1[i] + a83 * k3[i] + a84 * k4[i] + a85 * k5[i] + a86 * k6[i] + a87 * k7[i]);
-      f(k8, time + c8 * h, x);
+      f(k8, size, time + c8 * h, x);
 
       // k9
       static constexpr double a91 = (  579.0 -  131.0 * sqrt21) /  24.0;
@@ -987,7 +987,7 @@ namespace runge_kutta {
       static constexpr double c9 = 1.0;
       for (std::size_t i = 0; i < size; i++)
         x[i] = value[i] + h * (a91 * k1[i] + a93 * k3[i] + a94 * k4[i] + a95 * k5[i] + a96 * k6[i] + a97 * k7[i] + a98 * k8[i]);
-      f(k9, time + c9 * h, x);
+      f(k9, size, time + c9 * h, x);
 
       // increment
       static constexpr double b1 =  1.0 /  20.0;
@@ -1039,7 +1039,7 @@ namespace runge_kutta {
       static constexpr double bB =  1.0 /  20.0;
 
       // k1
-      f(k1, time, value);
+      f(k1, size, time, value);
 
       // k2
       static constexpr double a21 = 0.5;
@@ -1048,7 +1048,7 @@ namespace runge_kutta {
         delta[i] = b1 * h * k1[i];
         xnode[i] = value[i] + a21 * h * k1[i];
       }
-      f(k2, time + c20 * h, xnode);
+      f(k2, size, time + c20 * h, xnode);
 
       // k3
       static constexpr double a31 = 0.25;
@@ -1056,7 +1056,7 @@ namespace runge_kutta {
       static constexpr double c30 = a31 + a32;
       for (std::size_t i = 0; i < size; i++)
         xnode[i] = value[i] + a31 * h * k1[i] + a32 * h * k2[i];
-      f(k3, time + c30 * h, xnode);
+      f(k3, size, time + c30 * h, xnode);
 
       // k4 <= k2
       static constexpr double a41 = (1.0 /  7.0);
@@ -1065,7 +1065,7 @@ namespace runge_kutta {
       static constexpr double c40 = a41 + a42 + a43;
       for (std::size_t i = 0; i < size; i++)
         xnode[i] = value[i] + a41 * h * k1[i] + a42 * h * k2[i] + a43 * h * k3[i];
-      f(k4, time + c40 * h, xnode);
+      f(k4, size, time + c40 * h, xnode);
 
       // k5
       static constexpr double a51 = (1.0 /  84.0) * (11 + 1 * sqrt21);
@@ -1074,7 +1074,7 @@ namespace runge_kutta {
       static constexpr double c50 = a51 + a53 + a54;
       for (std::size_t i = 0; i < size; i++)
         xnode[i] = value[i] + a51 * h * k1[i] + a53 * h * k3[i] + a54 * h * k4[i];
-      f(k5, time + c50 * h, xnode);
+      f(k5, size, time + c50 * h, xnode);
 
       // k6
       static constexpr double a61 = (1.0 /  48.0) * (   5 +  1 * sqrt21);
@@ -1084,7 +1084,7 @@ namespace runge_kutta {
       static constexpr double c60 = a61 + a63 + a64 + a65;
       for (std::size_t i = 0; i < size; i++)
         xnode[i] = value[i] + a61 * h * k1[i] + a63 * h * k3[i] + a64 * h * k4[i] + a65 * h * k5[i];
-      f(k6, time + c60 * h, xnode);
+      f(k6, size, time + c60 * h, xnode);
 
       // k7 <= k3
       static constexpr double a71 = (1.0 /  42.0) * (  10 -   1 * sqrt21);
@@ -1095,7 +1095,7 @@ namespace runge_kutta {
       static constexpr double c70 = a71 + a73 + a74 + a75 + a76;
       for (std::size_t i = 0; i < size; i++)
         xnode[i] = value[i] + a71 * h * k1[i] + a73 * h * k3[i] + a74 * h * k4[i] + a75 * h * k5[i] + a76 * h * k6[i];
-      f(k7, time + c70 * h, xnode);
+      f(k7, size, time + c70 * h, xnode);
 
       // k8 <= k4
       static constexpr double a81 =  1.0 /  14.0;
@@ -1105,7 +1105,7 @@ namespace runge_kutta {
       static constexpr double c80 = a81 + a85 + a86 + a87;
       for (std::size_t i = 0; i < size; i++)
         xnode[i] = value[i] + a81 * h * k1[i] + a85 * h * k5[i] + a86 * h * k6[i] + a87 * h * k7[i];
-      f(k8, time + c80 * h, xnode);
+      f(k8, size, time + c80 * h, xnode);
 
       // k9
       static constexpr double a91 =   1.0 /   32.0;
@@ -1118,7 +1118,7 @@ namespace runge_kutta {
         delta[i] += b8 * h * k8[i];
         xnode[i] = value[i] + a91 * h * k1[i] + a95 * h * k5[i] + a96 * h * k6[i] + a97 * h * k7[i] + a98 * h * k8[i];
       }
-      f(k9, time + c90 * h, xnode);
+      f(k9, size, time + c90 * h, xnode);
 
       // kA <= k1
       static constexpr double aA1 =  1.0 /   14.0;
@@ -1132,7 +1132,7 @@ namespace runge_kutta {
         delta[i] += b9 * h * k9[i];
         xnode[i] = value[i] + aA1 * h * k1[i] + aA5 * h * k5[i] + aA6 * h * k6[i] + aA7 * h * k7[i] + aA8 * h * k8[i] + aA9 * h * k9[i];
       }
-      f(kA, time + cA0 * h, xnode);
+      f(kA, size, time + cA0 * h, xnode);
 
       // kB <= k5
       static constexpr double aB5 = (1.0 / 18.0) * (- 42.0 +  7.0 * sqrt21);
@@ -1146,7 +1146,7 @@ namespace runge_kutta {
         delta[i] += bA * h * kA[i];
         xnode[i] = value[i] + aB5 * h * k5[i] + aB6 * h * k6[i] + aB7 * h * k7[i] + aB8 * h * k8[i] + aB9 * h * k9[i] + aBA * h * kA[i];
       }
-      f(kB, time + cB0 * h, xnode);
+      f(kB, size, time + cB0 * h, xnode);
 
       // increment
       for (std::size_t i = 0; i < size; i++) {
