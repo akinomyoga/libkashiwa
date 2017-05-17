@@ -740,17 +740,25 @@ namespace kashiwa {
 
       std::vector<E> const& rhsdata = rhs.data;
       std::size_t const rhssize = rhs.data.size();
-      calc_t const factor = (integer_t::modulo * integer_t::modulo - (calc_t) 1)
-        / (rhsdata[rhssize - 1] * integer_t::modulo + rhsdata[rhssize - 2] + 1);
-      mwg_assert(factor < integer_t::modulo);
+      mwg_assert(rhssize >= 2);
+      calc_t const rhs_head2 = rhsdata[rhssize - 1] * integer_t::modulo + rhsdata[rhssize - 2];
+      calc_t const factor =
+        rhs_head2 == std::numeric_limits<calc_t>::max()? integer_t::modulo - 1:
+        (integer_t::modulo * integer_t::modulo - (calc_t) 1) / (rhs_head2 + 1);
+      mwg_assert(1 <= factor && factor < integer_t::modulo);
 
       // Note: prem == &lhs/&rhs の場合、
       //   以下の ※ の操作で lhs/rhs が破壊される。
       //   従って ※ より後では lhs/rhs には触れない事に注意する。
       integer_t _rem, div;
       integer_t& rem = prem? *prem: _rem;
-      div = rhs * factor;
-      rem = lhs * factor; // ※
+      if (factor == 1) {
+        div = rhs;
+        rem = lhs;
+      } else {
+        div = rhs * factor;
+        rem = lhs * factor; // ※
+      }
 
       std::vector<E> const& ddata = div.data;
       std::vector<E>      & ndata = rem.data;
@@ -783,7 +791,7 @@ namespace kashiwa {
         }
       }
 
-      if (prem) rem /= (elem_t) factor;
+      if (prem && factor > 1) rem /= (elem_t) factor;
       return rem == 0;
     }
 
