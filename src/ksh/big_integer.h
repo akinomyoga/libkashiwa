@@ -520,7 +520,9 @@ namespace kashiwa {
       using calc_t = typename integer_t::calculation_type;
       using elem_t = typename integer_t::element_type;
 
-      mwg_check(pos < num.data.size());
+      // Note: 引く数が 0 の時は pos < num.data.size() は必ずしも成り立たない事に注意する。
+      mwg_check(value == 0 || pos < num.data.size(), "pos=%zd |num.data|=%zd", pos, num.data.size());
+
       for (std::size_t const posN = num.data.size(); pos < posN; pos++) {
         if (value == 0) return;
         calc_t const elem = value % integer_t::modulo;
@@ -539,9 +541,10 @@ namespace kashiwa {
         for (std::size_t i = num.data.size(); --i > 0; )
           num.data[i] = (elem_t) (integer_t::modulo - 1 - num.data[i]);
         num.data[0] = (elem_t) (integer_t::modulo - num.data[0]);
-      } else {
-        while (num.data.back() == 0) num.data.pop_back();
-        if (num.data.size() == 0) num.sign = 0;
+      } else if (std::size_t sz = num.data.size()) {
+        while (sz && num.data[sz - 1] == 0) sz--;
+        num.data.resize(sz);
+        if (sz == 0) num.sign = 0;
       }
     }
 
