@@ -56,23 +56,31 @@ void test3() {
 
 void test_div() {
   using int_t = kashiwa::bigint;
-  int const n = 100;
 
-  auto uint32_mod = pow(int_t{2}, 32);
-  auto uint64_mod = pow(int_t{2}, 64);
-  mwg_check(uint64_mod - 1 + 1 == uint64_mod);
-  mwg_check(2 * uint64_mod / (uint64_mod - 1) == 2);
+  int const n = 100;
 
   auto a = pow(int_t{5}, n);
   mwg_check(a / (uint32_t) 25 == pow(int_t {5}, n - 2));
   mwg_check(a % (uint32_t) 25 == 0);
-  mwg_check(a / a == 1);
-  mwg_check(a % a == 0);
 
   auto b = a * a;
   mwg_check(b == pow(int_t {5}, 2 * n));
   mwg_check(b / a == a);
   mwg_check(b % a == 0);
+
+  auto uint32_mod = pow(int_t{2}, 32);
+  auto uint64_mod = pow(int_t{2}, 64);
+
+  // 2017-05-18 bug: 繰り下がりで桁数が減少した時 resize していなかった
+  mwg_check(uint64_mod - 1 + 1 == uint64_mod);
+
+  // 2017-05-18 bug: arhs (商の概算用の法) の overflow があった
+  mwg_check(int_t{39118700544} % int_t{37497702955} == 1620997589);
+
+  // 2017-05-18 bug: arhs で除ききれない remainder が残っていた
+  mwg_check(2 * uint64_mod / (uint64_mod - 1) == 2);
+  mwg_check(a / a == 1);
+  mwg_check(a % a == 0);
 }
 
 int main() {

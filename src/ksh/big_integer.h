@@ -741,10 +741,10 @@ namespace kashiwa {
       std::vector<E> const& rhsdata = rhs.data;
       std::size_t const rhssize = rhs.data.size();
       mwg_assert(rhssize >= 2);
-      calc_t const rhs_head2 = rhsdata[rhssize - 1] * integer_t::modulo + rhsdata[rhssize - 2];
+      calc_t const rhs2 = rhsdata[rhssize - 1] * integer_t::modulo + rhsdata[rhssize - 2];
       calc_t const factor =
-        rhs_head2 == std::numeric_limits<calc_t>::max()? integer_t::modulo - 1:
-        (integer_t::modulo * integer_t::modulo - (calc_t) 1) / (rhs_head2 + 1);
+        rhs2 == std::numeric_limits<calc_t>::max()? 1:
+        (integer_t::modulo * integer_t::modulo - 1) / (rhs2 + 1);
       mwg_assert(1 <= factor && factor < integer_t::modulo);
 
       // Note: prem == &lhs/&rhs の場合、
@@ -762,9 +762,10 @@ namespace kashiwa {
 
       std::vector<E> const& ddata = div.data;
       std::vector<E>      & ndata = rem.data;
-      calc_t const arhs = ddata.back() + 1;
+      calc_t const arhs = (calc_t) ddata.back() + 1;
       std::size_t rpos = ndata.size() - 1;
       std::size_t qpos = ndata.size() - ddata.size();
+      mwg_assert(arhs != 0);
 
       // 最上位の桁
       if (pquo) pquo->sign = div.sign * rem.sign;
