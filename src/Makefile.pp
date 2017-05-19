@@ -43,7 +43,7 @@ endif
 
 ifeq ($(host),unknown)
   CXX:=g++
-  CXXFLAGS:= -Wall -std=gnu++0x -O3 -march=native
+  CXXFLAGS:= -Wall -std=gnu++14 -O3 -march=native
 endif
 
 #------------------------------------------------------------------------------
