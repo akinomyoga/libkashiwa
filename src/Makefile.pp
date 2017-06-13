@@ -174,6 +174,7 @@ $(OBJDIR)/sample/%.o: sample/%.cpp | $(OBJDIR)/sample
 	$(CXX) $(CXXFLAGS) -I . -MD -MF $(@:.o=.d) -c -o $@ $<
 
 sample-names += legendre_polynomial
+sample-names += ode_dop853
 
 -include $(sample-names:%=$(OBJDIR)/sample/%.d)
 sample: $(sample-names:%=%.sample)

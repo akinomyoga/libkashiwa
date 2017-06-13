@@ -19,13 +19,13 @@ namespace runge_kutta {
     dense_output(dop853_integrator const& integ, stat_t& stat): integ(integ), stat(stat) {}
 
   private:
-    void initialize_data() {
+    void initialize_data(std::size_t const* icomp, std::size_t ncomp) {
       if (this->bufferId == stat.nstep) return;
       this->bufferId = stat.nstep;
 
       std::size_t const size = stat.previousSize;
       buffer.ensure<double>(size * 8);
-      integ._dense_output_initialize(buffer, stat, nullptr, 0);
+      integ._dense_output_initialize(buffer, stat, icomp, ncomp);
     }
 
   public:
@@ -33,7 +33,7 @@ namespace runge_kutta {
       double* ksh_restrict interpolated, double time,
       std::size_t const* icomp, std::size_t _ncomp
     ) override {
-      this->initialize_data();
+      this->initialize_data(icomp, _ncomp);
 
       double const s = (time - stat.previousTime) / stat.previousStep;
       double const t = 1.0 - s;
@@ -364,7 +364,7 @@ namespace runge_kutta {
         stat.nfcn++;
 
         // stiffness detection
-        if (stat.naccpt%nstif == 0 || iasti > 0) {
+        if (stat.naccpt % nstif == 0 || iasti > 0) {
           if (stf > 0.0) {
             double stnum = 0.0;
             for (std::size_t i = 0; i < size; i++)
@@ -400,7 +400,7 @@ namespace runge_kutta {
 
         eq.onstep();
 
-        if (last)return;
+        if (last) return;
 
         if (std::abs(hnew) > hmax) hnew = bwd * hmax;
         if (reject) hnew = bwd * std::min(std::abs(hnew), std::abs(h));
@@ -420,7 +420,7 @@ namespace runge_kutta {
   // この関数を呼び出すと内部の情報を破壊するため、この関数は 1 回限りしか呼び出せない。
   //
   void dop853_integrator::_dense_output_initialize(
-    working_buffer& interpBuffer, stat_t& stat, int* icomp, std::size_t nrd
+    working_buffer& interpBuffer, stat_t& stat, std::size_t const* icomp, std::size_t nrd
   ) const {
     double* ksh_restrict             cont  = interpBuffer.ptr<double>();
     iequation_for_erk&               eq    = *stat.eq;
@@ -531,7 +531,7 @@ namespace runge_kutta {
     if (!icomp) nrd = size;
 
     for (std::size_t j = 0; j < nrd; j++) {
-      int const i = icomp? icomp[j]: j; // 出力する変数の index
+      std::size_t const i = icomp? icomp[j]: j; // 出力する変数の index
       cont[j] = value[i];
       double const ydiff = x[i] - value[i];
       cont[j + nrd] = ydiff;
@@ -563,7 +563,7 @@ namespace runge_kutta {
 
     stat.nfcn += 3;
     for (std::size_t j = 0; j < nrd; j++) {
-      int const i = icomp? icomp[j]: j;
+      std::size_t const i = icomp? icomp[j]: j;
       cont[j + nrd * 4] = h * (cont[j + nrd * 4] + d4D * kD[i] + d4E * kE[i] + d4F * kF[i] + d4G * kG[i]);
       cont[j + nrd * 5] = h * (cont[j + nrd * 5] + d5D * kD[i] + d5E * kE[i] + d5F * kF[i] + d5G * kG[i]);
       cont[j + nrd * 6] = h * (cont[j + nrd * 6] + d6D * kD[i] + d6E * kE[i] + d6F * kF[i] + d6G * kG[i]);

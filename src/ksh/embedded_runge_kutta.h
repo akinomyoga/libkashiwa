@@ -77,7 +77,7 @@ namespace runge_kutta {
     };
 
     void _dense_output_initialize(
-      working_buffer& interpBuffer, stat_t& stat, int* icomp, std::size_t nrd
+      working_buffer& interpBuffer, stat_t& stat, std::size_t const* icomp, std::size_t nrd
     ) const;
 
     double _determine_initial_step(
