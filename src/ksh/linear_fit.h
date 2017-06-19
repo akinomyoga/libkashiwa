@@ -1,4 +1,4 @@
-// -*- mode: C++; coding: utf-8 -*-
+// -*- mode: c++; coding: utf-8 -*-
 #ifndef KASHIWA_LINEAR_FIT_H
 #define KASHIWA_LINEAR_FIT_H
 #include <cstdlib>
@@ -7,7 +7,7 @@
 #include "linear_lu.h"
 namespace kashiwa {
 
-  void linear_fit(int NParam, double* param, int NData, double const* data, double const* basis, working_buffer& buffer) {
+  inline void linear_fit(int NParam, double* param, int NData, double const* data, double const* basis, working_buffer& buffer) {
     buffer.ensure<double>(NParam + NParam * NParam);
     double* const contra     = buffer.ptr<double>();
     double* const covariance = contra + NParam;
@@ -24,7 +24,7 @@ namespace kashiwa {
     }
 
     working_buffer buffer2;
-    kashiwa::solve_linear_equation_lu(NParam, contra, covariance, contra, buffer2, covariance);
+    kashiwa::solve_linear_equation_lu(NParam, param, covariance, contra, buffer2, covariance);
   }
 
 }
