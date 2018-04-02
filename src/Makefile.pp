@@ -23,6 +23,15 @@ ifeq ($(HOSTNAME),padparadscha)
   CXX:=cxx
   CXXFLAGS:= -Wall -std=gnu++14 -O3 -march=native
   LDFLAGS:= -Wall -std=gnu++14 -O3 -march=native
+
+  # libmwg
+  LIBMWG_PREFIX := $(HOME)/opt/libmwg-201509
+  LIBMWG_BUILD  := i686-pc-linux-gnu-gcc-6.3.1+cxx11-release
+  CXXFLAGS += \
+    -isystem $(LIBMWG_PREFIX)/include \
+    -isystem $(LIBMWG_PREFIX)/include/$(LIBMWG_BUILD)
+  LDFLAGS += \
+    -L $(LIBMWG_PREFIX)/lib/$(LIBMWG_BUILD)
 endif
 
 ifeq ($(USER)@$(HOSTNAME),murase@tkyntn.phys.s.u-tokyo.ac.jp)

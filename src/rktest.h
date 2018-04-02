@@ -13,29 +13,7 @@
 #include <utility>
 #include <mwg/except.h>
 #include "ksh/def.h"
-
-template<typename F>
-double binary_search_function(double lowerBound, double upperBound, double value, double tolerance, F func) {
-  double yl = func(lowerBound) - value;
-  double yu = func(upperBound) - value;
-  if (yl * yu >= 0) {
-    return std::abs(yl) <= std::abs(yu)? lowerBound: upperBound;
-  } else if (yl > 0) {
-    using namespace std;
-    swap(lowerBound, upperBound);
-  }
-
-  for (int i = 0; i < 54; i++) {
-    double const middle = 0.5 * (lowerBound + upperBound);
-    if (std::abs(lowerBound - upperBound) <= tolerance)
-      return middle;
-
-    double const ym = func(middle) - value;
-    (ym <= 0? lowerBound: upperBound) = middle;
-  }
-
-  return 0.5 * (lowerBound + upperBound);
-}
+#include "ksh/utility.h"
 
 //-----------------------------------------------------------------------------
 // 方程式
@@ -71,7 +49,7 @@ static void f(double* ksh_restrict slope, std::size_t size, double t, double con
   slope[0] = (std::tan(value[0]) + 1.0) / 2;
 }
 static double exactSolution(double t) {
-  return binary_search_function(
+  return kashiwa::binary_search_function(
     0.0, 0.5 * M_PI, t, 0.0, [] (double x) {
       return x + std::log(std::cos(x) + std::sin(x));
     }
