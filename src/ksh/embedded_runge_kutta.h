@@ -23,6 +23,13 @@ namespace runge_kutta {
     std::size_t        previousSize  {0};
     double             previousTime  {0.0};
     double             previousStep  {0.0};
+
+    void clear() {
+      nfcn   = 0;
+      nstep  = 0;
+      naccpt = 0;
+      nrejct = 0;
+    }
   };
 
   struct idense_output {
@@ -37,10 +44,13 @@ namespace runge_kutta {
   };
 
   struct iequation_for_erk {
+    virtual ~iequation_for_erk() {}
     virtual void eval_derivative(double* ksh_restrict slope, std::size_t size, double t, double const* ksh_restrict value) = 0;
     virtual void onstep() {}
     virtual void ondense(stat_t const&, idense_output&) {}
-    virtual ~iequation_for_erk() {}
+
+  public:
+    virtual bool is_stopping() { return false; }
   };
 
   // DOP853: Dormand-Prince 8(5, 3)

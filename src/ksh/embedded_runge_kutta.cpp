@@ -33,13 +33,14 @@ namespace runge_kutta {
       double* ksh_restrict interpolated, double time,
       std::size_t const* icomp, std::size_t _ncomp
     ) override {
+      mwg_check(stat.previousTime - 1e-14 <= time && time <= stat.previousTime + stat.previousStep + 1e-14,
+        "time out of range: time=%g in [%g, %g]?",
+        time, stat.previousTime, stat.previousTime + stat.previousStep);
+
       this->initialize_data(icomp, _ncomp);
 
       double const s = (time - stat.previousTime) / stat.previousStep;
       double const t = 1.0 - s;
-      mwg_check(0.0 <= s && s <= 1.0,
-        "time out of range: time=%g in [%g, %g]?",
-        time, stat.previousTime, stat.previousTime + stat.previousStep);
 
       double const* data = buffer.ptr<double>();
       std::size_t const ncomp = icomp? _ncomp: stat.previousSize;
@@ -333,8 +334,8 @@ namespace runge_kutta {
     double hlamb = 0.0;
     int iasti = 0, nonsti = 0;
     for (;; stat.nstep++) {
-      mwg_check(nmax < 0 || stat.nstep < nmax,"収束しません time = %g, h = %g at step#%d", time, h, stat.nstep);
-      mwg_check(0.1 * std::abs(h) > std::abs(time) * DBL_EPSILON,"時刻桁落ち time = %g, h = %g", time, h);
+      mwg_check(nmax < 0 || stat.nstep < nmax, "収束しません time = %g, h = %g at step#%d", time, h, stat.nstep);
+      mwg_check(0.1 * std::abs(h) > std::abs(time) * DBL_EPSILON, "時刻桁落ち time = %g, h = %g", time, h);
 
       if ((time + 1.01 * h - timeN) * bwd > 0.0) {
         h = timeN - time;
@@ -400,7 +401,7 @@ namespace runge_kutta {
 
         eq.onstep();
 
-        if (last) return;
+        if (eq.is_stopping() || last) return;
 
         if (std::abs(hnew) > hmax) hnew = bwd * hmax;
         if (reject) hnew = bwd * std::min(std::abs(hnew), std::abs(h));

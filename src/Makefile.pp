@@ -50,6 +50,24 @@ ifeq ($(USER)@$(HOSTNAME),murase@tkyntn.phys.s.u-tokyo.ac.jp)
     -L $(LIBMWG_PREFIX)/lib/x86_64-unknown-linux-gnu-gcc-5.3.0+default
 endif
 
+ifeq ($(HOSTNAME),chatoyancy)
+  host:=found
+
+  OTFFT_PREFIX   := $(HOME)/opt/otfft-6.4
+  CXX := g++
+  CXXFLAGS := -Wall -std=gnu++14 -O3 -march=native
+  LDFLAGS := -Wall -std=gnu++14 -O3 -march=native
+
+  # libmwg
+  LIBMWG_PREFIX := $(HOME)/opt/libmwg-20170824
+  LIBMWG_BUILD  := x86_64-pc-linux-gnu-gcc-7.3.1+cxx98-debug
+  CXXFLAGS += \
+    -isystem $(LIBMWG_PREFIX)/include \
+    -isystem $(LIBMWG_PREFIX)/include/$(LIBMWG_BUILD)
+  LDFLAGS += \
+    -L $(LIBMWG_PREFIX)/lib/$(LIBMWG_BUILD)
+endif
+
 ifeq ($(host),unknown)
   CXX:=g++
   CXXFLAGS:= -Wall -std=gnu++14 -O3 -march=native
