@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <cmath>
+#include <limits>
 #include <mwg/except.h>
 #include "utility.h"
 #include "buffer.h"
@@ -335,7 +336,7 @@ namespace runge_kutta {
     int iasti = 0, nonsti = 0;
     for (;; stat.nstep++) {
       mwg_check(nmax < 0 || stat.nstep < nmax, "収束しません time = %g, h = %g at step#%d", time, h, stat.nstep);
-      mwg_check(0.1 * std::abs(h) > std::abs(time) * DBL_EPSILON, "時刻桁落ち time = %g, h = %g", time, h);
+      mwg_check(0.1 * std::abs(h) > std::abs(time) * std::numeric_limits<double>::epsilon(), "時刻桁落ち time = %g, h = %g", time, h);
 
       if ((time + 1.01 * h - timeN) * bwd > 0.0) {
         h = timeN - time;
