@@ -34,9 +34,12 @@ namespace runge_kutta {
       double* ksh_restrict interpolated, double time,
       std::size_t const* icomp, std::size_t _ncomp
     ) override {
-      mwg_check(stat.previousTime - 1e-14 <= time && time <= stat.previousTime + stat.previousStep + 1e-14,
+      double time_min = stat.previousTime;
+      double time_max = stat.previousTime + stat.previousStep;
+      if (stat.previousStep < 0.0) std::swap(time_min, time_max);
+      mwg_check(time_min - 1e-14 <= time && time <= time_max + 1e-14,
         "time out of range: time=%g in [%g, %g]?",
-        time, stat.previousTime, stat.previousTime + stat.previousStep);
+        time, time_min, time_max);
 
       this->initialize_data(icomp, _ncomp);
 
