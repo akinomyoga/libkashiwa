@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <limits>
 #include <mwg/except.h>
-#include <ksh/linear_lu.h>
+#include <ksh/linear_lu.hpp>
 
 namespace kashiwa {
   template<typename T, std::size_t N>

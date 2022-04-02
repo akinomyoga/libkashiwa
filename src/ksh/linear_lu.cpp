@@ -5,8 +5,8 @@
 #include <vector>
 #include <iterator>
 #include <mwg/except.h>
-#include "buffer.h"
-#include "linear_lu.h"
+#include "buffer.hpp"
+#include "linear_lu.hpp"
 
 namespace {
 

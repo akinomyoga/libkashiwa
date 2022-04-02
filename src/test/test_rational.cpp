@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <sstream>
 #include <mwg/except.h>
-#include <ksh/rational.h>
+#include <ksh/rational.hpp>
 
 namespace ksh = kashiwa;
 

@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <mwg/except.h>
-#include "rktest.h"
-#include "ksh/embedded_runge_kutta.h"
+#include "rktest.hpp"
+#include "ksh/embedded_runge_kutta.hpp"
 
 void test_erk1();
 

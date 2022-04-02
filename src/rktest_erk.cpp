@@ -2,8 +2,8 @@
 #include <cmath>
 #include <vector>
 #include <mwg/except.h>
-#include "rktest.h"
-#include "ksh/explicit_runge_kutta.h"
+#include "rktest.hpp"
+#include "ksh/explicit_runge_kutta.hpp"
 
 void test_erk1() {
   std::FILE* file;

@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <iostream>
-#include <ksh/big_integer.h>
+#include <ksh/big_integer.hpp>
 #include <mwg/except.h>
 
 void test() {

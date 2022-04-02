@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <limits>
 #include <mwg/except.h>
-#include <ksh/integrator.h>
+#include <ksh/integrator.hpp>
 
 namespace kashiwa {
   template<typename T, std::size_t N>

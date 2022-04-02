@@ -1,13 +1,13 @@
 // -*- mode:c++ -*-
-#ifndef KASHIWA_EXPLICIT_RUNGE_KUTTA_H
-#define KASHIWA_EXPLICIT_RUNGE_KUTTA_H
+#ifndef kashiwa_explicit_runge_kutta_hpp
+#define kashiwa_explicit_runge_kutta_hpp
 #ifdef _MSC_VER
 # define _USE_MATH_DEFINES
 #endif
 #include <cstddef>
 #include <cmath>
-#include "def.h"
-#include "buffer.h"
+#include "def.hpp"
+#include "buffer.hpp"
 
 namespace kashiwa {
 namespace runge_kutta {

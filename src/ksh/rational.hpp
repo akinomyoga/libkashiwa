@@ -1,12 +1,12 @@
 // -*- mode: c++ -*-
-#ifndef KASHIWA_RATIONAL_H
-#define KASHIWA_RATIONAL_H
+#ifndef kashiwa_rational_hpp
+#define kashiwa_rational_hpp
 #include <cstddef>
 #include <type_traits>
 #include <functional>
 #include <ostream>
 #include <utility>
-#include "def.h"
+#include "def.hpp"
 namespace kashiwa {
 
   namespace lambda {

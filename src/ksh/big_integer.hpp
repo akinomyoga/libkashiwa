@@ -1,6 +1,6 @@
 // -*- C++ -*-
-#ifndef KASHIWA_BIGINTEGER_H
-#define KASHIWA_BIGINTEGER_H
+#ifndef kashiwa_biginteger_hpp
+#define kashiwa_biginteger_hpp
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -9,7 +9,7 @@
 #include <ostream>
 #include <algorithm>
 #include <mwg/except.h>
-#include "def.h"
+#include "def.hpp"
 namespace kashiwa {
 
   template<

@@ -1,11 +1,11 @@
 // -*- mode:c++ -*-
-#ifndef KASHIWA_EMBEDDED_RUNGE_KUTTA_H
-#define KASHIWA_EMBEDDED_RUNGE_KUTTA_H
+#ifndef kashiwa_embedded_runge_kutta_hpp
+#define kashiwa_embedded_runge_kutta_hpp
 #include <cstddef>
 #include <cfloat>
 #include <mwg/except.h>
-#include "def.h"
-#include "buffer.h"
+#include "def.hpp"
+#include "buffer.hpp"
 
 namespace kashiwa {
 namespace runge_kutta {

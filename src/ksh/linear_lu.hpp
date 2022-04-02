@@ -1,8 +1,8 @@
 // -*- mode: C++; coding: utf-8 -*-
-#ifndef KASHIWA_LINEAR_LU_H
-#define KASHIWA_LINEAR_LU_H
+#ifndef kashiwa_linear_lu_hpp
+#define kashiwa_linear_lu_hpp
 #include <cstdlib>
-#include "buffer.h"
+#include "buffer.hpp"
 namespace kashiwa {
 
   /*?lwiki @fn void lu_decompose(int N, double* lumat, int* lupiv);

@@ -1,11 +1,11 @@
-#include "embedded_runge_kutta.h"
+#include "embedded_runge_kutta.hpp"
 #include <cstddef>
 #include <cstdio>
 #include <cmath>
 #include <limits>
 #include <mwg/except.h>
-#include "utility.h"
-#include "buffer.h"
+#include "utility.hpp"
+#include "buffer.hpp"
 
 namespace kashiwa {
 namespace runge_kutta {

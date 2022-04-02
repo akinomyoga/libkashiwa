@@ -1,6 +1,6 @@
 // -*- mode:c++ -*-
-#ifndef KASHIWA_BUFFER_H
-#define KASHIWA_BUFFER_H
+#ifndef kashiwa_buffer_hpp
+#define kashiwa_buffer_hpp
 #include <cstddef>
 #include <vector>
 

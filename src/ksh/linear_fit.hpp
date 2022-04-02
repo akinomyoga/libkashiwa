@@ -1,10 +1,10 @@
 // -*- mode: c++; coding: utf-8 -*-
-#ifndef KASHIWA_LINEAR_FIT_H
-#define KASHIWA_LINEAR_FIT_H
+#ifndef kashiwa_linear_fit_hpp
+#define kashiwa_linear_fit_hpp
 #include <cstdlib>
 #include <numeric>
-#include "buffer.h"
-#include "linear_lu.h"
+#include "buffer.hpp"
+#include "linear_lu.hpp"
 namespace kashiwa {
 
   inline void linear_fit(int NParam, double* param, int NData, double const* data, double const* basis, working_buffer& buffer) {

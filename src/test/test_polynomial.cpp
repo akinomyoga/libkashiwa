@@ -3,8 +3,8 @@
 #include <iostream>
 #include <sstream>
 #include <mwg/except.h>
-#include <ksh/polynomial.h>
-#include <ksh/rational.h>
+#include <ksh/polynomial.hpp>
+#include <ksh/rational.hpp>
 
 namespace ksh = kashiwa;
 

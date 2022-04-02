@@ -1,8 +1,8 @@
 #include <iostream>
 #include <cstdint>
-#include <ksh/rational.h>
-#include <ksh/polynomial.h>
-#include <ksh/big_integer.h>
+#include <ksh/rational.hpp>
+#include <ksh/polynomial.hpp>
+#include <ksh/big_integer.hpp>
 #include <mwg/except.h>
 
 int main() {

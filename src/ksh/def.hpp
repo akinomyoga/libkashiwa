@@ -1,6 +1,6 @@
 // -*- mode: c++ -*-
-#ifndef KASHIWA_DEF_H
-#define KASHIWA_DEF_H
+#ifndef kashiwa_def_hpp
+#define kashiwa_def_hpp
 #include <cstddef>
 #include <type_traits>
 #include <utility>

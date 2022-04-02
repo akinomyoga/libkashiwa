@@ -1,6 +1,6 @@
 // -*- mode:c++ -*-
-#ifndef KASHIWA_RKTEST_H
-#define KASHIWA_RKTEST_H
+#ifndef kashiwa_rktest_hpp
+#define kashiwa_rktest_hpp
 #ifdef _MSC_VER
 # define _USE_MATH_DEFINES
 #endif
@@ -12,8 +12,8 @@
 #include <numeric>
 #include <utility>
 #include <mwg/except.h>
-#include "ksh/def.h"
-#include "ksh/utility.h"
+#include "ksh/def.hpp"
+#include "ksh/utility.hpp"
 
 //-----------------------------------------------------------------------------
 // 方程式

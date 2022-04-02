@@ -1,6 +1,6 @@
 // -*- mode: c++ -*-
-#ifndef KASHIWA_POLYNOMIAL_H
-#define KASHIWA_POLYNOMIAL_H
+#ifndef kashiwa_polynomial_hpp
+#define kashiwa_polynomial_hpp
 #include <cstddef>
 #include <vector>
 #include <initializer_list>
@@ -8,7 +8,7 @@
 #include <utility>
 #include <type_traits>
 #include <ostream>
-#include "def.h"
+#include "def.hpp"
 namespace kashiwa {
 
   // これは1元の多項式にしか対応していない。

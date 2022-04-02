@@ -1,6 +1,6 @@
 // -*- mode:c++ -*-
-#ifndef KASHIWA_UTILITY_H
-#define KASHIWA_UTILITY_H
+#ifndef kashiwa_utility_hpp
+#define kashiwa_utility_hpp
 namespace kashiwa {
 
   template<typename T>
