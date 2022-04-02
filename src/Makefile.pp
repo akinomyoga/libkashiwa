@@ -94,7 +94,7 @@ directories := $(OUTDIR) $(OBJDIR)
 $"target"_objects += $(OBJDIR)/%name%.o
 -include $(OBJDIR)/%name%.d
 $(OBJDIR)/%name%.o: %name%.cpp | $(OBJDIR)/ksh
-	$(CXX) $(CXXFLAGS) -MD -MF $(@:.o=.d) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -MP -MD -MF $(@:.o=.d) -c -o $@ $<
 #%%end.i
 #%end
 #%m register_binary
@@ -154,7 +154,7 @@ linear: test/linear.exe
 	./$<
 -include $(OBJDIR)/test/linear.d
 $(OBJDIR)/test/linear.o: test/linear.cpp | $(OBJDIR)/test
-	$(CXX) $(CXXFLAGS) -I . -MD -MF $(@:.o=.d) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -I . -MP -MD -MF $(@:.o=.d) -c -o $@ $<
 test/linear.exe: $(OBJDIR)/test/linear.o $(OUTDIR)/libksh.a
 	$(CXX) $(check_LDFLAGS) -o $@ $^ $(check_LIBS)
 
@@ -165,7 +165,7 @@ check: %name%
 	./$<
 -include $(OBJDIR)/test/test_%name%.d
 $(OBJDIR)/test/test_%name%.o: test/test_%name%.cpp | $(OBJDIR)/test
-	$(CXX) $(CXXFLAGS) -I . -MD -MF $(@:.o=.d) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -I . -MP -MD -MF $(@:.o=.d) -c -o $@ $<
 test/test_%name%.exe: $(OBJDIR)/test/test_%name%.o $(OUTDIR)/libksh.a
 	$(CXX) $(check_LDFLAGS) -o $@ $^ $(check_LIBS)
 #%end
