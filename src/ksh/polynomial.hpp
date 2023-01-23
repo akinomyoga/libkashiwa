@@ -57,7 +57,7 @@ namespace kashiwa {
 
     void normalize() {
       std::size_t i = this->m_data.size();
-      if (this->m_data[i - 1] != 0) return;
+      if (i == 0 || this->m_data[i - 1] != 0) return;
       for (i--; this->m_data[i - 1] == 0; i--);
       this->m_data.resize(i);
     }
@@ -140,7 +140,29 @@ namespace kashiwa {
   }
   template<typename K>
   polynomial<K> operator-(polynomial<K> const& lhs, polynomial<K> const& rhs) {
-    return polynomial_detail::merge(lhs, rhs, [](K const& lhs, K const& rhs) {return lhs - rhs;});
+    std::vector<K> const& ldata = lhs.data();
+    std::vector<K> const& rdata = rhs.data();
+    K const* pL = &ldata[0];
+    K const* pR = &rdata[0];
+
+    K const* p1;
+    std::size_t const iN1 = ldata.size();
+    std::size_t const iN2 = rdata.size();
+
+    polynomial<K> result;
+    if (iN1 >= iN2) {
+      result.m_data.reserve(iN1);
+      std::size_t i = 0;
+      for (; i < iN2; i++) result.m_data.emplace_back(pL[i] - pR[i]);
+      for (; i < iN1; i++) result.m_data.emplace_back(pL[i]);
+    } else {
+      result.m_data.reserve(iN2);
+      std::size_t i = 0;
+      for (; i < iN1; i++) result.m_data.emplace_back(pL[i] - pR[i]);
+      for (; i < iN2; i++) result.m_data.emplace_back(-pR[i]);
+    }
+    result.normalize();
+    return result;
   }
 
   //
@@ -246,6 +268,23 @@ namespace kashiwa {
     }
 
     return result;
+  }
+
+  template<typename K>
+  polynomial<K> integrate(polynomial<K> const& poly) {
+    polynomial<K> result;
+    result.m_data.reserve(poly.m_data.size() + 1);
+    result.m_data.emplace_back(0);
+    int power = 0;
+    for (K const& coeff: poly.m_data)
+      result.m_data.emplace_back(coeff / ++power);
+    return result;
+  }
+
+  template<typename K>
+  K integrate(polynomial<K> const& poly, K const& beg, K const& end) {
+    polynomial<K> const result = integrate(poly);
+    return result.assign(end) - result.assign(beg);
   }
 
   // template<typename Ch, typename Tr, typename K>
