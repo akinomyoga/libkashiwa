@@ -103,6 +103,11 @@ void test_erk1() {
   test_method(file, kashiwa::runge_kutta::hammud6_integrator());
   std::fclose(file);
 
+  mwg_printd("butcher6");
+  file = std::fopen("../out/rk/butcher6.txt", "wb");
+  test_method(file, kashiwa::runge_kutta::butcher6_integrator());
+  std::fclose(file);
+
   mwg_printd("shanks7");
   file = std::fopen("../out/rk/shanks7.txt", "wb");
   test_method(file, kashiwa::runge_kutta::shanks7_integrator());
@@ -116,5 +121,10 @@ void test_erk1() {
   mwg_printd("cv8");
   file = std::fopen("../out/rk/rkcv8.txt", "wb");
   test_method(file, kashiwa::runge_kutta::cooper_verner8_integrator());
+  std::fclose(file);
+
+  mwg_printd("verner9");
+  file = std::fopen("../out/rk/verner9.txt", "wb");
+  test_method(file, kashiwa::runge_kutta::verner9_integrator());
   std::fclose(file);
 }

@@ -9,6 +9,13 @@
 #include "def.hpp"
 #include "buffer.hpp"
 
+// References
+//
+// [1] [陽的Runge-Kutta法のButcher tableau - 330k info](http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau)
+//   以下に移動した様だ: https://www.330k.info/essay/explicit-runge-kutta-butcher-tableau/
+//   Web Archive にも残っている https://web.archive.org/web/20220121115842/https://www.330k.info/essay/explicit-runge-kutta-butcher-tableau/
+//
+
 namespace kashiwa {
 namespace runge_kutta {
 
@@ -680,8 +687,6 @@ namespace runge_kutta {
     static const int order = 6;
     mutable working_buffer buffer;
 
-    static constexpr double sqrt21 = std::sqrt(21.0); // Ref [cv8.2] では -sqrt(21.0). どちらでも OK.
-
     template<typename F>
     void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
       buffer.ensure<double>(7 * size);
@@ -769,13 +774,103 @@ namespace runge_kutta {
     }
   };
 
+  // Butcher's 6th-order method
+  // http://www.mymathlib.com/diffeq/runge-kutta/runge_kutta_butcher.html
+  // http://www.mymathlib.com/c_source/diffeq/runge_kutta/runge_kutta_butcher.c
+  struct butcher6_integrator {
+    static const int stage = 7;
+    static const int order = 6;
+    mutable working_buffer buffer;
+
+    template<typename F>
+    void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
+      buffer.ensure<double>(7 * size);
+      double* ksh_restrict  x  = buffer.ptr<double>();
+      double* ksh_restrict  k1 = buffer.ptr<double>() + size * 1;
+      double* ksh_restrict  k2 = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict  k3 = buffer.ptr<double>() + size * 3;
+      double* ksh_restrict  k4 = buffer.ptr<double>() + size * 4;
+      double* ksh_restrict  k5 = buffer.ptr<double>() + size * 5;
+      double* ksh_restrict  k6 = buffer.ptr<double>() + size * 6;
+      double* ksh_restrict& k7 = k2;
+
+      static constexpr double b1 =  11.0 / 120.0;
+      static constexpr double b3 =  81.0 / 120.0;
+      static constexpr double b4 =  81.0 / 120.0;
+      static constexpr double b5 = -32.0 / 120.0;
+      static constexpr double b6 = -32.0 / 120.0;
+      static constexpr double b7 =  11.0 / 120.0;
+
+      // k1
+      f(k1, size, time, value);
+
+      // k2
+      static constexpr double a21 = 1.0 / 3.0;
+      static constexpr double c2  = 1.0 / 3.0;
+      for (std::size_t i = 0; i < size; i++)
+        x[i] = value[i] + a21 * h * k1[i];
+      f(k2, size, time + c2 * h, x);
+
+      // k3
+      static constexpr double a32 = 2.0 / 3.0;
+      static constexpr double c3  = 2.0 / 3.0;
+      for (std::size_t i = 0; i < size; i++)
+        x[i] = value[i] + a32 * h * k2[i];
+      f(k3, size, time + c3 * h, x);
+
+      // k4
+      static constexpr double a41 =  1.0 / 12.0;
+      static constexpr double a42 =  4.0 / 12.0;
+      static constexpr double a43 = -1.0 / 12.0;
+      static constexpr double c4  =  1.0 /  3.0;
+      for (std::size_t i = 0; i < size; i++)
+        x[i] = value[i] + h * (a41 * k1[i] + a42 * k2[i] + a43 * k3[i]);
+      f(k4, size, time + c4 * h, x);
+
+      // k5
+      static constexpr double a51 = -1.0 / 16.0;
+      static constexpr double a52 = 18.0 / 16.0;
+      static constexpr double a53 = -3.0 / 16.0;
+      static constexpr double a54 = -6.0 / 16.0;
+      static constexpr double c5  =  1.0 /  2.0;
+      for (std::size_t i = 0; i < size; i++)
+        x[i] = value[i] + h * (a51 * k1[i] + a52 * k2[i] + a53 * k3[i] + a54 * k4[i]);
+      f(k5, size, time + c5 * h, x);
+
+      // k6
+      static constexpr double a62 =  9.0 / 8.0;
+      static constexpr double a63 = -3.0 / 8.0;
+      static constexpr double a64 = -6.0 / 8.0;
+      static constexpr double a65 =  4.0 / 8.0;
+      static constexpr double c6  =  1.0 / 2.0;
+      for (std::size_t i = 0; i < size; i++)
+        x[i] = value[i] + h * (a62 * k2[i] + a63 * k3[i] + a64 * k4[i] + a65 * k5[i]);
+      f(k6, size, time + c6 * h, x);
+
+      // k7 <= k2
+      static constexpr double a71 =   9.0 / 44.0;
+      static constexpr double a72 = -36.0 / 44.0;
+      static constexpr double a73 =  63.0 / 44.0;
+      static constexpr double a74 =  72.0 / 44.0;
+      static constexpr double a75 = -64.0 / 44.0;
+      static constexpr double c7 = 1.0;
+      for (std::size_t i = 0; i < size; i++)
+        x[i] = value[i] + h * (a71 * k1[i] + a72 * k2[i] + a73 * k3[i] + a74 * k4[i] + a75 * k5[i]);
+      f(k7, size, time + c7 * h, x);
+
+      // increment
+      for (std::size_t i = 0; i < size; i++)
+        value[i] += h * (b1 * k1[i] + b3 * k3[i] + b4 * k4[i] + b5 * k5[i] + b6 * k6[i] + b7 * k7[i]);
+
+      time += h;
+    }
+  };
+
   // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
   struct shanks7_integrator {
     static const int stage = 9;
     static const int order = 7;
     mutable working_buffer buffer;
-
-    static constexpr double sqrt21 = std::sqrt(21.0); // Ref [cv8.2] では -sqrt(21.0). どちらでも OK.
 
     template<typename F>
     void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
@@ -1158,11 +1253,228 @@ namespace runge_kutta {
     }
   };
 
+
+  // Verner 9th order (埋込み型RKの一部らしい)
+  // - https://www.330k.info/essay/explicit-runge-kutta-butcher-tableau/
+  //   この方法はとても大きな誤差の係数を持つ。恐らく kC の係数が巨大な為。
+  struct verner9_integrator {
+    static const int stage = 15;
+    static const int order = 9;
+    mutable working_buffer buffer;
+
+    static constexpr double sqrt6 = std::sqrt(6.0);
+
+    template<typename F>
+    void operator()(double& time, double* ksh_restrict value, std::size_t size, F const& f, double h) const {
+      buffer.ensure<double>(11 * size);
+      double* ksh_restrict  xnode = buffer.ptr<double>();
+      double* ksh_restrict  k1    = buffer.ptr<double>() + size * 1;
+      double* ksh_restrict  k2    = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict& k3    = k2;
+      double* ksh_restrict  k4    = buffer.ptr<double>() + size * 3;
+      double* ksh_restrict& k5    = k3;
+      double* ksh_restrict  k6    = buffer.ptr<double>() + size * 4;
+      double* ksh_restrict& k7    = k4;
+      double* ksh_restrict& k8    = k5;
+      double* ksh_restrict  k9    = buffer.ptr<double>() + size * 5;
+      double* ksh_restrict  kA    = buffer.ptr<double>() + size * 6;
+      double* ksh_restrict  kB    = buffer.ptr<double>() + size * 7;
+      double* ksh_restrict  kC    = buffer.ptr<double>() + size * 8;
+      double* ksh_restrict  kD    = buffer.ptr<double>() + size * 9;
+      // Note: kE は埋め込み型の誤差評価の為に使われるので跳んでいる。
+      double* ksh_restrict  kF    = buffer.ptr<double>() + size * 10;
+      double* ksh_restrict& kG    = k6;
+
+      static constexpr double b1 =    23.0 /   525.0;
+      static constexpr double b8 =   171.0 /  1400.0;
+      static constexpr double b9 =    86.0 /   525.0;
+      static constexpr double bA =    93.0 /   280.0;
+      static constexpr double bB = -2048.0 /  6825.0;
+      static constexpr double bC =    -3.0 / 18200.0;
+      static constexpr double bD =    39.0 /   175.0;
+      static constexpr double bF =     9.0 /    25.0;
+      static constexpr double bG =   233.0 /  4200.0;
+
+      // k1
+      f(k1, size, time, value);
+
+      // k2
+      static constexpr double a21 = 1.0 / 12.0;
+      static constexpr double c20 = a21;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + a21 * h * k1[i];
+      f(k2, size, time + c20 * h, xnode);
+
+      // k3
+      static constexpr double a31 = 1.0 / 27.0;
+      static constexpr double a32 = 2.0 / 27.0;
+      static constexpr double c30 = a31 + a32;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + a31 * h * k1[i] + a32 * h * k2[i];
+      f(k3, size, time + c30 * h, xnode);
+
+      // k4
+      static constexpr double a41 = 1.0 / 24.0;
+      static constexpr double a43 = 1.0 / 8.0;
+      static constexpr double c40 = a41 + a43;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + a41 * h * k1[i] + a43 * h * k3[i];
+      f(k4, size, time + c40 * h, xnode);
+
+      // k5
+      static constexpr double a51 = (1.0 / 375.0) * (   4.0 +  94.0 * sqrt6);
+      static constexpr double a53 = (1.0 / 375.0) * (-282.0 - 252.0 * sqrt6);
+      static constexpr double a54 = (1.0 / 375.0) * ( 328.0 + 208.0 * sqrt6);
+      static constexpr double c50 = a51 + a53 + a54;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + a51 * h * k1[i] + a53 * h * k3[i] + a54 * h * k4[i];
+      f(k5, size, time + c50 * h, xnode);
+
+      // k6
+      static constexpr double a61 = (1.0 /  150.0) * (  9.0 -        sqrt6);
+      static constexpr double a64 = (1.0 / 1425.0) * (312.0 + 32.0 * sqrt6);
+      static constexpr double a65 = (1.0 /  570.0) * ( 69.0 + 29.0 * sqrt6);
+      static constexpr double c60 = a61 + a64 + a65;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + a61 * h * k1[i] + a64 * h * k4[i] + a65 * h * k5[i];
+      f(k6, size, time + c60 * h, xnode);
+
+      // k7
+      static constexpr double a71 = (1.0 / 1250.0) * (   927.0 -  347.0 * sqrt6);
+      static constexpr double a74 = (1.0 / 9375.0) * (-16248.0 + 7328.0 * sqrt6);
+      static constexpr double a75 = (1.0 / 3750.0) * (  -489.0 +  179.0 * sqrt6);
+      static constexpr double a76 = (1.0 / 9375.0) * ( 14268.0 - 5798.0 * sqrt6);
+      static constexpr double c70 = a71 + a74 + a75 + a76;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + a71 * h * k1[i] + a74 * h * k4[i] + a75 * h * k5[i] + a76 * h * k6[i];
+      f(k7, size, time + c70 * h, xnode);
+
+      // k8
+      static constexpr double a81 =  2.0 / 27.0;
+      static constexpr double a86 = (1.0 /  54.0) * (16.0 - sqrt6);
+      static constexpr double a87 = (1.0 /  54.0) * (16.0 + sqrt6);
+      static constexpr double c80 = a81 + a86 + a87;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + a81 * h * k1[i] + a86 * h * k6[i] + a87 * h * k7[i];
+      f(k8, size, time + c80 * h, xnode);
+
+      // k9
+      static constexpr double a91 =  19.0 / 256.0;
+      static constexpr double a96 = ( 1.0 / 512.0) * (118.0 - 23.0 * sqrt6);
+      static constexpr double a97 = ( 1.0 / 512.0) * (118.0 + 23.0 * sqrt6);
+      static constexpr double a98 =  -9.0 / 256.0;
+      static constexpr double c90 = a91 + a96 + a97 + a98;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + a91 * h * k1[i] + a96 * h * k6[i] + a97 * h * k7[i] + a98 * h * k8[i];
+      f(k9, size, time + c90 * h, xnode);
+
+      // kA
+      static constexpr double aA1 =  11.0 / 144.0;
+      static constexpr double aA6 = ( 1.0 / 864.0) * (266.0 - sqrt6);
+      static constexpr double aA7 = ( 1.0 / 864.0) * (266.0 + sqrt6);
+      static constexpr double aA8 =  -1.0 /  16.0;
+      static constexpr double aA9 =  -8.0 /  27.0;
+      static constexpr double cA0 = aA1 + aA6 + aA7 + aA8 + aA9;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + aA1 * h * k1[i] + aA6 * h * k6[i] + aA7 * h * k7[i] + aA8 * h * k8[i] + aA9 * h * k9[i];
+      f(kA, size, time + cA0 * h, xnode);
+
+      // kB
+      static constexpr double aB1 = ( 5034.0 -  271.0 * sqrt6) / 61440.0;
+      static constexpr double aB7 = ( 7859.0 - 1626.0 * sqrt6) / 10240.0;
+      static constexpr double aB8 = (-2232.0 +  813.0 * sqrt6) / 20480.0;
+      static constexpr double aB9 = ( -594.0 +  271.0 * sqrt6) /   960.0;
+      static constexpr double aBA = (  657.0 -  813.0 * sqrt6) /  5120.0;
+      static constexpr double cB0 = aB1 + aB7 + aB8 + aB9 + aBA;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + aB1 * h * k1[i] + aB7 * h * k7[i] + aB8 * h * k8[i] + aB9 * h * k9[i] + aBA * h * kA[i];
+      f(kB, size, time + cB0 * h, xnode);
+
+      // kC
+      static constexpr double aC1 = (   5996.0 -   3794.0 * sqrt6) /   405.0;
+      static constexpr double aC6 = (  -4342.0 -    338.0 * sqrt6) /     9.0; // ~ -574
+      static constexpr double aC7 = ( 154922.0 -  40458.0 * sqrt6) /   135.0; // ~ +413
+      static constexpr double aC8 = (  -4176.0 +   3794.0 * sqrt6) /    45.0; // ~ +114
+      static constexpr double aC9 = (-340864.0 + 242816.0 * sqrt6) /   405.0; // ~ +627
+      static constexpr double aCA = (  26304.0 -  15176.0 * sqrt6) /    45.0; // ~ -241
+      static constexpr double aCB = ( -26624.0                   ) /    81.0; // ~ -328
+      static constexpr double cC0 = aC1 + aC6 + aC7 + aC8 + aC9 + aCA + aCB;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + aC1 * h * k1[i] + aC6 * h * k6[i] + aC7 * h * k7[i] + aC8 * h * k8[i] + aC9 * h * k9[i] + aCA * h * kA[i] + aCB * h * kB[i];
+      f(kC, size, time + cC0 * h, xnode);
+
+      // kD
+      static constexpr double aD1 = (   3793.0 +   2168.0 * sqrt6) / 103680.0;
+      static constexpr double aD6 = (   4042.0 +   2263.0 * sqrt6) /  13824.0;
+      static constexpr double aD7 = (-231278.0 +  40717.0 * sqrt6) /  69120.0;
+      static constexpr double aD8 = (   7947.0 -   2168.0 * sqrt6) /  11520.0;
+      static constexpr double aD9 = (   1048.0 -    542.0 * sqrt6) /    405.0;
+      static constexpr double aDA = (  -1383.0 +    542.0 * sqrt6) /    720.0;
+      static constexpr double aDB = (   2624.0                   ) /   1053.0;
+      static constexpr double aDC = (      3.0                   ) /   1664.0;
+      static constexpr double cD0 = aD1 + aD6 + aD7 + aD8 + aD9 + aDA + aDB + aDC;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + aD1 * h * k1[i] + aD6 * h * k6[i] + aD7 * h * k7[i] + aD8 * h * k8[i] + aD9 * h * k9[i] + aDA * h * kA[i] + aDB * h * kB[i] + aDC * h * kC[i];
+      f(kD, size, time + cD0 * h, xnode);
+
+      // // kE
+      // static constexpr double aE1 = (   -137.0                   ) /   1296.0;
+      // static constexpr double aE6 = (   5642.0 -    337.0 * sqrt6) /    864.0;
+      // static constexpr double aE7 = (   5642.0 +    337.0 * sqrt6) /    864.0;
+      // static constexpr double aE8 = (   -299.0                   ) /     48.0;
+      // static constexpr double aE9 = (    184.0                   ) /     81.0;
+      // static constexpr double aEA = (    -44.0                   ) /      9.0;
+      // static constexpr double aEB = (  -5120.0                   ) /   1053.0;
+      // static constexpr double aEC = (    -11.0                   ) /    468.0;
+      // static constexpr double aED = (     16.0                   ) /      9.0;
+      // static constexpr double cE0 = aE1 + aE6 + aE7 + aE8 + aE9 + aEA + aEB + aEC + aED;
+      // for (std::size_t i = 0; i < size; i++)
+      //   xnode[i] = value[i] + aE1 * h * k1[i] + aE6 * h * k6[i] + aE7 * h * k7[i] + aE8 * h * k8[i] + aE9 * h * k9[i] + aEA * h * kA[i] + aEB * h * kB[i] + aEC * h * kC[i] + aED * h * kD[i];
+      // f(kE, size, time + cE0 * h, xnode);
+
+      // kF
+      static constexpr double aF1 = (  33617.0 -   2168.0 * sqrt6) / 518400.0;
+      static constexpr double aF6 = (  -3846.0 +     31.0 * sqrt6) /  13824.0;
+      static constexpr double aF7 = ( 155338.0 -  52807.0 * sqrt6) / 345600.0;
+      static constexpr double aF8 = ( -12537.0 +   2168.0 * sqrt6) /  57600.0;
+      static constexpr double aF9 = (     92.0 +    542.0 * sqrt6) /   2025.0;
+      static constexpr double aFA = (  -1797.0 -    542.0 * sqrt6) /   3600.0;
+      static constexpr double aFB = (    320.0                   ) /    567.0;
+      static constexpr double aFC = (     -1.0                   ) /   1920.0;
+      static constexpr double aFD = (      4.0                   ) /    105.0;
+      static constexpr double cF0 = aF1 + aF6 + aF7 + aF8 + aF9 + aFA + aFB + aFC + aFD;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + aF1 * h * k1[i] + aF6 * h * k6[i] + aF7 * h * k7[i] + aF8 * h * k8[i] + aF9 * h * k9[i] + aFA * h * kA[i] + aFB * h * kB[i] + aFC * h * kC[i] + aFD * h * kD[i];
+      f(kF, size, time + cF0 * h, xnode);
+
+      // kG
+      static constexpr double aG1 = ( -36487.0 -  30352.0 * sqrt6) / 279600.0;
+      static constexpr double aG6 = ( -29666.0 -   4499.0 * sqrt6) /   7456.0;
+      static constexpr double aG7 = (2779182.0 - 615973.0 * sqrt6) / 186400.0;
+      static constexpr double aG8 = ( -94329.0 +  91056.0 * sqrt6) /  93200.0;
+      static constexpr double aG9 = (-232192.0 + 121408.0 * sqrt6) /  17475.0;
+      static constexpr double aGA = ( 101226.0 -  22764.0 * sqrt6) /   5825.0;
+      static constexpr double aGB = (-169984.0                   ) /   9087.0;
+      static constexpr double aGC = (    -87.0                   ) /  30290.0;
+      static constexpr double aGD = (    492.0                   ) /   1165.0;
+      static constexpr double aGF = (   1260.0                   ) /    233.0;
+      static constexpr double cG0 = aG1 + aG6 + aG7 + aG8 + aG9 + aGA + aGB + aGC + aGD + aGF;
+      for (std::size_t i = 0; i < size; i++)
+        xnode[i] = value[i] + aG1 * h * k1[i] + aG6 * h * k6[i] + aG7 * h * k7[i] + aG8 * h * k8[i] + aG9 * h * k9[i] + aGA * h * kA[i] + aGB * h * kB[i] + aGC * h * kC[i] + aGD * h * kD[i] + aGF * h * kF[i];
+      f(kG, size, time + cG0 * h, xnode);
+
+      // increment
+      for (std::size_t i = 0; i < size; i++)
+        value[i] += h * (b1 * k1[i] + b8 * k8[i] + b9 * k9[i] + bA * kA[i] + bB * kB[i] + bC * kC[i] + bD * kD[i] + bF * kF[i] + bG * kG[i]);
+
+      time += h;
+    }
+  };
+
   // 他
   // * http://www.mymathlib.com/diffeq/runge-kutta/runge_kutta_ralston_4.html Ralston's 4th
   // * ハイラーの Ralson(1962), Hull(1967) (u, v) = (0.4, 0.45) と同じ物か?
   // * http://www.mymathlib.com/diffeq/runge-kutta/runge_kutta_nystrom.html Nystrom's 5th
-  // * http://www.mymathlib.com/diffeq/runge-kutta/runge_kutta_butcher.html Butcher's 6th
 
 }
 }
