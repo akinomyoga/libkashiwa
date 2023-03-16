@@ -65,11 +65,15 @@ namespace runge_kutta {
     }
   };
 
-  // ホイン法、modified Euler's method
-  // - en.wikipedia には improved/modified の両方の名称が載っている。
-  // - スペクトル法の本によるとこれは修正オイラー法という名前である。
-  // - http://pc-physics.com/syuseieuler1.html これも修正オイラー法。
-  // - http://detail.chiebukuro.yahoo.co.jp/qa/question_detail/q1091336470 このページも
+  // ホイン法、または modified Euler's method。文献 [1] によると
+  // improved/modified の両方の名前が挙げられている。文献[2,3,4]ではこれを修正
+  // オイラー法と呼んでいる。TVD-RK3 (SSP-RK2) はこれに等価である[5,6]。
+  // - [1] en.wikipedia
+  // - [2] スペクトル法の本
+  // - [3] http://pc-physics.com/syuseieuler1.html
+  // - [4] http://detail.chiebukuro.yahoo.co.jp/qa/question_detail/q1091336470
+  // - [5] https://www.slis.tsukuba.ac.jp/~fujisawa.makoto.fu/cgi-bin/wiki/index.php?TVD+RK
+  // - [6] https://gkeyll.readthedocs.io/en/latest/dev/ssp-rk.html#ssp-rk2
   struct heun_integrator {
     static const int stage = 2;
     static const int order = 2;
@@ -95,6 +99,8 @@ namespace runge_kutta {
     }
   };
 
+  // https://en.wikipedia.org/wiki/Heun%27s_method によるとこれも
+  // Heun's method と呼ばれることがあるらしい。
   struct ralston_integrator {
     static const int stage = 2;
     static const int order = 2;
@@ -270,10 +276,86 @@ namespace runge_kutta {
     }
   };
 
+  // TVD-RK3, 3rd-order Strong Stability Preserving RK
+  // https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods
+  // https://www.slis.tsukuba.ac.jp/~fujisawa.makoto.fu/cgi-bin/wiki/index.php?TVD+RK
+  struct tvdrk3_integrator {
+    static const int stage = 3;
+    static const int order = 3;
+    mutable working_buffer buffer;
+
+    template<typename F>
+    void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
+      buffer.ensure<double>(3 * size);
+      double* ksh_restrict x = buffer.ptr<double>();
+      double* ksh_restrict k1 = buffer.ptr<double>() + size;
+      double* ksh_restrict k2 = buffer.ptr<double>() + size * 2;
+      double* ksh_restrict& k1_plus_k2 = k1;
+      double* ksh_restrict& k3 = k2;
+
+      f(k1, size, time, value);
+
+      for (std::size_t i = 0; i < size; i++)
+        x[i] = value[i] + h * k1[i];
+      f(k2, size, time + h, x);
+
+      for (std::size_t i = 0; i < size; i++) {
+        k1_plus_k2[i] = k1[i] + k2[i];
+        x[i] = value[i] + 0.25 * h * k1_plus_k2[i];
+      }
+      f(k3, size, time + 0.5 * h, x);
+
+      for (std::size_t i = 0; i < size; i++)
+        value[i] += h * ((1.0 / 6.0) * k1_plus_k2[i] + (2.0 / 3.0) * k3[i]);
+
+      time += h;
+    }
+  };
+
+  // 4-stage 3rd-order SSP RK
+  // https://gist.github.com/ketch/764e8dd4a91399eef5be
+  struct tvdrk43_integrator {
+    static const int stage = 4;
+    static const int order = 3;
+    mutable working_buffer buffer;
+
+    template<typename F>
+    void operator()(double& time, double* value, std::size_t size, F const& f, double h) const {
+      buffer.ensure<double>(3 * size);
+      double* ksh_restrict x = buffer.ptr<double>();
+      double* ksh_restrict ksum = buffer.ptr<double>() + size;
+      double* ksh_restrict knew = buffer.ptr<double>() + size * 2;
+
+      f(ksum, size, time, value);
+
+      for (std::size_t i = 0; i < size; i++)
+        x[i] = value[i] + 0.5 * h * ksum[i];
+      f(knew, size, time + 0.5 * h, x);
+
+      for (std::size_t i = 0; i < size; i++) {
+        ksum[i] += knew[i];
+        x[i] = value[i] + 0.5 * h * ksum[i];
+      }
+      f(knew, size, time + h, x);
+
+      for (std::size_t i = 0; i < size; i++) {
+        ksum[i] += knew[i];
+        x[i] = value[i] + (1.0 / 6.0) * h * ksum[i];
+      }
+      f(knew, size, time + (1.0 / 2.0) * h, x);
+
+      for (std::size_t i = 0; i < size; i++)
+        value[i] += h * ((1.0 / 6.0) * ksum[i] + (1.0 / 2.0) * knew[i]);
+
+      time += h;
+    }
+  };
+
   //---------------------------------------------------------------------------
   // 4段4次公式
 
-  // RK4 (classical Runge-Kutta method)
+  // RK4 (classical Runge-Kutta method)。TVD RK4 はこれに等価である。
+  // [1] https://www.slis.tsukuba.ac.jp/~fujisawa.makoto.fu/cgi-bin/wiki/index.php?TVD+RK#f225c799
   struct rk4_integrator {
     static const int stage = 4;
     static const int order = 4;
@@ -427,7 +509,6 @@ namespace runge_kutta {
       time += h;
     }
   };
-
 
   //---------------------------------------------------------------------------
   // 6段5次公式
@@ -1475,6 +1556,7 @@ namespace runge_kutta {
   // * http://www.mymathlib.com/diffeq/runge-kutta/runge_kutta_ralston_4.html Ralston's 4th
   // * ハイラーの Ralson(1962), Hull(1967) (u, v) = (0.4, 0.45) と同じ物か?
   // * http://www.mymathlib.com/diffeq/runge-kutta/runge_kutta_nystrom.html Nystrom's 5th
+  // * https://gist.github.com/ketch/764e8dd4a91399eef5be このページには他にも沢山のステージの SSPRK が載っている。
 
 }
 }

@@ -56,6 +56,16 @@ void test_erk1() {
   test_method(file, kashiwa::runge_kutta::kutta3_integrator());
   std::fclose(file);
 
+  mwg_printd("tvdrk3");
+  file = std::fopen("../out/rk/tvdrk3.txt", "wb");
+  test_method(file, kashiwa::runge_kutta::tvdrk3_integrator());
+  std::fclose(file);
+
+  mwg_printd("tvdrk43");
+  file = std::fopen("../out/rk/tvdrk43.txt", "wb");
+  test_method(file, kashiwa::runge_kutta::tvdrk43_integrator());
+  std::fclose(file);
+
   //
   // 4次公式
   //

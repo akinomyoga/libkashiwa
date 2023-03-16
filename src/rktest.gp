@@ -52,6 +52,8 @@ plot \
   outdir."/rkheun3.txt"  u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#008844' title 'Heun3', \
   outdir."/rkral3.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#AACCCC' title 'Ralston3', \
   outdir."/rkk3.txt"     u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#006600' title 'Kutta3', \
+  outdir."/tvdrk3.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#338800' title 'TVD-RK3', \
+  outdir."/tvdrk43.txt"  u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#338800' dt (16,4) title 'TVD-RK3(4)', \
   outdir."/rkrk4.txt"    u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#000088' title 'RK4', \
   outdir."/rkgill.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#6666AA' title 'Gill', \
   outdir."/rkk38.txt"    u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#0000FF' title 'Kutta 3/8', \
@@ -59,7 +61,9 @@ plot \
   outdir."/b5v2.txt"     u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#CCAACC' title 'Butcher5v2', \
   outdir."/b5v1.txt"     u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#FF00FF' title 'Butcher5v1'
 
-set yrange [1:*] reverse
+yaxis(fe,err) = (-log(abs(err)/10.0)/log(abs(fe)))
+set ylabel 'Score2'
+set yrange [3:*] reverse
 plot \
   outdir."/b5v1.txt"     u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#FF00FF' title 'Butcher5v1', \
   outdir."/hammud6.txt"  u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#CCCC00' title 'Hammud6', \
@@ -67,5 +71,6 @@ plot \
   outdir."/shanks7.txt"  u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#88AACC' title 'Shanks7', \
   outdir."/rkcv7.txt"    u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#00BBBB' title 'Cooper Verner 7', \
   outdir."/dop853.txt"   u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#666666' title '(DOP853)', \
+  outdir."/mdop853.txt"  u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#666666' dt (4,4) title 'DOP853', \
   outdir."/rkcv8.txt"    u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#000000' title 'Cooper Verner 8', \
   outdir."/verner9.txt"  u (abs($5)):(yaxis($1,$5)) w lp ps 0.5 lc rgb '#FF0000' title '(Verner9)'
