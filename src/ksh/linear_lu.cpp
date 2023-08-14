@@ -1,25 +1,29 @@
-#include <cstdio>
 #include <cmath>
+#include <cstdio>
+
 #include <algorithm>
+#include <complex>
+#include <iterator>
 #include <utility>
 #include <vector>
-#include <iterator>
+
 #include <mwg/except.h>
 #include "buffer.hpp"
 #include "linear_lu.hpp"
 
 namespace {
 
+  template<typename T>
   class lu_decomposer {
     std::size_t N;
-    double* arr;
+    T* arr;
     int* imap;
 
-    double& A(int i, int j) {
+    T& A(int i, int j) {
       return arr[imap[i] * N + j];
     }
 
-    double determine_pivot(int i) {
+    T determine_pivot(int i) {
       int imax = i;
       double vmax = std::abs(A(i, i));
       for (std::size_t icand = i + 1; icand < N; icand++) {
@@ -38,19 +42,19 @@ namespace {
     }
 
   public:
-    void decompose(double* arr, int* imap) {
+    void decompose(T* arr, int* imap) {
       this->arr = arr;
       this->imap = imap;
 
       for (std::size_t i = 0; i < N; i++) imap[i] = i;
 
       for (std::size_t i = 0; i < N; i++) {
-        double const scal = 1.0 / this->determine_pivot(i);
+        T const scal = 1.0 / this->determine_pivot(i);
 
         for (std::size_t ii = i + 1; ii < N; ii++) {
-          double const l = A(ii, i) *= scal;
+          T const l = A(ii, i) *= scal;
           for (std::size_t jj = i + 1; jj < N; jj++) {
-            double const u = A(i, jj);
+            T const u = A(i, jj);
             A(ii, jj) -= l * u;
           }
         }
@@ -109,9 +113,34 @@ namespace {
 
 namespace kashiwa {
 
-  void lu_decompose(std::size_t N, double* lumat, int* imap) {
-    lu_decomposer(N).decompose(lumat, imap);
+  template<typename T>
+  void lu_decompose(std::size_t N, T* lumat, int* imap) {
+    lu_decomposer<T>(N).decompose(lumat, imap);
   }
+  template void lu_decompose<double>(std::size_t N, double* lumat, int* imap);
+  template void lu_decompose<std::complex<double>>(std::size_t N, std::complex<double>* lumat, int* imap);
+
+  template<typename T>
+  T lu_determinant(std::size_t N, T const* lumat, int const* lupiv) {
+    T result = lumat[lupiv[0]];
+    for (std::size_t i = 1; i < N; i++)
+      result *= lumat[lupiv[i] * N + i];
+    return result;
+  }
+  template double lu_determinant<double>(std::size_t, double const*, int const*);
+  template std::complex<double> lu_determinant<std::complex<double>>(std::size_t, std::complex<double> const*, int const*);
+
+  template<typename T>
+  T determinant_by_lu(std::size_t N, T const* mat, working_buffer& buffer) {
+    buffer.ensure(N * N * sizeof(T) + N * sizeof(int));
+    T* const lumat = buffer.ptr<T>();
+    int* const lupiv = reinterpret_cast<int*>(lumat + N * N);
+    std::copy(mat, mat + N * N, lumat);
+    lu_decompose<T>(N, lumat, lupiv);
+    return lu_determinant<T>(N, lumat, lupiv);
+  }
+  template double determinant_by_lu<double>(std::size_t N, double const* mat, working_buffer& buffer);
+  template std::complex<double> determinant_by_lu<std::complex<double>>(std::size_t N, std::complex<double> const* mat, working_buffer& buffer);
 
   void solve_lu_equation(std::size_t N, double* result, double const* lumat, int const* lupiv, double const* vec, working_buffer& buffer) {
     double* vtmp = result;

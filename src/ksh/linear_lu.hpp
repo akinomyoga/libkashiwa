@@ -5,9 +5,13 @@
 #include "buffer.hpp"
 namespace kashiwa {
 
-  /*?lwiki @fn void lu_decompose(int N, double* lumat, int* lupiv);
+  /*?lwiki
+   * @fn void lu_decompose(int N, T* lumat, int* lupiv);
    *   正方行列 $A$ を LU 分解して下三角行列 $L$ と 上三角行列 $U$ に分解します。
    *   $L$ の対角成分は 1 に規格化されます。
+   *
+   *   @tparam typename T
+   *     `double` または `std::complex<double>`
    *
    *   @param[in] std::size_t N;
    *     行列の次元を指定します。
@@ -22,7 +26,28 @@ namespace kashiwa {
    *     pivot 選択による行の順序を格納します。
    *
    */
-  void lu_decompose(std::size_t N, double* lumat, int* lupiv);
+  template<typename T>
+  void lu_decompose(std::size_t N, T* lumat, int* lupiv);
+
+  /*?lwiki
+   * @fn T lu_determinant(std::size_t N, T const* lumat, int const* lupiv);
+   *   LU分解された行列を用いて行列式を計算します。
+   *
+   *   @tparam typename T
+   *     `double` または `std::complex<double>`
+   */
+  template<typename T>
+  T lu_determinant(std::size_t N, T const* lumat, int const* lupiv);
+
+  /*?lwiki
+   * @fn T determinant_by_lu(std::size_t N, T const* mat, working_buffer& buffer);
+   *   LU分解を用いて行列式を計算します。
+   *
+   *   @tparam typename T
+   *     `double` または `std::complex<double>`
+   */
+  template<typename T>
+  T determinant_by_lu(std::size_t N, T const* mat, working_buffer& buffer);
 
   /*?lwiki
    * @fn void solve_lu_equation(std::size_t N, double* result, double const* lumat, int const* lupiv, double const* vec, working_buffer& buffer);
