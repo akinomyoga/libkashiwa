@@ -21,7 +21,7 @@ namespace kashiwa {
 namespace runge_kutta {
 
   // オイラー(1768) Institutiones Calculi Integralis
-  struct euler_integrator {
+  struct euler_integrator: explicit_integrator_base<euler_integrator> {
     static const int stage = 1;
     static const int order = 1;
     mutable working_buffer buffer;
@@ -43,7 +43,7 @@ namespace runge_kutta {
   // - http://www.mymathlib.com/diffeq/runge-kutta/improved_euler_method.html
   //   によると中点法は improved Euler's method である。
   // - スペクトル法の本によるとこれは改良オイラー法である。
-  struct midpoint_integrator {
+  struct midpoint_integrator: explicit_integrator_base<midpoint_integrator> {
     static const int stage = 2;
     static const int order = 2;
     mutable working_buffer buffer;
@@ -75,7 +75,7 @@ namespace runge_kutta {
   // - [4] http://detail.chiebukuro.yahoo.co.jp/qa/question_detail/q1091336470
   // - [5] https://www.slis.tsukuba.ac.jp/~fujisawa.makoto.fu/cgi-bin/wiki/index.php?TVD+RK
   // - [6] https://gkeyll.readthedocs.io/en/latest/dev/ssp-rk.html#ssp-rk2
-  struct heun_integrator {
+  struct heun_integrator: explicit_integrator_base<heun_integrator> {
     static const int stage = 2;
     static const int order = 2;
     mutable working_buffer buffer;
@@ -102,7 +102,7 @@ namespace runge_kutta {
 
   // https://en.wikipedia.org/wiki/Heun%27s_method によるとこれも
   // Heun's method と呼ばれることがあるらしい。
-  struct ralston_integrator {
+  struct ralston_integrator: explicit_integrator_base<ralston_integrator> {
     static const int stage = 2;
     static const int order = 2;
     mutable working_buffer buffer;
@@ -133,7 +133,7 @@ namespace runge_kutta {
   /* Runge の3次公式 (4段3次の公式なので非効率)
    * - ハイラーの本
    */
-  struct runge3_integrator {
+  struct runge3_integrator: explicit_integrator_base<runge3_integrator> {
     static const int stage = 4;
     static const int order = 3;
     mutable working_buffer buffer;
@@ -175,7 +175,7 @@ namespace runge_kutta {
    * - http://www.mymathlib.com/diffeq/runge-kutta/runge_kutta_v2_3.html
    *   には "Runge-Kutta 3次法 v2" として紹介されている。
    */
-  struct heun3_integrator {
+  struct heun3_integrator: explicit_integrator_base<heun3_integrator> {
     static const int stage = 3;
     static const int order = 3;
     mutable working_buffer buffer;
@@ -207,7 +207,7 @@ namespace runge_kutta {
   // Ralston 3次法
   // * https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods によると、
   //   "Kutta's third-order method" である。
-  struct ralston3_integrator {
+  struct ralston3_integrator: explicit_integrator_base<ralston3_integrator> {
     static const int stage = 3;
     static const int order = 3;
     mutable working_buffer buffer;
@@ -246,7 +246,7 @@ namespace runge_kutta {
   //   "Kutta's third-order method" である。
   // * http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau によると、
   //   Kutta 3次法、または、Classical RK3 と書かれている。
-  struct kutta3_integrator {
+  struct kutta3_integrator: explicit_integrator_base<kutta3_integrator> {
     static const int stage = 3;
     static const int order = 3;
     mutable working_buffer buffer;
@@ -280,7 +280,7 @@ namespace runge_kutta {
   // TVD-RK3, 3rd-order Strong Stability Preserving RK
   // https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods
   // https://www.slis.tsukuba.ac.jp/~fujisawa.makoto.fu/cgi-bin/wiki/index.php?TVD+RK
-  struct tvdrk3_integrator {
+  struct tvdrk3_integrator: explicit_integrator_base<tvdrk3_integrator> {
     static const int stage = 3;
     static const int order = 3;
     mutable working_buffer buffer;
@@ -315,7 +315,7 @@ namespace runge_kutta {
 
   // 4-stage 3rd-order SSP RK
   // https://gist.github.com/ketch/764e8dd4a91399eef5be
-  struct tvdrk43_integrator {
+  struct tvdrk43_integrator: explicit_integrator_base<tvdrk43_integrator> {
     static const int stage = 4;
     static const int order = 3;
     mutable working_buffer buffer;
@@ -357,7 +357,7 @@ namespace runge_kutta {
 
   // RK4 (classical Runge-Kutta method)。TVD RK4 はこれに等価である。
   // [1] https://www.slis.tsukuba.ac.jp/~fujisawa.makoto.fu/cgi-bin/wiki/index.php?TVD+RK#f225c799
-  struct rk4_integrator {
+  struct rk4_integrator: explicit_integrator_base<rk4_integrator> {
     static const int stage = 4;
     static const int order = 4;
     mutable working_buffer buffer;
@@ -402,7 +402,7 @@ namespace runge_kutta {
   };
 
   // Kutta 3/8-rule
-  struct kutta_3_8_integrator {
+  struct kutta_3_8_integrator: explicit_integrator_base<kutta_3_8_integrator> {
     static const int stage = 4;
     static const int order = 4;
     mutable working_buffer buffer;
@@ -449,7 +449,7 @@ namespace runge_kutta {
   // Runge-Kutta Gill method
   //   Ref. gill.1 によると、丸め誤差の補正を但しく実行する為には計算手順があるとの事。
   //   [gill.1] [[Runge-Kutta-Gill法について - あらきけいすけの雑記帳>http://d.hatena.ne.jp/arakik10/20091004/p1]]
-  struct gill_integrator {
+  struct gill_integrator: explicit_integrator_base<gill_integrator> {
     static const int stage = 4;
     static const int order = 4;
     mutable working_buffer buffer;
@@ -515,7 +515,7 @@ namespace runge_kutta {
   // 6段5次公式
 
   // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
-  struct butcher5v1_integrator {
+  struct butcher5v1_integrator: explicit_integrator_base<butcher5v1_integrator> {
     static const int stage = 6;
     static const int order = 5;
     mutable working_buffer buffer;
@@ -590,7 +590,7 @@ namespace runge_kutta {
   };
 
   // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
-  struct butcher5v2_integrator {
+  struct butcher5v2_integrator: explicit_integrator_base<butcher5v2_integrator> {
     static const int stage = 6;
     static const int order = 5;
     mutable working_buffer buffer;
@@ -686,7 +686,7 @@ namespace runge_kutta {
   };
 
   // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
-  struct butcher5v3_integrator {
+  struct butcher5v3_integrator: explicit_integrator_base<butcher5v3_integrator> {
     static const int stage = 6;
     static const int order = 5;
     mutable working_buffer buffer;
@@ -764,7 +764,7 @@ namespace runge_kutta {
   // 高次公式
 
   // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
-  struct hammud6_integrator {
+  struct hammud6_integrator: explicit_integrator_base<hammud6_integrator> {
     static const int stage = 7;
     static const int order = 6;
     mutable working_buffer buffer;
@@ -859,7 +859,7 @@ namespace runge_kutta {
   // Butcher's 6th-order method
   // http://www.mymathlib.com/diffeq/runge-kutta/runge_kutta_butcher.html
   // http://www.mymathlib.com/c_source/diffeq/runge_kutta/runge_kutta_butcher.c
-  struct butcher6_integrator {
+  struct butcher6_integrator: explicit_integrator_base<butcher6_integrator> {
     static const int stage = 7;
     static const int order = 6;
     mutable working_buffer buffer;
@@ -949,7 +949,7 @@ namespace runge_kutta {
   };
 
   // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
-  struct shanks7_integrator {
+  struct shanks7_integrator: explicit_integrator_base<shanks7_integrator> {
     static const int stage = 9;
     static const int order = 7;
     mutable working_buffer buffer;
@@ -1065,7 +1065,7 @@ namespace runge_kutta {
   };
 
   // http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
-  struct cooper_verner7_integrator {
+  struct cooper_verner7_integrator: explicit_integrator_base<cooper_verner7_integrator> {
     static const int stage = 9;
     static const int order = 7;
     mutable working_buffer buffer;
@@ -1185,7 +1185,7 @@ namespace runge_kutta {
   //   [cv8.1] E.ハイラー, 三井 斌友, 『常微分方程式の数値解法 I 』, 丸善出版 (2012/7/17).
   //   [cv8.2] http://www.330k.info/essay/Explicit-Runge-Kutta-Butcher-Tableau
   //   [cv8.3] http://www.mymathlib.com/diffeq/runge-kutta/runge_kutta_verner.html
-  struct cooper_verner8_integrator {
+  struct cooper_verner8_integrator: explicit_integrator_base<cooper_verner8_integrator> {
     static const int stage = 11;
     static const int order = 8;
     mutable working_buffer buffer;
@@ -1339,7 +1339,7 @@ namespace runge_kutta {
   // Verner 9th order (埋込み型RKの一部らしい)
   // - https://www.330k.info/essay/explicit-runge-kutta-butcher-tableau/
   //   この方法はとても大きな誤差の係数を持つ。恐らく kC の係数が巨大な為。
-  struct verner9_integrator {
+  struct verner9_integrator: explicit_integrator_base<verner9_integrator> {
     static const int stage = 15;
     static const int order = 9;
     mutable working_buffer buffer;
