@@ -403,7 +403,7 @@ namespace runge_kutta {
 
         time += h;
 
-        eq.onstep();
+        eq.onstep(time, value);
 
         if (eq.is_stopping() || last) return;
 
@@ -421,7 +421,7 @@ namespace runge_kutta {
   //   after  [  x | k1 | kD | kC | xE | xF | xG | kE | kF | kG ]
   //
   // 但し x は次の step の値である。
-  // xE, xF, xG は蜜出力のデータを生成する為に内部で使用した変数である。
+  // xE, xF, xG は密出力のデータを生成する為に内部で使用した変数である。
   // この関数を呼び出すと内部の情報を破壊するため、この関数は 1 回限りしか呼び出せない。
   //
   void dop853_integrator::_dense_output_initialize(

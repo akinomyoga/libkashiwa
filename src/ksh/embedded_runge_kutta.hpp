@@ -6,59 +6,17 @@
 #include <mwg/except.h>
 #include "def.hpp"
 #include "buffer.hpp"
+#include "ode.hpp"
 
 namespace kashiwa {
 namespace runge_kutta {
-
-  struct iequation_for_erk;
-
-  struct stat_t {
-    int nfcn   {0};
-    int nstep  {0};
-    int naccpt {0};
-    int nrejct {0};
-
-    iequation_for_erk* eq            {nullptr};
-    double const*      previousValue {nullptr};
-    std::size_t        previousSize  {0};
-    double             previousTime  {0.0};
-    double             previousStep  {0.0};
-
-    void clear() {
-      nfcn   = 0;
-      nstep  = 0;
-      naccpt = 0;
-      nrejct = 0;
-    }
-  };
-
-  struct idense_output {
-    virtual void get_values_at(
-      double* ksh_restrict interpolated, double time,
-      std::size_t const* icomp, std::size_t ncomp
-    ) = 0;
-
-    void get_values_at(double* ksh_restrict interpolated, double time) {
-      return get_values_at(interpolated, time, nullptr, 0);
-    }
-  };
-
-  struct iequation_for_erk {
-    virtual ~iequation_for_erk() {}
-    virtual void eval_derivative(double* ksh_restrict slope, std::size_t size, double t, double const* ksh_restrict value) = 0;
-    virtual void onstep() {}
-    virtual void ondense(stat_t const&, idense_output&) {}
-
-  public:
-    virtual bool is_stopping() { return false; }
-  };
 
   // DOP853: Dormand-Prince 8(5, 3)
   //
   //   The coefficients are taken from the supplementary material of the Heirer's book:
   //   from http://www.unige.ch/~hairer/prog/nonstiff/dop853.f
   //
-  struct dop853_integrator {
+  struct dop853_integrator: explicit_integrator_base<dop853_integrator> {
     static const int stage = 12;
     static const int order = 8;
     mutable working_buffer buffer;
@@ -115,7 +73,9 @@ namespace runge_kutta {
       virtual void eval_derivative(double* ksh_restrict slope, std::size_t size, double t, double const* ksh_restrict value) override {
         f(slope, size, t, value);
       }
-      virtual void onstep() {
+      virtual void onstep(double time, double const* ksh_restrict value) {
+        ksh_unused(time);
+        ksh_unused(value);
         stepCallback();
       }
     };

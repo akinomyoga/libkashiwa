@@ -8,6 +8,7 @@
 #include <cmath>
 #include "def.hpp"
 #include "buffer.hpp"
+#include "ode.hpp"
 
 // References
 //
