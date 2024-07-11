@@ -71,8 +71,6 @@ struct contour_search_params {
   };
 };
 
-namespace details {
-
 template<typename T, typename F>
 T binary_search(T lower, T upper, F predicate, int count = 10) {
   bool const up = predicate(lower);
@@ -93,35 +91,50 @@ T binary_search(T lower, T upper, F predicate, int count = 10) {
 
 template<typename F>
 struct contour_tracer {
-  binning m_binx;
-  binning m_biny;
+  contour_search_params m_params;
   F m_func;
-  contour_tracer(binning const& binx, binning const& biny, F func):
-    m_binx(binx), m_biny(biny), m_func(func) {}
+  contour_tracer(contour_search_params const& params, F func):
+    m_params(params), m_func(func)
+  {
+    if (std::isnan(m_params.limitx.first))
+      m_params.limitx.first = 1.5 * m_params.binx.min() - 0.5 * m_params.binx.max();
+    if (std::isnan(m_params.limitx.second))
+      m_params.limitx.second = 1.5 * m_params.binx.max() - 0.5 * m_params.binx.min();
+    if (std::isnan(m_params.limity.first))
+      m_params.limity.first = 1.5 * m_params.biny.min() - 0.5 * m_params.biny.max();
+    if (std::isnan(m_params.limity.second))
+      m_params.limity.second = 1.5 * m_params.biny.max() - 0.5 * m_params.biny.min();
+  }
+
+  int evaluate(double const x, double const y) {
+    if (x < m_params.limitx.first || x > m_params.limitx.second) return -1;
+    if (y < m_params.limity.first || y > m_params.limity.second) return -1;
+    return m_func(x, y);
+  }
 
   // -1: already checked
   // 0: region not to check
   // 1: region to check
   std::vector<int> m_table;
   void generate_map() {
-    std::size_t const ixN = m_binx.size();
-    std::size_t const iyN = m_biny.size();
+    std::size_t const ixN = m_params.binx.size();
+    std::size_t const iyN = m_params.biny.size();
     m_table.resize((ixN + 1) * (iyN + 1));
     for (std::size_t ix = 0; ix <= ixN; ix++) {
-      double const x = m_binx[ix];
+      double const x = m_params.binx[ix];
       for (std::size_t iy = 0; iy <= iyN; iy++) {
-        double const y = m_biny[iy];
-        m_table[ix * (iyN + 1) + iy] = m_func(x, y);
+        double const y = m_params.biny[iy];
+        m_table[ix * (iyN + 1) + iy] = evaluate(x, y);
       }
     }
   }
 
   std::vector<std::complex<double>> m_region_points;
   void find_connected_regions() {
-    int const ixN = m_binx.size();
-    int const iyN = m_biny.size();
-    double const dx = m_binx.mesh();
-    double const dy = m_biny.mesh();
+    int const ixN = m_params.binx.size();
+    int const iyN = m_params.biny.size();
+    double const dx = m_params.binx.mesh();
+    double const dy = m_params.biny.mesh();
     std::vector<int> table = m_table; // copy
 
     std::vector<std::pair<int, int>> list1, list2;
@@ -162,8 +175,8 @@ struct contour_tracer {
           list1.swap(list2);
         }
 
-        double const x = m_binx[ixmax];
-        double const y = m_biny[iymax];
+        double const x = m_params.binx[ixmax];
+        double const y = m_params.biny[iymax];
         m_region_points.emplace_back(x, y);
       }
     }
@@ -174,18 +187,26 @@ struct contour_tracer {
     constexpr int scope_resolution = 100;
     constexpr double scope_offset = 1e-5;
 
-    double const dx = m_binx.mesh();
+    double const dx = m_params.binx.mesh();
     double const ds = 0.5 * dx;
 
     int color = 0;
     auto _in_region = [this, &color] (std::complex<double> value) -> bool {
-      return m_func(value.real(), value.imag()) == color;
+      return evaluate(value.real(), value.imag()) == color;
     };
 
     for (std::complex<double> z0: m_region_points) {
       try {
-        color = m_func(z0.real(), z0.imag());
-        z0 = binary_search(z0, z0 + 2.0 * dx, _in_region, 32);
+        color = evaluate(z0.real(), z0.imag());
+
+        // Identify the smallest x where (x, Im(z0)) is in the region.  Since
+        // we clip the region by m_params.limitx, we should be able to find
+        // such a point at least until we reach the right edge of the clipping
+        // box, m_params.limitx.second.
+        std::complex<double> zr = z0 + 2.0 * dx;
+        while (zr.real() < m_params.limitx.second + 2.0 * dx && _in_region(zr))
+          zr += 2.0 * dx;
+        z0 = binary_search(z0, zr, _in_region, 32);
 
         std::complex<double> zt = z0 - ds;
         while (!_in_region(zt))
@@ -219,7 +240,10 @@ struct contour_tracer {
           z2 = z1 + n * std::polar(ds, theta);
           contour.push_back(z2);
 
-          if (std::abs(z2 - z0) < 2.0 * ds && contour.size() >= 5) break;
+          if (std::abs(z2 - z0) < 2.0 * ds && contour.size() >= 5) {
+            contour.push_back(z0);
+            break;
+          }
           if (contour.size() >= 10000) break;
         }
 
@@ -252,15 +276,9 @@ struct contour_tracer {
   }
 };
 
-}
-
 template<typename F>
 void save_contours(const char* filename, contour_search_params const& params, F func) {
-  details::contour_tracer gen(params.binx, params.biny, [&func, &params] (double const x, double const y) {
-    if (x < params.limitx.first || x > params.limitx.second) return -1;
-    if (y < params.limity.first || y > params.limity.second) return -1;
-    return func(x, y);
-  });
+  contour_tracer gen(params, func);
   gen.generate_map();
   gen.find_connected_regions();
   gen.save_contours(filename);
