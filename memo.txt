@@ -1,3 +1,4 @@
+# -*- coding: utf-8; fill-column: 79 -*-
 
 -------------------------------------------------------------------------------
   概要
@@ -21,6 +22,10 @@ Author: K. Murase <myoga.murase@gmail.com>
 -------------------------------------------------------------------------------
   ToDo
 -------------------------------------------------------------------------------
+
+2024-07-11
+
+* contour: trace_contour_grid, Newton 法による高速化
 
 2017-02-12
 
@@ -82,9 +87,167 @@ Author: K. Murase <myoga.murase@gmail.com>
   Done
 -------------------------------------------------------------------------------
 
+2024-07-11
+
+* contour: 一つの点から複数の等高線が出ている場合の問題 [#D0020]
+
+  次の線素をどの様に選ぶべきだろうか。現在の方針だと直進を好む様にしている。然
+  しこれだと複数の稜線が出ている場合に正しく経路を取り尽くす事ができない。
+
+  a reject: 角度をもっと細かく取って隣の等高線を決定しようとしたが振動が起きて
+    駄目だった。
+
+    // determine_angle_scope (src/ksh/contour.hpp)
+
+    constexpr int angle_sample_count = 100;
+    // To handle the higher-order critical points from which more than two
+    // contours come out, we try to select the next contour properly.
+
+    // I first tried to switch the rotation direction based on whether the
+    // region is in the right-hand side with respect to the previous direction,
+    // i.e., we always select the next contour in the outward direction.  This
+    // turned out to cause the oscillation.
+    double const dtheta = 2.0 * M_PI / angle_sample_count;
+    if (!is_in_region(z + n * std::polar(ds, 0.5 * theta1))) {
+      for (int i = 1; i < angle_sample_count; i++) {
+        double const theta2 = (i + 0.5) * dtheta;
+        if (this->is_in_region(z + n * std::polar(ds, theta2)))
+          return {theta2 - dtheta, theta2};
+      }
+    } else if (!is_in_region(z + n * std::polar(ds, -0.5 * theta1))) {
+      for (int i = 1; i < angle_sample_count; i++) {
+        double const theta2 = -(i + 0.5) * dtheta;
+        if (this->is_in_region(z + n * std::polar(ds, theta2)))
+          return {theta2, theta2 + dtheta};
+      }
+    }
+
+  b reject: a の方法で隣の等高線を決める時に回転方向を、範囲の外側に出る方向に
+    決定しようとしていたのがいけないのかもしれないと思って、範囲の向きに関係な
+    く反時計回りに回転して探索する様にしたが、それでもやはり振動が起きる。
+
+  改めて考えてみたが何故振動が発生するのかよく分からない。もしくは、直進できる
+  かの探索と細かい探索で探索半径 ds を変更する? 小さな半径で探して非自明な向き
+  に等高線が出ていたらそちらに進む。こうすれば隣の別の等高線に引っかかってしま
+  うという事はない気がする。
+
+  c reject: 折れ曲がり判定に使う半径は小さくする?
+
+    これを試してみたらうまく行ったと思ったが実はコードが有効になっていなかった。
+    有効にすると失敗する。何故なら小さな半径で二つの角度で片方だけが領域に入る
+    様にしても、大きな半径ではそうとは限らないので。然し、だからと言って小さな
+    半径で step を踏む様にするとそれは結局小さな ds で実行するのと変わらないの
+    で意味ない。
+
+    // D0020: To properly handle critical points at which multiple contours
+    // cross, we first scan [0, 2\pi) with some sampling points.  We use a
+    // smaller radius $ds2 = (2.0/3.0)ds$ to avoid oscillation (infinite loop)
+    // near the sharp angle of the region.
+    {
+      constexpr int angle_sample_count = 12;
+      double const dtheta = 2.0 * M_PI / angle_sample_count;
+      double const ds2 = (2.0 / 3.0) * ds;
+      double const theta1 = 0.5 * dtheta;
+      bool const theta1_in_region = is_in_region(z + n * std::polar(ds2, theta1));
+      for (int i = 1; i < angle_sample_count; i++) {
+        double const theta2 = (i + 0.5) * dtheta;
+        if (this->is_in_region(z + n * std::polar(ds2, theta2)) != theta1_in_region)
+          return {theta2 - dtheta, theta2};
+      }
+    }
+
+  うーん。やはり何故 b でうまく行かないのかが分からない。うーん。分かった気がす
+  る。鋭角付近でもう一つの辺に移る時には必ずしも直角に折れ曲がる訳では無い。鋭
+  角に折れ曲がる事ができたとすると、元の辺との交点が二つあって、そうするとその
+  次の試行で必ず元の辺に戻ってしまう? という事の気がする。
+
+  * 振動を抑えるにはやはり contour の方向性をちゃんと決める様にするべき
+    の気がする。今のコードを見ると最初の線素は右手に領域を囲む様になっている。
+    これは余り自然ではない気がするので、取り敢えず逆向きにしたい。
+
+    と思ったがこれを方向性を決めたとしてもやはり振動は抑えられない気がする。コー
+    ドはより単純になるかもしれないが現在の問題とは独立の話である。
+
+    // D0020: To properly handle critical points at which multiple contours
+    // cross, we first scan [0, 2\pi) with some sampling points.
+    {
+      constexpr int angle_sample_count = 12;
+      double const dtheta = 2.0 * M_PI / angle_sample_count;
+
+      // We first determine a small angle $\theta$ outside the region.  We
+      // should be able to find such an angle in the clockwise direction
+      // because we trace the contour so that it encloses the region on the
+      // left-hand side.
+      int count = 0;
+      double theta = 0.5 * dtheta;
+      while (is_in_region(z + n * std::polar(ds, theta))) {
+        theta *= 0.5;
+        if (++count >= 20)
+          throw std::runtime_error("binary_search: wrong boundary direction");
+      }
+
+      // We then increase $\theta$ by $d\theta$ and find the first $\theta$ in
+      // the region.
+      for (int i = 1; i < angle_sample_count; i++) {
+        theta += dtheta;
+        if (this->is_in_region(z + n * std::polar(ds, theta)))
+          return {theta - dtheta, theta};
+      }
+    }
+
+  次の可能性としては既に通った道を覚えておいてその道は通らない様にするという物。
+  しかしこれの判定も難しい様な気がする。物凄く鋭角になっていたり、細い隙間がずっ
+  と続いている様な状況だと物凄く昔の線素とも交差する可能性があるので結局全ての
+  線素と衝突判定をしなければならず O(N^2) になる。時間計算量を忘れる事にしても、
+  交差判定自体をどの様に行うかも問題がある。
+
+  d 或いは諦めて格子ベースで点を特定してその後で点を適当に並べ替えるという方法
+    にする?
+
+    x ok: 然しそうだとしても複数の線が格子の辺を跨いでいる時にそれらを正しく抽
+      出できるのかという問題がある。
+
+      或いは実は大丈夫なのだろうか。例えば偶数個の交差は見逃す可能性がある。然
+      し、そういう事ならば別に偶数個の交差は省略しても良いのでは? 例えば以下の
+      様になっていた場合 (格子点は * で示してある) には、真ん中の格子セルについ
+      ては交差が一つも検出されない。
+
+      >     |........|
+      >  *  |.*....*.|  *
+      >     +--------+
+      > 
+      >     +--------+
+      >  *  |.*....*.|  *
+      >     |........|
+
+      そうすると形状的に以下の形になっていると錯誤してしまう。
+
+      >     |........|
+      >  *  |.*....*.|  *
+      >     |........|
+      >     |........|
+      >     |........|
+      >  *  |.*....*.|  *
+      >     |........|
+
+      然し改めて考えてみると実はこれで問題ない様な気がする。
+
+    x ok: 全部列挙できたとしてもそれぞれの点がどの様に繋がっているかをどうやっ
+      て決めるのか? と思ったが、それに関しては問題ない様な気がしてきた。単に隣
+      り合うもの同士で組にすれば良いのでは。
+
+    うーん。これだと完全に実装し直しになってしまう。
+
+    どの様に実装したらよいだろうか。現在の点を分類してそれ毎に処理を切り替えれ
+    ば良い? 探索範囲の境界については特別に取り扱う必要がある気がする → 実装し
+    た。これにより病的な振る舞いは排除することができたと思う。一方で失敗してい
+    る気がする。
+
+  取り敢えずこれは安定して動作している。
+
 2017-02-12
 
-* [2017-02-03] polynomial: 割り算 (商と余り)
+* [2017-02-03] polynomial: 割り算 (商と余り) [#D0019]
 
   現在は係数体による割り算は提供しているが、
   多項式の割り算については提供していない。
@@ -92,7 +255,7 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 2017-02-05 Memo
 
-* big_integer: 基数は 10 の累乗よりも 2 の累乗の方が良い。
+* big_integer: 基数は 10 の累乗よりも 2 の累乗の方が良い [#D0018]
 
   十進整数としての出力の際の基数の変換に時間がかかるからと言って
   基数を初めから 10 の累乗にして計算してみた。
@@ -102,15 +265,15 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 2017-02-04
 
-* polynomial, rational: a = -a 最適化。
+* polynomial, rational: a = -a 最適化 [#D0017]
 
   操作 a = -a については型によって効率の良い実装方法がある筈。
 
   → ksh/def.h に kashiwa::destructive_negate を用意した。
 
-* polynomial, rational: 共通の演算子について自動で定義する方法を考える。
+* polynomial, rational: 共通の演算子について自動で定義する方法を考える [#D0016]
 
-* polynomial, rational: K overloads
+* polynomial, rational: K overloads [#D0015]
 
   % 現在、元となる型との演算も提供している。
   % しかし polynomial<rational<int>> などとした場合に、
@@ -144,7 +307,7 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 2017-01-06
 
-* Gauss-Chebyshev を実装した。
+* Gauss-Chebyshev を実装した [#D0014]
 
   実際にこれを使って計算をしてみるとそんなに収束は良くない。
   恐らく $\sqrt{1-x^2} f(x)$ が多項式近似でうまく表せなければ性能が悪いのだろう。
@@ -156,7 +319,7 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 2016-12-19
 
-* 2016-12-13 取り敢えずいま準備できる物
+* 2016-12-13 取り敢えずいま準備できる物 [#D0013]
 
   > - Runge-Kutta
   > - 線形方程式解法
@@ -169,7 +332,7 @@ Author: K. Murase <myoga.murase@gmail.com>
   > また、実際にこれを使ったコードを用意しないと発展しないので、
   > bolt の側を libkashiwa を用いる様に書き換える。
 
-* 2016-12-16 線形フィッティングのコード
+* 2016-12-16 線形フィッティングのコード [#D0012]
 
   線形フィッティングは基本的には射影である。
 
@@ -206,12 +369,12 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 2016-12-16
 
-* ガウス求積のインターフェイス
+* ガウス求積のインターフェイス [#D0011]
 
   - 現在のガウス求積の interface ではスカラーの値しか積分できない。
     複数の数値・もしくはベクトルを積分できる様にする。
 
-* 2016-12-15 線形方程式解法に関して
+* 2016-12-15 線形方程式解法に関して [#D0010]
 
   現在の実装方法だと何回もメモリを確保したり開放したりという事になる。
   LU分解専用のバッファを用意して更に std::move を使ったり使わなかったり
@@ -225,7 +388,7 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 2016-12-13
 
-* bolt の filter
+* runge_kutta: bolt の filter [#D0009]
 
   bolt の側も filter-branch して Runge-Kutta を除くか?
   bolt の側では kashiwa を使う様に変更してから
@@ -242,11 +405,11 @@ Author: K. Murase <myoga.murase@gmail.com>
   bolt に含まれていた対応するファイルたちを削除した。
 
 
-* Runge-Kutta memo.txt, Makefile 取り込み
+* runge_kutta: memo.txt, Makefile 取り込み [#D0008]
 
   よく考えたらこれを merge するのを忘れていた。
 
-* Runge-Kutta 取り込み
+* runge_kutta: Runge-Kutta 取り込み [#D0007]
 
   Runge-Kutta に関しては bolt repository から取り込む。
   関連する commit だけを抽出する方法について調べる。
@@ -333,7 +496,7 @@ Author: K. Murase <myoga.murase@gmail.com>
 
   何事もなく終わった。
 
-* 取り敢えず作る。計画を立てる。
+* 取り敢えず作る。計画を立てる [#D0006]
 
   今までに書いたコード、それからこれから書く数値計算関連のコードに関して、
   便利で汎用的な物を全部ここに放り込んでいく事にする。
@@ -356,7 +519,7 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 2016-04-25
 
-* DOP853 を改造して途中で状態を出力するなどの処理をできる様にする。
+* runge_kutta: DOP853 を改造して途中で状態を出力するなどの処理をできる様にする [#D0005]
 
   DOP853 では誤差に応じた h の変更なども含めて目的の時刻まで積分を実行する物なので、
   現在の様に時間微分の関数 f だけを渡す様な設計だと時間発展以外に何も出来ない。
@@ -365,7 +528,7 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 2016-04-24
 
-* Runge-Kutta について思うこと
+* runge_kutta: Runge-Kutta について思うこと [#D0004]
 
   様々な種類の RK がある。どの次数を選ぶのが良いか。
 
@@ -417,7 +580,7 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 2016-04-12
 
-* 結局、取り敢えずは RKG を使うのが良さそうである。
+* runge_kutta: 結局、取り敢えずは RKG を使うのが良さそうである [#D0003]
 
   計算結果が安定でない場合には TVD RK4 を何處からか探してきて適用する必要がある。
   或いは、TVD RK4 にすると微妙なうねりが減るとかそういう事もあるかもしれないので、
@@ -425,7 +588,7 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 2016-04-22
 
-* RK: CV8 の丸め誤差が蓄積する。
+* runge_kutta: CV8 の丸め誤差が蓄積する [#D0002]
 
   分割数を更に多くして確かめてみた所 RK4 の丸め誤差は一定に留まっているのに対して、
   CV8 の丸め誤差は線形で成長している。何故だろうか。
@@ -446,7 +609,7 @@ Author: K. Murase <myoga.murase@gmail.com>
 
 2016-04-22
 
-* Runge-Kutta Gill
+* runge_kutta: Runge-Kutta Gill [#D0001]
 
   Runge-Kutta Gill は丸め誤差をキャンセルする様にできているのだと言っておきながら、
   他の4段4次の公式と較べて大して違いがある様には見えない。

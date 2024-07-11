@@ -6,13 +6,12 @@
 #include <stdexcept>
 #include <vector>
 
+#include "utility.hpp"
+
 // * XXX--領域が単連結でない場合には内側の boundary を正しく抽出する事ができない。
 //
 // * XXX--現在の実装だと、一点から4以上の線が出ている場合に無限ループになった
 //   り取り尽くしていない点が発生したりする気がする。ちゃんと確認する必要がある。
-//
-// * ToDo: 現在 limitx, limity によって生じた boudary も出力しているが、これを
-//   省略する機能?
 
 namespace kashiwa::contour {
 
@@ -55,11 +54,23 @@ public:
   double mid_point(std::size_t index) const {
     return at(index + 0.5);
   }
+
+  // From value to index
+  double locate(double value) const {
+    return (value - m_min) / m_dx;
+  }
 };
 
 struct contour_search_params {
   binning binx;
   binning biny;
+  bool closepath = false;
+
+  enum tracer_type {
+    tracer_inchworm,
+    tracer_grid,
+  };
+  tracer_type tracer = tracer_inchworm;
 
   std::pair<double, double> limitx = {
     std::numeric_limits<double>::quiet_NaN(),
@@ -106,12 +117,6 @@ struct contour_tracer {
       m_params.limity.second = 1.5 * m_params.biny.max() - 0.5 * m_params.biny.min();
   }
 
-  int evaluate(double const x, double const y) {
-    if (x < m_params.limitx.first || x > m_params.limitx.second) return -1;
-    if (y < m_params.limity.first || y > m_params.limity.second) return -1;
-    return m_func(x, y);
-  }
-
   // -1: already checked
   // 0: region not to check
   // 1: region to check
@@ -124,7 +129,7 @@ struct contour_tracer {
       double const x = m_params.binx[ix];
       for (std::size_t iy = 0; iy <= iyN; iy++) {
         double const y = m_params.biny[iy];
-        m_table[ix * (iyN + 1) + iy] = evaluate(x, y);
+        m_table[ix * (iyN + 1) + iy] = m_func(x, y);
       }
     }
   }
@@ -182,22 +187,84 @@ struct contour_tracer {
     }
   }
 
-  std::vector<std::vector<std::complex<double>>> get_contours() {
-    std::vector<std::vector<std::complex<double>>> ret;
+  /*?lwiki
+   * @param[in] std::complex<double> const& z;
+   *   The current position.
+   * @param[in] std::complex<double> const& n;
+   *   The outward direction for the previous line element (from the current
+   *   position `z` to the previous position).
+   * @param[in] double ds;
+   *   The search radius, or equivalently, the length of the line element.
+   * @param[in] Predicate const& in_region;
+   *   The predicate to test whether the specified  point is in the region.
+   */
+  template<typename Predicate>
+  std::pair<double, double> determine_angle_scope(std::complex<double> const& z, std::complex<double> const& n, double const ds, Predicate const& in_region) const {
+#if 0
+    // D0020: To properly handle critical points at which multiple contours
+    // cross, we first scan [0, 2\pi) with some sampling points. これにより確か
+    // に臨界点上での振る舞いは改善したが、代わりに別の場所で角度の二分探索に失
+    // 敗する。
+    {
+      constexpr int angle_sample_count = 12;
+      double const dtheta = 2.0 * M_PI / angle_sample_count;
+
+      // We first determine a small angle $\theta$ outside the region.  We
+      // should be able to find such an angle in the clockwise direction
+      // because we trace the contour so that it encloses the region on the
+      // left-hand side.
+      int count = 0;
+      double theta = 0.5 * dtheta;
+      while (in_region(z + n * std::polar(ds, theta))) {
+        theta *= 0.5;
+        if (++count >= 20)
+          throw std::runtime_error("binary_search: wrong boundary direction");
+      }
+
+      // We then increase $\theta$ by $d\theta$ and find the first $\theta$ in
+      // the region.
+      for (int i = 1; i < angle_sample_count; i++) {
+        theta += dtheta;
+        if (in_region(z + n * std::polar(ds, theta)))
+          return {theta - dtheta, theta};
+      }
+    }
+#endif
+
     constexpr int scope_resolution = 100;
     constexpr double scope_offset = 1e-5;
+    // The above implementations should basically succeed if enabled, but in
+    // case it fails due to the coarse sampling, we fallback to the older
+    // approach, which selects the contour in the same direction as the
+    // previous line element as much as possible.
+    double scope;
+    for (int i = 1; i <= scope_resolution; i++) {
+      scope = (M_PI - scope_offset) * i / scope_resolution;
+      if (in_region(z - n * std::polar(ds, -scope))
+        != in_region(z - n * std::polar(ds, scope)))
+        break;
+    }
+
+    return {M_PI - scope, M_PI + scope};
+  }
+
+  std::vector<std::vector<std::complex<double>>> trace_contours_inchworm() {
+    std::vector<std::vector<std::complex<double>>> ret;
 
     double const dx = m_params.binx.mesh();
     double const ds = 0.5 * dx;
 
     int color = 0;
     auto _in_region = [this, &color] (std::complex<double> value) -> bool {
-      return evaluate(value.real(), value.imag()) == color;
+      double const x = value.real(), y = value.imag();
+      if (x < m_params.limitx.first || x > m_params.limitx.second) return false;
+      if (y < m_params.limity.first || y > m_params.limity.second) return false;
+      return m_func(x, y) == color;
     };
 
     for (std::complex<double> z0: m_region_points) {
       try {
-        color = evaluate(z0.real(), z0.imag());
+        color = m_func(z0.real(), z0.imag());
 
         // Identify the smallest x where (x, Im(z0)) is in the region.  Since
         // we clip the region by m_params.limitx, we should be able to find
@@ -212,7 +279,7 @@ struct contour_tracer {
         while (!_in_region(zt))
           zt = 0.5 * (z0 + binary_search(zt, z0 + (zt - z0) * 1e-6, _in_region, 20));
 
-        double theta = binary_search(0.0, M_PI, [z0, zt, &_in_region] (double theta) {
+        double theta = binary_search(-M_PI, 0.0, [z0, zt, &_in_region] (double theta) {
           return _in_region(z0 + (zt - z0) * std::polar(1.0, theta));
         }, 20);
         std::complex<double> z1 = z0;
@@ -223,17 +290,9 @@ struct contour_tracer {
         contour.push_back(z2);
 
         for (;;) {
-          std::complex<double> n = (z2 - z1) / std::abs(z2 - z1);
-
-          double scope;
-          for (int i = 1; i <= scope_resolution; i++) {
-            scope = (M_PI - scope_offset) * i / scope_resolution;
-            if (_in_region(z2 + n * std::polar(ds, -scope))
-              != _in_region(z2 + n * std::polar(ds, scope)))
-              break;
-          }
-
-          theta = binary_search(-scope, scope, [z2, n, ds, &_in_region] (double theta) {
+          std::complex<double> n = (z1 - z2) / std::abs(z2 - z1);
+          std::pair<double, double> const scope = this->determine_angle_scope(z2, n, ds);
+          theta = binary_search(scope.first, scope.second, [z2, n, ds, &_in_region] (double theta) {
             return _in_region(z2 + n * std::polar(ds, theta));
           }, 20);
           z1 = z2;
@@ -255,8 +314,183 @@ struct contour_tracer {
     }
     return ret;
   }
+
+  std::vector<std::vector<std::complex<double>>> trace_contours_grid() {
+    double const dx = m_params.binx.mesh();
+    int const ixN = m_params.binx.size();
+    int const iyN = m_params.biny.size();
+    double const xthresh = dx * dx * 1e-4;
+
+    int color = 0;
+    auto _in_region = [this] (std::complex<double> value) -> bool {
+      return this->m_func(value.real(), value.imag());
+    };
+    auto _index2contained = [this, iyN, &color] (int ix, int iy) -> bool {
+      return this->m_table[ix * (iyN + 1) + iy] == color;
+    };
+    auto _index2complex = [this] (int ix, int iy) -> std::complex<double> {
+      return std::complex<double>(m_params.binx[ix], m_params.biny[iy]);
+    };
+
+    enum point_type {
+      limit_corner,
+      link_up,
+      link_down,
+      link_right,
+      link_left,
+    } type;
+
+    std::vector<std::vector<std::complex<double>>> ret;
+    std::vector<std::complex<double>> contour;
+    auto _add_contour = [&] {
+      if (contour.size()) {
+        ret.emplace_back(std::move(contour));
+        contour.clear();
+      }
+    };
+
+    for (std::complex<double> z0: m_region_points) {
+      int ix = kashiwa::clamp<int>(std::round(m_params.binx.locate(z0.real())), 0, ixN);
+      int iy = kashiwa::clamp<int>(std::round(m_params.biny.locate(z0.imag())), 0, iyN);
+      color = m_table[ix * (iyN + 1) + iy];
+
+      contour.clear();
+
+      std::complex<double> p1, p2;
+      std::complex<double> pinit, plast;
+      bool pinit_initialized = false;
+
+      if (ix == ixN) {
+        type = link_down;
+      } else {
+        type = link_right;
+        p1 = _index2complex(ix, iy);
+        p2 = _index2complex(ix + 1, iy);
+        contour.emplace_back(binary_search(p1, p2, _in_region, 20));
+        pinit = contour.back();
+        pinit_initialized = true;
+      }
+
+      for (int iloop = 0; iloop < 10000; iloop++) {
+        switch (type) {
+        case link_right:
+          if (iy == iyN) {
+            if (!m_params.closepath) _add_contour();
+            while (ix > 0 && _index2contained(ix - 1, iy)) ix--;
+            if (ix == 0) {
+              type = link_up;
+              goto corner;
+            }
+            type = link_left;
+            p1 = _index2complex(ix, iy);
+            p2 = _index2complex(ix - 1, iy);
+          } else if (_index2contained(ix + 1, iy + 1)) {
+            type = link_down;
+            p1 = _index2complex(++ix, ++iy);
+          } else if (_index2contained(ix, iy + 1)) {
+            type = link_right;
+            p1 = _index2complex(ix, ++iy);
+            p2 = _index2complex(ix + 1, iy);
+          } else {
+            type = link_up;
+            p2 = _index2complex(ix, iy + 1);
+          }
+          goto link;
+        case link_up:
+          if (ix == 0) {
+            if (!m_params.closepath) _add_contour();
+            while (iy > 0 && _index2contained(ix, iy - 1)) iy--;
+            if (iy == 0) {
+              type = link_left;
+              goto corner;
+            }
+            type = link_down;
+            p1 = _index2complex(ix, iy);
+            p2 = _index2complex(ix, iy - 1);
+          } else if (_index2contained(ix - 1, iy + 1)) {
+            type = link_right;
+            p1 = _index2complex(--ix, ++iy);
+          } else if (_index2contained(ix - 1, iy)) {
+            type = link_up;
+            p1 = _index2complex(--ix, iy);
+            p2 = _index2complex(ix, iy + 1);
+          } else {
+            type = link_left;
+            p2 = _index2complex(ix - 1, iy);
+          }
+          goto link;
+        case link_left:
+          if (iy == 0) {
+            if (!m_params.closepath) _add_contour();
+            while (ix < ixN && _index2contained(ix + 1, iy)) ix++;
+            if (ix == ixN) {
+              type = link_down;
+              goto corner;
+            }
+            type = link_right;
+            p1 = _index2complex(ix, iy);
+            p2 = _index2complex(ix + 1, iy);
+          } else if (_index2contained(ix - 1, iy - 1)) {
+            type = link_up;
+            p1 = _index2complex(--ix, --iy);
+          } else if (_index2contained(ix, iy - 1)) {
+            type = link_left;
+            p1 = _index2complex(ix, --iy);
+            p2 = _index2complex(ix - 1, iy);
+          } else {
+            type = link_down;
+            p2 = _index2complex(ix, iy - 1);
+          }
+          goto link;
+        case link_down:
+          if (ix == ixN) {
+            if (!m_params.closepath) _add_contour();
+            while (iy < iyN && _index2contained(ix, iy + 1)) iy++;
+            if (iy == iyN) {
+              type = link_right;
+              goto corner;
+            }
+            type = link_up;
+            p1 = _index2complex(ix, iy);
+            p2 = _index2complex(ix, iy + 1);
+          } else if (_index2contained(ix + 1, iy - 1)) {
+            type = link_left;
+            p1 = _index2complex(++ix, --iy);
+          } else if (_index2contained(ix + 1, iy)) {
+            type = link_down;
+            p1 = _index2complex(++ix, iy);
+            p2 = _index2complex(ix, iy - 1);
+          } else {
+            type = link_right;
+            p2 = _index2complex(ix + 1, iy);
+          }
+          goto link;
+        corner:
+          plast = _index2complex(ix, iy);
+          if (m_params.closepath)
+            contour.emplace_back(plast);
+          break;
+        link:
+          plast = binary_search(p1, p2, _in_region, 20);
+          contour.emplace_back(plast);
+          break;
+        }
+
+        if (!pinit_initialized) {
+          pinit = plast;
+          pinit_initialized = true;
+        } else if (std::norm(plast - pinit) < xthresh) {
+          break;
+        }
+      }
+
+      _add_contour();
+    }
+    return ret;
+  }
+
   std::size_t print_contours(std::FILE* file) {
-    auto contours = get_contours();
+    auto contours = trace_contours_grid();
     for (auto contour: contours) {
       for (auto z: contour)
         std::fprintf(file, "%g %g\n", z.real(), z.imag());
