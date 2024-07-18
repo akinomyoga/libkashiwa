@@ -19,6 +19,14 @@
 # define ksh_unused(var) ((void) var)
 #endif
 
+#ifndef ksh_fallthrough
+# if __cpluscplus >= 201703L
+#  define ksh_fallthrough [[fallthrough]]
+# else
+#  define ksh_fallthrough
+# endif
+#endif
+
 namespace kashiwa {
 
   typedef unsigned char byte;

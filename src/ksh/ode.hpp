@@ -41,7 +41,10 @@ namespace runge_kutta {
   struct iequation_for_erk {
     virtual ~iequation_for_erk() {}
     virtual void eval_derivative(double* ksh_restrict slope, std::size_t size, double t, double const* ksh_restrict value) = 0;
-    virtual void onstep(double t, double const* ksh_restrict value) {}
+    virtual void onstep(double t, double const* ksh_restrict value) {
+      ksh_unused(t);
+      ksh_unused(value);
+    }
     virtual void ondense(stat_t const&, idense_output&) {}
   public:
     virtual bool is_stopping() { return false; }

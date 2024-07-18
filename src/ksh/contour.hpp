@@ -1,17 +1,21 @@
 #ifndef kashiwa_contour_hpp
 #define kashiwa_contour_hpp
 #include <cstddef>
+#include <cstdint>
 
 #include <complex>
 #include <stdexcept>
 #include <vector>
 
+#include "def.hpp"
 #include "utility.hpp"
 
+// tracer_inchworm:
+//
 // * XXX--領域が単連結でない場合には内側の boundary を正しく抽出する事ができない。
 //
-// * XXX--現在の実装だと、一点から4以上の線が出ている場合に無限ループになった
-//   り取り尽くしていない点が発生したりする気がする。ちゃんと確認する必要がある。
+// * XXX--現在の実装だと、一点から4以上の線が出ている場合に無限ループになったり
+//   取り尽くしていない点が発生したりする気がする。ちゃんと確認する必要がある。
 
 namespace kashiwa::contour {
 
@@ -70,7 +74,7 @@ struct contour_search_params {
     tracer_inchworm,
     tracer_grid,
   };
-  tracer_type tracer = tracer_inchworm;
+  tracer_type tracer = tracer_grid;
 
   std::pair<double, double> limitx = {
     std::numeric_limits<double>::quiet_NaN(),
@@ -135,12 +139,14 @@ struct contour_tracer {
   }
 
   std::vector<std::complex<double>> m_region_points;
-  void find_connected_regions() {
+  void update_connected_regions() {
     int const ixN = m_params.binx.size();
     int const iyN = m_params.biny.size();
     double const dx = m_params.binx.mesh();
     double const dy = m_params.biny.mesh();
     std::vector<int> table = m_table; // copy
+
+    m_region_points.clear();
 
     std::vector<std::pair<int, int>> list1, list2;
     for (int ix = 0; ix <= ixN; ix++) {
@@ -187,6 +193,7 @@ struct contour_tracer {
     }
   }
 
+public:
   /*?lwiki
    * @param[in] std::complex<double> const& z;
    *   The current position.
@@ -249,6 +256,8 @@ struct contour_tracer {
   }
 
   std::vector<std::vector<std::complex<double>>> trace_contours_inchworm() {
+    this->update_connected_regions();
+
     std::vector<std::vector<std::complex<double>>> ret;
 
     double const dx = m_params.binx.mesh();
@@ -291,7 +300,7 @@ struct contour_tracer {
 
         for (;;) {
           std::complex<double> n = (z1 - z2) / std::abs(z2 - z1);
-          std::pair<double, double> const scope = this->determine_angle_scope(z2, n, ds);
+          std::pair<double, double> const scope = this->determine_angle_scope(z2, n, ds, _in_region);
           theta = binary_search(scope.first, scope.second, [z2, n, ds, &_in_region] (double theta) {
             return _in_region(z2 + n * std::polar(ds, theta));
           }, 20);
@@ -315,182 +324,261 @@ struct contour_tracer {
     return ret;
   }
 
-  std::vector<std::vector<std::complex<double>>> trace_contours_grid() {
+public:
+  enum grid_contour_point_type {
+    limit_corner,
+    link_up,
+    link_down,
+    link_right,
+    link_left,
+  };
+
+  enum grid_link_mark_flags {
+    grid_link_mark_vertical = 0x1,
+    grid_link_mark_horizontal = 0x2,
+  };
+
+  void grid_initialize_link_mark(std::vector<std::uint32_t>& link_mark) const {
+    int const ixN = m_params.binx.size();
+    int const iyN = m_params.biny.size();
+    link_mark.assign(ixN * iyN, 0);
+    for (int ix = 0; ix < ixN; ix++) {
+      for (int iy = 0; iy < iyN; iy++) {
+        int const color0 = m_table[ix * (iyN + 1) + iy];
+        int const color1 = m_table[(ix + 1) * (iyN + 1) + iy];
+        int const color2 = m_table[ix * (iyN + 1) + iy + 1];
+        if (color0 != color1 && (color0 > 0 || color1 > 0))
+          link_mark[ix * iyN + iy] |= grid_link_mark_horizontal;
+        if (color0 != color2 && (color0 > 0 || color2 > 0))
+          link_mark[ix * iyN + iy] |= grid_link_mark_vertical;
+      }
+    }
+  }
+
+  void grid_unmark_link(std::vector<std::uint32_t>& link_mark, grid_contour_point_type type, int ix, int iy) const {
+    int const iyN = m_params.biny.size();
+    switch (type) {
+    case link_down:
+      iy--;
+      ksh_fallthrough;
+      /*FALL-THROUGH*/
+    case link_up:
+      link_mark[ix * iyN + iy] &= ~grid_link_mark_vertical;
+      break;
+    case link_left:
+      ix--;
+      ksh_fallthrough;
+      /*FALL-THROUGH*/
+    case link_right:
+      link_mark[ix * iyN + iy] &= ~grid_link_mark_horizontal;
+      break;
+    }
+  }
+
+  void grid_trace_contour(std::vector<std::vector<std::complex<double>>>& out, std::vector<std::uint32_t>& link_mark, grid_contour_point_type type, int ix, int iy, bool include_first) {
     double const dx = m_params.binx.mesh();
     int const ixN = m_params.binx.size();
     int const iyN = m_params.biny.size();
     double const xthresh = dx * dx * 1e-4;
 
-    int color = 0;
+    std::vector<std::complex<double>> contour;
+    auto _add_contour = [&out, &contour] {
+      if (contour.size()) {
+        out.emplace_back(std::move(contour));
+        contour.clear();
+      }
+    };
+
+    int const color = m_table[ix * (iyN + 1) + iy];
     auto _in_region = [this] (std::complex<double> value) -> bool {
       return this->m_func(value.real(), value.imag());
     };
-    auto _index2contained = [this, iyN, &color] (int ix, int iy) -> bool {
+    auto _index2contained = [this, iyN, color] (int ix, int iy) -> bool {
       return this->m_table[ix * (iyN + 1) + iy] == color;
     };
     auto _index2complex = [this] (int ix, int iy) -> std::complex<double> {
       return std::complex<double>(m_params.binx[ix], m_params.biny[iy]);
     };
 
-    enum point_type {
-      limit_corner,
-      link_up,
-      link_down,
-      link_right,
-      link_left,
-    } type;
+    std::complex<double> p1, p2;
+    std::complex<double> pinit, plast;
+    bool pinit_initialized = false;
+
+    if (include_first) {
+      p1 = _index2complex(ix, iy);
+      switch (type) {
+      case link_right: p2 = _index2complex(ix + 1, iy); break;
+      case link_left: p2 = _index2complex(ix - 1, iy); break;
+      case link_up: p2 = _index2complex(ix, iy + 1); break;
+      case link_down: p2 = _index2complex(ix, iy - 1); break;
+      }
+      plast = binary_search(p1, p2, _in_region, 20);
+      contour.emplace_back(plast);
+      grid_unmark_link(link_mark, type, ix, iy);
+      pinit = plast;
+      pinit_initialized = true;
+    }
+
+    for (int iloop = 0; iloop < 10000; iloop++) {
+      switch (type) {
+      case link_right:
+        if (iy == iyN) {
+          if (!m_params.closepath) _add_contour();
+          while (ix > 0 && _index2contained(ix - 1, iy)) ix--;
+          if (ix == 0) {
+            type = link_up;
+            goto corner;
+          }
+          type = link_left;
+          p1 = _index2complex(ix, iy);
+          p2 = _index2complex(ix - 1, iy);
+        } else if (_index2contained(ix + 1, iy + 1)) {
+          type = link_down;
+          p1 = _index2complex(++ix, ++iy);
+        } else if (_index2contained(ix, iy + 1)) {
+          type = link_right;
+          p1 = _index2complex(ix, ++iy);
+          p2 = _index2complex(ix + 1, iy);
+        } else {
+          type = link_up;
+          p2 = _index2complex(ix, iy + 1);
+        }
+        goto link;
+      case link_up:
+        if (ix == 0) {
+          if (!m_params.closepath) _add_contour();
+          while (iy > 0 && _index2contained(ix, iy - 1)) iy--;
+          if (iy == 0) {
+            type = link_left;
+            goto corner;
+          }
+          type = link_down;
+          p1 = _index2complex(ix, iy);
+          p2 = _index2complex(ix, iy - 1);
+        } else if (_index2contained(ix - 1, iy + 1)) {
+          type = link_right;
+          p1 = _index2complex(--ix, ++iy);
+        } else if (_index2contained(ix - 1, iy)) {
+          type = link_up;
+          p1 = _index2complex(--ix, iy);
+          p2 = _index2complex(ix, iy + 1);
+        } else {
+          type = link_left;
+          p2 = _index2complex(ix - 1, iy);
+        }
+        goto link;
+      case link_left:
+        if (iy == 0) {
+          if (!m_params.closepath) _add_contour();
+          while (ix < ixN && _index2contained(ix + 1, iy)) ix++;
+          if (ix == ixN) {
+            type = link_down;
+            goto corner;
+          }
+          type = link_right;
+          p1 = _index2complex(ix, iy);
+          p2 = _index2complex(ix + 1, iy);
+        } else if (_index2contained(ix - 1, iy - 1)) {
+          type = link_up;
+          p1 = _index2complex(--ix, --iy);
+        } else if (_index2contained(ix, iy - 1)) {
+          type = link_left;
+          p1 = _index2complex(ix, --iy);
+          p2 = _index2complex(ix - 1, iy);
+        } else {
+          type = link_down;
+          p2 = _index2complex(ix, iy - 1);
+        }
+        goto link;
+      case link_down:
+        if (ix == ixN) {
+          if (!m_params.closepath) _add_contour();
+          while (iy < iyN && _index2contained(ix, iy + 1)) iy++;
+          if (iy == iyN) {
+            type = link_right;
+            goto corner;
+          }
+          type = link_up;
+          p1 = _index2complex(ix, iy);
+          p2 = _index2complex(ix, iy + 1);
+        } else if (_index2contained(ix + 1, iy - 1)) {
+          type = link_left;
+          p1 = _index2complex(++ix, --iy);
+        } else if (_index2contained(ix + 1, iy)) {
+          type = link_down;
+          p1 = _index2complex(++ix, iy);
+          p2 = _index2complex(ix, iy - 1);
+        } else {
+          type = link_right;
+          p2 = _index2complex(ix + 1, iy);
+        }
+        goto link;
+      corner:
+        plast = _index2complex(ix, iy);
+        if (m_params.closepath)
+          contour.emplace_back(plast);
+        break;
+      link:
+        plast = binary_search(p1, p2, _in_region, 20);
+        contour.emplace_back(plast);
+        grid_unmark_link(link_mark, type, ix, iy);
+        break;
+      }
+
+      if (!pinit_initialized) {
+        pinit = plast;
+        pinit_initialized = true;
+      } else if (std::norm(plast - pinit) < xthresh) {
+        break;
+      }
+    }
+
+    _add_contour();
+  }
+
+  std::vector<std::vector<std::complex<double>>> trace_contours_grid() {
+    int const ixN = m_params.binx.size();
+    int const iyN = m_params.biny.size();
+
+    std::vector<std::uint32_t> link_mark;
+    grid_initialize_link_mark(link_mark);
 
     std::vector<std::vector<std::complex<double>>> ret;
-    std::vector<std::complex<double>> contour;
-    auto _add_contour = [&] {
-      if (contour.size()) {
-        ret.emplace_back(std::move(contour));
-        contour.clear();
-      }
-    };
 
-    for (std::complex<double> z0: m_region_points) {
-      int ix = kashiwa::clamp<int>(std::round(m_params.binx.locate(z0.real())), 0, ixN);
-      int iy = kashiwa::clamp<int>(std::round(m_params.biny.locate(z0.imag())), 0, iyN);
-      color = m_table[ix * (iyN + 1) + iy];
-
-      contour.clear();
-
-      std::complex<double> p1, p2;
-      std::complex<double> pinit, plast;
-      bool pinit_initialized = false;
-
-      if (ix == ixN) {
-        type = link_down;
-      } else {
-        type = link_right;
-        p1 = _index2complex(ix, iy);
-        p2 = _index2complex(ix + 1, iy);
-        contour.emplace_back(binary_search(p1, p2, _in_region, 20));
-        pinit = contour.back();
-        pinit_initialized = true;
-      }
-
-      for (int iloop = 0; iloop < 10000; iloop++) {
-        switch (type) {
-        case link_right:
-          if (iy == iyN) {
-            if (!m_params.closepath) _add_contour();
-            while (ix > 0 && _index2contained(ix - 1, iy)) ix--;
-            if (ix == 0) {
-              type = link_up;
-              goto corner;
-            }
-            type = link_left;
-            p1 = _index2complex(ix, iy);
-            p2 = _index2complex(ix - 1, iy);
-          } else if (_index2contained(ix + 1, iy + 1)) {
-            type = link_down;
-            p1 = _index2complex(++ix, ++iy);
-          } else if (_index2contained(ix, iy + 1)) {
-            type = link_right;
-            p1 = _index2complex(ix, ++iy);
-            p2 = _index2complex(ix + 1, iy);
-          } else {
-            type = link_up;
-            p2 = _index2complex(ix, iy + 1);
-          }
-          goto link;
-        case link_up:
-          if (ix == 0) {
-            if (!m_params.closepath) _add_contour();
-            while (iy > 0 && _index2contained(ix, iy - 1)) iy--;
-            if (iy == 0) {
-              type = link_left;
-              goto corner;
-            }
-            type = link_down;
-            p1 = _index2complex(ix, iy);
-            p2 = _index2complex(ix, iy - 1);
-          } else if (_index2contained(ix - 1, iy + 1)) {
-            type = link_right;
-            p1 = _index2complex(--ix, ++iy);
-          } else if (_index2contained(ix - 1, iy)) {
-            type = link_up;
-            p1 = _index2complex(--ix, iy);
-            p2 = _index2complex(ix, iy + 1);
-          } else {
-            type = link_left;
-            p2 = _index2complex(ix - 1, iy);
-          }
-          goto link;
-        case link_left:
-          if (iy == 0) {
-            if (!m_params.closepath) _add_contour();
-            while (ix < ixN && _index2contained(ix + 1, iy)) ix++;
-            if (ix == ixN) {
-              type = link_down;
-              goto corner;
-            }
-            type = link_right;
-            p1 = _index2complex(ix, iy);
-            p2 = _index2complex(ix + 1, iy);
-          } else if (_index2contained(ix - 1, iy - 1)) {
-            type = link_up;
-            p1 = _index2complex(--ix, --iy);
-          } else if (_index2contained(ix, iy - 1)) {
-            type = link_left;
-            p1 = _index2complex(ix, --iy);
-            p2 = _index2complex(ix - 1, iy);
-          } else {
-            type = link_down;
-            p2 = _index2complex(ix, iy - 1);
-          }
-          goto link;
-        case link_down:
-          if (ix == ixN) {
-            if (!m_params.closepath) _add_contour();
-            while (iy < iyN && _index2contained(ix, iy + 1)) iy++;
-            if (iy == iyN) {
-              type = link_right;
-              goto corner;
-            }
-            type = link_up;
-            p1 = _index2complex(ix, iy);
-            p2 = _index2complex(ix, iy + 1);
-          } else if (_index2contained(ix + 1, iy - 1)) {
-            type = link_left;
-            p1 = _index2complex(++ix, --iy);
-          } else if (_index2contained(ix + 1, iy)) {
-            type = link_down;
-            p1 = _index2complex(++ix, iy);
-            p2 = _index2complex(ix, iy - 1);
-          } else {
-            type = link_right;
-            p2 = _index2complex(ix + 1, iy);
-          }
-          goto link;
-        corner:
-          plast = _index2complex(ix, iy);
-          if (m_params.closepath)
-            contour.emplace_back(plast);
-          break;
-        link:
-          plast = binary_search(p1, p2, _in_region, 20);
-          contour.emplace_back(plast);
-          break;
+    for (int ix = 0; ix < ixN; ix++) {
+      for (int iy = 0; iy < iyN; iy++) {
+        if (link_mark[ix * iyN + iy] & grid_link_mark_horizontal) {
+          if (m_table[ix * (iyN + 1) + iy] > 0)
+            grid_trace_contour(ret, link_mark, link_right, ix, iy, true);
+          else
+            grid_trace_contour(ret, link_mark, link_left, ix + 1, iy, true);
         }
-
-        if (!pinit_initialized) {
-          pinit = plast;
-          pinit_initialized = true;
-        } else if (std::norm(plast - pinit) < xthresh) {
-          break;
+        if (link_mark[ix * iyN + iy] & grid_link_mark_vertical) {
+          if (m_table[ix * (iyN + 1) + iy] > 0)
+            grid_trace_contour(ret, link_mark, link_up, ix, iy, true);
+          else
+            grid_trace_contour(ret, link_mark, link_down, ix, iy + 1, true);
         }
       }
-
-      _add_contour();
     }
+
     return ret;
   }
 
+public:
+  std::vector<std::vector<std::complex<double>>> trace_contours() {
+    switch (m_params.tracer) {
+    case contour_search_params::tracer_grid:
+      return  trace_contours_grid();
+    case contour_search_params::tracer_inchworm:
+      return  trace_contours_inchworm();
+    default:
+      throw std::logic_error("FATAL: unrecognized tracer_type");
+    }
+  }
+
   std::size_t print_contours(std::FILE* file) {
-    auto contours = trace_contours_grid();
+    auto contours = trace_contours();
     for (auto contour: contours) {
       for (auto z: contour)
         std::fprintf(file, "%g %g\n", z.real(), z.imag());
@@ -499,13 +587,17 @@ struct contour_tracer {
     return contours.size();
   }
   void save_contours(const char* filename) {
-    std::FILE* file = std::fopen(filename, "wb");
+    std::string filename_part = filename;
+    filename_part += ".part";
+    std::FILE* file = std::fopen(filename_part.c_str(), "wb");
     if (!file) {
       std::fprintf(stderr, "countour_generator(save_contours): failed to open the output file '%s'\n");
       throw std::runtime_error("countour_generator(save_contours): failed to open the output file");
     }
     std::size_t const count = print_contours(file);
     std::fclose(file);
+    std::remove(filename);
+    std::rename(filename_part.c_str(), filename);
     std::printf("%s: saved %zu contours\n", filename, count);
   }
 };
@@ -514,7 +606,6 @@ template<typename F>
 void save_contours(const char* filename, contour_search_params const& params, F func) {
   contour_tracer gen(params, func);
   gen.generate_map();
-  gen.find_connected_regions();
   gen.save_contours(filename);
 }
 
