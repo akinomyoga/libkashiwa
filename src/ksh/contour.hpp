@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <type_traits>
 #include <complex>
 #include <stdexcept>
 #include <vector>
@@ -88,13 +89,13 @@ struct contour_search_params {
 
 template<typename T, typename F>
 T binary_search(T lower, T upper, F predicate, int count = 10) {
-  bool const up = predicate(lower);
-  bool const lp = predicate(upper);
+  bool const up = predicate(upper);
+  bool const lp = predicate(lower);
   if (up == lp)
     throw std::runtime_error("binary_search: wrong boundary condition");
 
   while (count--) {
-    if (T m =(T)0.5 * (lower + upper); predicate(m) == up) {
+    if (T m = (T)0.5 * (lower + upper); predicate(m) == lp) {
       lower = m;
     } else {
       upper = m;
@@ -104,13 +105,74 @@ T binary_search(T lower, T upper, F predicate, int count = 10) {
   return (T)0.5 * (lower + upper);
 }
 
-template<typename F>
+template<typename T, typename LevelFunction>
+T linear_search(T lower, T upper, LevelFunction level, int count = 10) {
+  double lv = level(lower);
+  double uv = level(upper);
+  if (lv == 0.0) {
+    return uv == 0.0 ? (T)0.5 * (lower + upper) : lower;
+  } else if (uv == 0.0) {
+    return upper;
+  }
+
+  bool const up = uv > 0.0;
+  bool const lp = lv > 0.0;
+  if (up == lp)
+    throw std::runtime_error("binary_search: wrong boundary condition");
+
+  while (count--) {
+    double const t = uv / (uv - lv);
+    T const m = (T)t * lower + (T)(1.0 - t) * upper;
+    double const mv = level(m);
+    if ((mv > 0.0) == lp) {
+      lower = m;
+      lv = mv;
+    } else {
+      upper = m;
+      uv = mv;
+    }
+  }
+
+  return (T)0.5 * (lower + upper);
+};
+
+struct classifier_tag_has_offset {};
+
+class default_classifier {
+public:
+  template<typename T>
+  std::enable_if_t<std::is_floating_point_v<T>, int>
+  operator()(T value) const { return value > 0; }
+
+  template<typename T>
+  std::enable_if_t<!std::is_floating_point_v<T>, int>
+  operator()(T const& value) const { return (int) value; }
+};
+
+template<typename FloatingPoint>
+class level_classifier: classifier_tag_has_offset {
+public:
+  typedef FloatingPoint level_type;
+
+private:
+  level_type m_level;
+public:
+  level_classifier(level_type level): m_level(level) {}
+
+  int operator()(level_type value) const { return value > m_level; }
+
+  level_type offset(level_type value) const { return value - m_level; }
+};
+
+template<typename Leveler>
 struct contour_tracer {
+  typedef std::invoke_result_t<Leveler, double, double> level_type;
+
   contour_search_params m_params;
-  F m_func;
-  contour_tracer(contour_search_params const& params, F func):
-    m_params(params), m_func(func)
-  {
+  Leveler m_func;
+
+private:
+  void adjust_params() {
     if (std::isnan(m_params.limitx.first))
       m_params.limitx.first = 1.5 * m_params.binx.min() - 0.5 * m_params.binx.max();
     if (std::isnan(m_params.limitx.second))
@@ -121,11 +183,16 @@ struct contour_tracer {
       m_params.limity.second = 1.5 * m_params.biny.max() - 0.5 * m_params.biny.min();
   }
 
+public:
+  contour_tracer(contour_search_params const& params, Leveler func): m_params(params), m_func(func) {
+    this->adjust_params();
+  }
+
   // -1: already checked
   // 0: region not to check
   // 1: region to check
-  std::vector<int> m_table;
-  void generate_map() {
+  std::vector<level_type> m_table;
+  void generate_level_table() {
     std::size_t const ixN = m_params.binx.size();
     std::size_t const iyN = m_params.biny.size();
     m_table.resize((ixN + 1) * (iyN + 1));
@@ -138,15 +205,19 @@ struct contour_tracer {
     }
   }
 
-  std::vector<std::complex<double>> m_region_points;
-  void update_connected_regions() {
+private:
+  template<typename Classifier>
+  void inchworm_locate_connected_regions(std::vector<std::complex<double>> region_points, Classifier const& classify) {
     int const ixN = m_params.binx.size();
     int const iyN = m_params.biny.size();
     double const dx = m_params.binx.mesh();
     double const dy = m_params.biny.mesh();
-    std::vector<int> table = m_table; // copy
 
-    m_region_points.clear();
+    std::vector<int> table(m_table.size());
+    for (std::size_t i = 0; i < m_table.size(); i++)
+      table[i] = classify(m_table[i]);
+
+    region_points.clear();
 
     std::vector<std::pair<int, int>> list1, list2;
     for (int ix = 0; ix <= ixN; ix++) {
@@ -188,12 +259,11 @@ struct contour_tracer {
 
         double const x = m_params.binx[ixmax];
         double const y = m_params.biny[iymax];
-        m_region_points.emplace_back(x, y);
+        region_points.emplace_back(x, y);
       }
     }
   }
 
-public:
   /*?lwiki
    * @param[in] std::complex<double> const& z;
    *   The current position.
@@ -206,7 +276,7 @@ public:
    *   The predicate to test whether the specified  point is in the region.
    */
   template<typename Predicate>
-  std::pair<double, double> determine_angle_scope(std::complex<double> const& z, std::complex<double> const& n, double const ds, Predicate const& in_region) const {
+  std::pair<double, double> inchworm_determine_angle_scope(std::complex<double> const& z, std::complex<double> const& n, double const ds, Predicate const& in_region) const {
 #if 0
     // D0020: To properly handle critical points at which multiple contours
     // cross, we first scan [0, 2\pi) with some sampling points. これにより確か
@@ -255,8 +325,11 @@ public:
     return {M_PI - scope, M_PI + scope};
   }
 
-  std::vector<std::vector<std::complex<double>>> trace_contours_inchworm() {
-    this->update_connected_regions();
+public:
+  template<typename Classifier>
+  std::vector<std::vector<std::complex<double>>> trace_contours_inchworm(Classifier const& classify) {
+    std::vector<std::complex<double>> region_points;
+    inchworm_locate_connected_regions(region_points, classify);
 
     std::vector<std::vector<std::complex<double>>> ret;
 
@@ -264,16 +337,16 @@ public:
     double const ds = 0.5 * dx;
 
     int color = 0;
-    auto _in_region = [this, &color] (std::complex<double> value) -> bool {
+    auto _in_region = [this, &color, &classify] (std::complex<double> value) -> bool {
       double const x = value.real(), y = value.imag();
       if (x < m_params.limitx.first || x > m_params.limitx.second) return false;
       if (y < m_params.limity.first || y > m_params.limity.second) return false;
-      return m_func(x, y) == color;
+      return classify(m_func(x, y)) == color;
     };
 
-    for (std::complex<double> z0: m_region_points) {
+    for (std::complex<double> z0: region_points) {
       try {
-        color = m_func(z0.real(), z0.imag());
+        color = classify(m_func(z0.real(), z0.imag()));
 
         // Identify the smallest x where (x, Im(z0)) is in the region.  Since
         // we clip the region by m_params.limitx, we should be able to find
@@ -300,7 +373,7 @@ public:
 
         for (;;) {
           std::complex<double> n = (z1 - z2) / std::abs(z2 - z1);
-          std::pair<double, double> const scope = this->determine_angle_scope(z2, n, ds, _in_region);
+          std::pair<double, double> const scope = this->inchworm_determine_angle_scope(z2, n, ds, _in_region);
           theta = binary_search(scope.first, scope.second, [z2, n, ds, &_in_region] (double theta) {
             return _in_region(z2 + n * std::polar(ds, theta));
           }, 20);
@@ -324,7 +397,7 @@ public:
     return ret;
   }
 
-public:
+private:
   enum grid_contour_point_type {
     limit_corner,
     link_up,
@@ -338,15 +411,16 @@ public:
     grid_link_mark_horizontal = 0x2,
   };
 
-  void grid_initialize_link_mark(std::vector<std::uint32_t>& link_mark) const {
+  template<typename Classifier>
+  void grid_initialize_link_mark(std::vector<std::uint32_t>& link_mark, Classifier const& classify) const {
     int const ixN = m_params.binx.size();
     int const iyN = m_params.biny.size();
     link_mark.assign(ixN * iyN, 0);
     for (int ix = 0; ix < ixN; ix++) {
       for (int iy = 0; iy < iyN; iy++) {
-        int const color0 = m_table[ix * (iyN + 1) + iy];
-        int const color1 = m_table[(ix + 1) * (iyN + 1) + iy];
-        int const color2 = m_table[ix * (iyN + 1) + iy + 1];
+        int const color0 = classify(m_table[ix * (iyN + 1) + iy]);
+        int const color1 = classify(m_table[(ix + 1) * (iyN + 1) + iy]);
+        int const color2 = classify(m_table[ix * (iyN + 1) + iy + 1]);
         if (color0 != color1 && (color0 > 0 || color1 > 0))
           link_mark[ix * iyN + iy] |= grid_link_mark_horizontal;
         if (color0 != color2 && (color0 > 0 || color2 > 0))
@@ -375,7 +449,49 @@ public:
     }
   }
 
-  void grid_trace_contour(std::vector<std::vector<std::complex<double>>>& out, std::vector<std::uint32_t>& link_mark, grid_contour_point_type type, int ix, int iy, bool include_first) {
+  template<typename Classifier, bool = std::is_base_of_v<classifier_tag_has_offset, Classifier>>
+  class grid_range_searcher {
+    contour_tracer* m_this;
+    Classifier const& m_classify;
+    int m_color;
+  public:
+    grid_range_searcher(contour_tracer* self, Classifier const& classify, int color): m_this(self), m_classify(classify), m_color(color) {}
+
+  private:
+    bool test(std::complex<double> const& value) const {
+      return m_classify(m_this->m_func(value.real(), value.imag())) == m_color;
+    }
+  public:
+    std::complex<double> search(std::complex<double> const& p1, std::complex<double> const& p2) {
+      return binary_search(p1, p2, [this] (std::complex<double> const& value) { return this->test(value); }, 20);
+    }
+  };
+
+  template<typename Classifier>
+  class grid_range_searcher<Classifier, true> {
+    contour_tracer* m_this;
+    Classifier const& m_classify;
+  public:
+    grid_range_searcher(contour_tracer* self, Classifier const& classify, int color): m_this(self), m_classify(classify) {
+      ksh_unused(color);
+    }
+
+  private:
+    level_type offset(std::complex<double> const& value) const {
+      return m_classify.offset(m_this->m_func(value.real(), value.imag()));
+    }
+  public:
+    std::complex<double> search(std::complex<double> const& p1, std::complex<double> const& p2) {
+      return linear_search(p1, p2, [this] (std::complex<double> const& value) { return this->offset(value); }, 20);
+    }
+  };
+
+public:
+  template<typename Classifier>
+  void grid_trace_contour(
+    std::vector<std::vector<std::complex<double>>>& out, std::vector<std::uint32_t>& link_mark,
+    grid_contour_point_type type, int ix, int iy, bool include_first, Classifier const& classify
+  ) {
     double const dx = m_params.binx.mesh();
     int const ixN = m_params.binx.size();
     int const iyN = m_params.biny.size();
@@ -389,15 +505,14 @@ public:
       }
     };
 
-    int const color = m_table[ix * (iyN + 1) + iy];
-    auto _in_region = [this] (std::complex<double> value) -> bool {
-      return this->m_func(value.real(), value.imag());
-    };
-    auto _index2contained = [this, iyN, color] (int ix, int iy) -> bool {
-      return this->m_table[ix * (iyN + 1) + iy] == color;
-    };
-    auto _index2complex = [this] (int ix, int iy) -> std::complex<double> {
+    int const color = classify(m_table[ix * (iyN + 1) + iy]);
+    grid_range_searcher searcher(this, classify, color);
+
+    auto _index2point = [this] (int ix, int iy) -> std::complex<double> {
       return std::complex<double>(m_params.binx[ix], m_params.biny[iy]);
+    };
+    auto _index2contained = [this, iyN, color, &classify] (int ix, int iy) -> bool {
+      return classify(this->m_table[ix * (iyN + 1) + iy]) == color;
     };
 
     std::complex<double> p1, p2;
@@ -405,14 +520,14 @@ public:
     bool pinit_initialized = false;
 
     if (include_first) {
-      p1 = _index2complex(ix, iy);
+      p1 = _index2point(ix, iy);
       switch (type) {
-      case link_right: p2 = _index2complex(ix + 1, iy); break;
-      case link_left: p2 = _index2complex(ix - 1, iy); break;
-      case link_up: p2 = _index2complex(ix, iy + 1); break;
-      case link_down: p2 = _index2complex(ix, iy - 1); break;
+      case link_right: p2 = _index2point(ix + 1, iy); break;
+      case link_left: p2 = _index2point(ix - 1, iy); break;
+      case link_up: p2 = _index2point(ix, iy + 1); break;
+      case link_down: p2 = _index2point(ix, iy - 1); break;
       }
-      plast = binary_search(p1, p2, _in_region, 20);
+      plast = searcher.search(p1, p2);
       contour.emplace_back(plast);
       grid_unmark_link(link_mark, type, ix, iy);
       pinit = plast;
@@ -430,18 +545,18 @@ public:
             goto corner;
           }
           type = link_left;
-          p1 = _index2complex(ix, iy);
-          p2 = _index2complex(ix - 1, iy);
+          p1 = _index2point(ix, iy);
+          p2 = _index2point(ix - 1, iy);
         } else if (_index2contained(ix + 1, iy + 1)) {
           type = link_down;
-          p1 = _index2complex(++ix, ++iy);
+          p1 = _index2point(++ix, ++iy);
         } else if (_index2contained(ix, iy + 1)) {
           type = link_right;
-          p1 = _index2complex(ix, ++iy);
-          p2 = _index2complex(ix + 1, iy);
+          p1 = _index2point(ix, ++iy);
+          p2 = _index2point(ix + 1, iy);
         } else {
           type = link_up;
-          p2 = _index2complex(ix, iy + 1);
+          p2 = _index2point(ix, iy + 1);
         }
         goto link;
       case link_up:
@@ -453,18 +568,18 @@ public:
             goto corner;
           }
           type = link_down;
-          p1 = _index2complex(ix, iy);
-          p2 = _index2complex(ix, iy - 1);
+          p1 = _index2point(ix, iy);
+          p2 = _index2point(ix, iy - 1);
         } else if (_index2contained(ix - 1, iy + 1)) {
           type = link_right;
-          p1 = _index2complex(--ix, ++iy);
+          p1 = _index2point(--ix, ++iy);
         } else if (_index2contained(ix - 1, iy)) {
           type = link_up;
-          p1 = _index2complex(--ix, iy);
-          p2 = _index2complex(ix, iy + 1);
+          p1 = _index2point(--ix, iy);
+          p2 = _index2point(ix, iy + 1);
         } else {
           type = link_left;
-          p2 = _index2complex(ix - 1, iy);
+          p2 = _index2point(ix - 1, iy);
         }
         goto link;
       case link_left:
@@ -476,18 +591,18 @@ public:
             goto corner;
           }
           type = link_right;
-          p1 = _index2complex(ix, iy);
-          p2 = _index2complex(ix + 1, iy);
+          p1 = _index2point(ix, iy);
+          p2 = _index2point(ix + 1, iy);
         } else if (_index2contained(ix - 1, iy - 1)) {
           type = link_up;
-          p1 = _index2complex(--ix, --iy);
+          p1 = _index2point(--ix, --iy);
         } else if (_index2contained(ix, iy - 1)) {
           type = link_left;
-          p1 = _index2complex(ix, --iy);
-          p2 = _index2complex(ix - 1, iy);
+          p1 = _index2point(ix, --iy);
+          p2 = _index2point(ix - 1, iy);
         } else {
           type = link_down;
-          p2 = _index2complex(ix, iy - 1);
+          p2 = _index2point(ix, iy - 1);
         }
         goto link;
       case link_down:
@@ -499,27 +614,27 @@ public:
             goto corner;
           }
           type = link_up;
-          p1 = _index2complex(ix, iy);
-          p2 = _index2complex(ix, iy + 1);
+          p1 = _index2point(ix, iy);
+          p2 = _index2point(ix, iy + 1);
         } else if (_index2contained(ix + 1, iy - 1)) {
           type = link_left;
-          p1 = _index2complex(++ix, --iy);
+          p1 = _index2point(++ix, --iy);
         } else if (_index2contained(ix + 1, iy)) {
           type = link_down;
-          p1 = _index2complex(++ix, iy);
-          p2 = _index2complex(ix, iy - 1);
+          p1 = _index2point(++ix, iy);
+          p2 = _index2point(ix, iy - 1);
         } else {
           type = link_right;
-          p2 = _index2complex(ix + 1, iy);
+          p2 = _index2point(ix + 1, iy);
         }
         goto link;
       corner:
-        plast = _index2complex(ix, iy);
+        plast = _index2point(ix, iy);
         if (m_params.closepath)
           contour.emplace_back(plast);
         break;
       link:
-        plast = binary_search(p1, p2, _in_region, 20);
+        plast = searcher.search(p1, p2);
         contour.emplace_back(plast);
         grid_unmark_link(link_mark, type, ix, iy);
         break;
@@ -536,28 +651,29 @@ public:
     _add_contour();
   }
 
-  std::vector<std::vector<std::complex<double>>> trace_contours_grid() {
+  template<typename Classifier>
+  std::vector<std::vector<std::complex<double>>> trace_contours_grid(Classifier const& classify) {
     int const ixN = m_params.binx.size();
     int const iyN = m_params.biny.size();
 
     std::vector<std::uint32_t> link_mark;
-    grid_initialize_link_mark(link_mark);
+    grid_initialize_link_mark(link_mark, classify);
 
     std::vector<std::vector<std::complex<double>>> ret;
 
     for (int ix = 0; ix < ixN; ix++) {
       for (int iy = 0; iy < iyN; iy++) {
         if (link_mark[ix * iyN + iy] & grid_link_mark_horizontal) {
-          if (m_table[ix * (iyN + 1) + iy] > 0)
-            grid_trace_contour(ret, link_mark, link_right, ix, iy, true);
+          if (classify(m_table[ix * (iyN + 1) + iy]) > 0)
+            grid_trace_contour(ret, link_mark, link_right, ix, iy, true, classify);
           else
-            grid_trace_contour(ret, link_mark, link_left, ix + 1, iy, true);
+            grid_trace_contour(ret, link_mark, link_left, ix + 1, iy, true, classify);
         }
         if (link_mark[ix * iyN + iy] & grid_link_mark_vertical) {
-          if (m_table[ix * (iyN + 1) + iy] > 0)
-            grid_trace_contour(ret, link_mark, link_up, ix, iy, true);
+          if (classify(m_table[ix * (iyN + 1) + iy]) > 0)
+            grid_trace_contour(ret, link_mark, link_up, ix, iy, true, classify);
           else
-            grid_trace_contour(ret, link_mark, link_down, ix, iy + 1, true);
+            grid_trace_contour(ret, link_mark, link_down, ix, iy + 1, true, classify);
         }
       }
     }
@@ -566,19 +682,20 @@ public:
   }
 
 public:
-  std::vector<std::vector<std::complex<double>>> trace_contours() {
+  template<typename Classifier>
+  std::vector<std::vector<std::complex<double>>> trace_contours(Classifier const& classify) {
     switch (m_params.tracer) {
     case contour_search_params::tracer_grid:
-      return  trace_contours_grid();
+      return  trace_contours_grid(classify);
     case contour_search_params::tracer_inchworm:
-      return  trace_contours_inchworm();
+      return  trace_contours_inchworm(classify);
     default:
       throw std::logic_error("FATAL: unrecognized tracer_type");
     }
   }
-
-  std::size_t print_contours(std::FILE* file) {
-    auto contours = trace_contours();
+  template<typename Classifier>
+  std::size_t print_contours(std::FILE* file, Classifier const& classify) {
+    auto contours = trace_contours(classify);
     for (auto contour: contours) {
       for (auto z: contour)
         std::fprintf(file, "%g %g\n", z.real(), z.imag());
@@ -586,7 +703,9 @@ public:
     }
     return contours.size();
   }
-  void save_contours(const char* filename) {
+
+  template<typename Classifier>
+  void save_contours(const char* filename, Classifier const& classify) {
     std::string filename_part = filename;
     filename_part += ".part";
     std::FILE* file = std::fopen(filename_part.c_str(), "wb");
@@ -600,12 +719,35 @@ public:
     std::rename(filename_part.c_str(), filename);
     std::printf("%s: saved %zu contours\n", filename, count);
   }
+
+  std::vector<std::vector<std::complex<double>>> trace_contours() {
+    return this->trace_contours(default_classifier {});
+  }
+  std::size_t print_contours(std::FILE* file) {
+    return this->print_contours(file, default_classifier {});
+  }
+  void save_contours(const char* filename) {
+    return this->save_contours(filename, default_classifier {});
+  }
+
+  template<typename T1 = level_type, typename T2 = std::enable_if_t<std::is_floating_point_v<T1>>>
+  std::vector<std::vector<std::complex<double>>> trace_contours_at(level_type level) {
+    return this->trace_contours(level_classifier {level});
+  }
+  template<typename T1 = level_type, typename T2 = std::enable_if_t<std::is_floating_point_v<T1>>>
+  std::size_t print_contours_at(std::FILE* file, level_type level) {
+    return this->print_contours(file, level_classifier {level});
+  }
+  template<typename T1 = level_type, typename T2 = std::enable_if_t<std::is_floating_point_v<T1>>>
+  void save_contours_at(const char* filename, level_type level) {
+    return this->save_contours(filename, level_classifier {level});
+  }
 };
 
 template<typename F>
 void save_contours(const char* filename, contour_search_params const& params, F func) {
   contour_tracer gen(params, func);
-  gen.generate_map();
+  gen.generate_level_table();
   gen.save_contours(filename);
 }
 
