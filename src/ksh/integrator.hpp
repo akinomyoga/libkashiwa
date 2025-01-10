@@ -3,6 +3,7 @@
 #define kashiwa_integrator_hpp
 #include <cstddef>
 #include <cmath>
+#include <complex>
 #include <algorithm>
 namespace kashiwa {
 namespace integrator_detail {
@@ -153,6 +154,19 @@ namespace integrator_detail {
     double const factor = dxdt * M_PI / Ni;
     for (int k = 0; k < Nd; k++)
       result[k] *= factor;
+  }
+
+  template<int I, typename F>
+  void gauss_legendre_quadrature(int N, std::complex<double>* result, double xmin, double xmax, F f) {
+    gauss_legendre_quadrature<I>(N * 2, reinterpret_cast<double*>(result), xmin, xmax, [&] (double* integrand, double x) {
+      f(reinterpret_cast<std::complex<double>*>(integrand), x);
+    });
+  }
+  template<int I, typename F>
+  void gauss_chebyshev_quadrature(int N, std::complex<double>* result, double xmin, double xmax, F f) {
+    gauss_chebyshev_quadrature<I>(N * 2, reinterpret_cast<double*>(result), xmin, xmax, [&] (double* integrand, double x) {
+      f(reinterpret_cast<std::complex<double>*>(integrand), x);
+    });
   }
 
 }
