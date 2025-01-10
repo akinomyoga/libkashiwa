@@ -41,6 +41,7 @@ namespace runge_kutta {
       double hmax {0.0};
       double step {0.0};
       int    nstif {0};
+      int    nstif_notify = {0}; // default: 15
       std::ptrdiff_t nmax {100000};
     };
 

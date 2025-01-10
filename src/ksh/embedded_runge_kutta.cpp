@@ -306,15 +306,16 @@ namespace runge_kutta {
   ) const {
     buffer.ensure<double>(10 * size);
     double const beta  = kashiwa::clamp(params.beta, 0.0, 0.2); // e.g. 0.04
-    double const safe  = params.safe == 0.0? 0.9: kashiwa::clamp(params.safe, 1e-4, 1.0);
-    double const facc1 = 1.0 / (params.fac1 == 0.0? 0.333: params.fac1);
-    double const facc2 = 1.0 / (params.fac2 == 0.0? 6.000: params.fac2);
+    double const safe  = params.safe == 0.0 ? 0.9 : kashiwa::clamp(params.safe, 1e-4, 1.0);
+    double const facc1 = 1.0 / (params.fac1 == 0.0 ? 0.333 : params.fac1);
+    double const facc2 = 1.0 / (params.fac2 == 0.0 ? 6.000 : params.fac2);
     double const expo1 = 1.0 / 8.0 - beta * 0.2;
-    double const hmax  = std::abs(params.hmax == 0.0? timeN - time: params.hmax);
-    int    const bwd   = time < timeN? 1: -1;
+    double const hmax  = std::abs(params.hmax == 0.0 ? timeN - time : params.hmax);
+    int    const bwd   = time < timeN ? 1 : -1;
     double const rtol  = std::abs(params.rtol);
     double const atol  = std::abs(params.atol);
-    int    const nstif = std::abs(params.nstif == 0?10: params.nstif);
+    int    const nstif = std::abs(params.nstif == 0 ? 10 : params.nstif);
+    int    const nstif_notify = params.nstif_notify == 0 ? 15 : params.nstif_notify;
     std::ptrdiff_t const nmax = params.nmax;
 
     double* ksh_restrict const x  = buffer.ptr<double>();
@@ -379,7 +380,7 @@ namespace runge_kutta {
           if (hlamb > 6.1) {
             nonsti = 0;
             iasti++;
-            if (!(iasti == 15))
+            if (iasti == nstif_notify)
               std::fprintf(stderr,"the problem seems to become stiff at time = %g\n", time);
           } else {
             nonsti++;
