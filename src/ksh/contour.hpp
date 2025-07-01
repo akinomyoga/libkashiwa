@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include <mwg/except.h>
 #include "def.hpp"
 #include "utility.hpp"
 
@@ -400,14 +401,18 @@ public:
 private:
   enum grid_contour_point_type {
     limit_corner,
-    link_up,
-    link_down,
-    link_right,
-    link_left,
+    link_up,    // link (x,y)-(x,y+1)
+    link_down,  // link (x,y)-(x,y-1)
+    link_right, // link (x,y)-(x+1,y)
+    link_left,  // link (x,y)-(x-1,y)
   };
 
   enum grid_link_mark_flags {
+    /* This flag means that the link between the current grid point (x,y) and
+       the up grid point (x,y+1) needs to be processed. */
     grid_link_mark_vertical = 0x1,
+    /* This flag means that the link between the current grid point (x,y) and
+       the right grid point (x+1,y) needs to be processed. */
     grid_link_mark_horizontal = 0x2,
   };
 
@@ -415,36 +420,46 @@ private:
   void grid_initialize_link_mark(std::vector<std::uint32_t>& link_mark, Classifier const& classify) const {
     int const ixN = m_params.binx.size();
     int const iyN = m_params.biny.size();
-    link_mark.assign(ixN * iyN, 0);
-    for (int ix = 0; ix < ixN; ix++) {
-      for (int iy = 0; iy < iyN; iy++) {
-        int const color0 = classify(m_table[ix * (iyN + 1) + iy]);
-        int const color1 = classify(m_table[(ix + 1) * (iyN + 1) + iy]);
-        int const color2 = classify(m_table[ix * (iyN + 1) + iy + 1]);
-        if (color0 != color1 && (color0 > 0 || color1 > 0))
-          link_mark[ix * iyN + iy] |= grid_link_mark_horizontal;
-        if (color0 != color2 && (color0 > 0 || color2 > 0))
-          link_mark[ix * iyN + iy] |= grid_link_mark_vertical;
+    int const ixM = m_params.binx.size() + 1;
+    int const iyM = m_params.biny.size() + 1;
+    link_mark.assign(ixM * iyM, 0);
+    for (int ix = 0; ix <= ixN; ix++) {
+      for (int iy = 0; iy <= iyN; iy++) {
+        int const color0 = classify(m_table[ix * iyM + iy]);
+        if (ix < ixN) {
+          int const color1 = classify(m_table[(ix + 1) * iyM + iy]);
+          if (color0 != color1 && (color0 > 0 || color1 > 0))
+            link_mark[ix * iyM + iy] |= grid_link_mark_horizontal;
+        }
+        if (iy < iyN) {
+          int const color2 = classify(m_table[ix * iyM + iy + 1]);
+          if (color0 != color2 && (color0 > 0 || color2 > 0))
+            link_mark[ix * iyM + iy] |= grid_link_mark_vertical;
+        }
       }
     }
   }
 
   void grid_unmark_link(std::vector<std::uint32_t>& link_mark, grid_contour_point_type type, int ix, int iy) const {
+    int const iyM = m_params.biny.size() + 1;
     int const iyN = m_params.biny.size();
+    int const ixN = m_params.binx.size();
     switch (type) {
     case link_down:
       iy--;
       ksh_fallthrough;
       /*FALL-THROUGH*/
     case link_up:
-      link_mark[ix * iyN + iy] &= ~grid_link_mark_vertical;
+      mwg_assert(0 <= ix && ix <= ixN && 0 <= iy && iy < iyN);
+      link_mark[ix * iyM + iy] &= ~grid_link_mark_vertical;
       break;
     case link_left:
       ix--;
       ksh_fallthrough;
       /*FALL-THROUGH*/
     case link_right:
-      link_mark[ix * iyN + iy] &= ~grid_link_mark_horizontal;
+      mwg_assert(0 <= ix && ix < ixN && 0 <= iy && iy <= iyN);
+      link_mark[ix * iyM + iy] &= ~grid_link_mark_horizontal;
       break;
     }
   }
@@ -661,15 +676,15 @@ public:
 
     std::vector<std::vector<std::complex<double>>> ret;
 
-    for (int ix = 0; ix < ixN; ix++) {
-      for (int iy = 0; iy < iyN; iy++) {
-        if (link_mark[ix * iyN + iy] & grid_link_mark_horizontal) {
+    for (int ix = 0; ix <= ixN; ix++) {
+      for (int iy = 0; iy <= iyN; iy++) {
+        if (ix < ixN && link_mark[ix * (iyN + 1) + iy] & grid_link_mark_horizontal) {
           if (classify(m_table[ix * (iyN + 1) + iy]) > 0)
             grid_trace_contour(ret, link_mark, link_right, ix, iy, true, classify);
           else
             grid_trace_contour(ret, link_mark, link_left, ix + 1, iy, true, classify);
         }
-        if (link_mark[ix * iyN + iy] & grid_link_mark_vertical) {
+        if (iy < iyN && link_mark[ix * (iyN + 1) + iy] & grid_link_mark_vertical) {
           if (classify(m_table[ix * (iyN + 1) + iy]) > 0)
             grid_trace_contour(ret, link_mark, link_up, ix, iy, true, classify);
           else
@@ -686,9 +701,9 @@ public:
   std::vector<std::vector<std::complex<double>>> trace_contours(Classifier const& classify) {
     switch (m_params.tracer) {
     case contour_search_params::tracer_grid:
-      return  trace_contours_grid(classify);
+      return trace_contours_grid(classify);
     case contour_search_params::tracer_inchworm:
-      return  trace_contours_inchworm(classify);
+      return trace_contours_inchworm(classify);
     default:
       throw std::logic_error("FATAL: unrecognized tracer_type");
     }
