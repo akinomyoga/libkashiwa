@@ -39,6 +39,7 @@ namespace runge_kutta {
       double fac2 {0.0};
       double safe {0.0};
       double hmax {0.0};
+      double hmin {0.0};
       double step {0.0};
       int    nstif {0};
       int    nstif_notify = {0}; // default: 15
@@ -52,7 +53,7 @@ namespace runge_kutta {
     double _determine_initial_step(
       double time, double* ksh_restrict value, std::size_t size,
       iequation_for_erk& eq,
-      int bwd, double atol, double rtol, double hmax
+      int bwd, double atol, double rtol, double hmax, double hmin
     ) const;
 
   private:

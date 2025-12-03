@@ -252,7 +252,7 @@ namespace runge_kutta {
   double dop853_integrator::_determine_initial_step(
     double time, double* ksh_restrict value, std::size_t size,
     iequation_for_erk& eq,
-    int bwd, double atol, double rtol, double hmax
+    int bwd, double atol, double rtol, double hmax, double hmin
   ) const {
     double* ksh_restrict const x  = buffer.ptr<double>();
     double* ksh_restrict const k1 = buffer.ptr<double>() + size * 1;
@@ -296,7 +296,9 @@ namespace runge_kutta {
     else
       h2 = std::pow(0.01 / der12, 1.0 / order);
 
-    return bwd * std::min(std::min(100 * h1, h2), hmax);
+    double const hnew = std::min(100 * h1, h2);
+
+    return bwd * std::max(hmin, std::min(hmax, hnew));
   }
 
   void dop853_integrator::integrate(
@@ -318,6 +320,9 @@ namespace runge_kutta {
     int    const nstif_notify = params.nstif_notify == 0 ? 15 : params.nstif_notify;
     std::ptrdiff_t const nmax = params.nmax;
 
+    // 2025-12-04 custom setting (which doesn't exist in the original DOP835)
+    double const hmin = params.hmin;
+
     double* ksh_restrict const x  = buffer.ptr<double>();
     double* ksh_restrict const k1 = buffer.ptr<double>() + size * 1; // 最初の微分評価 (c = 0.0) を入れる場所
     double* ksh_restrict const kD = buffer.ptr<double>() + size * 2; // 次のステップの最初の微分 (FSAL) を入れる場所
@@ -328,7 +333,7 @@ namespace runge_kutta {
 
     double h = bwd * std::abs(params.step);
     if (h == 0.0) {
-      h = this->_determine_initial_step(time, value, size, eq, bwd, atol, rtol, hmax);
+      h = this->_determine_initial_step(time, value, size, eq, bwd, atol, rtol, hmax, hmin);
       stat.nfcn++;
     }
 
@@ -339,8 +344,10 @@ namespace runge_kutta {
     double hlamb = 0.0;
     int iasti = 0, nonsti = 0;
     for (;; stat.nstep++) {
-      mwg_check(nmax < 0 || stat.nstep < nmax, "収束しません time = %g, h = %g at step#%d", time, h, stat.nstep);
-      mwg_check(0.1 * std::abs(h) > std::abs(time) * std::numeric_limits<double>::epsilon(), "時刻桁落ち time = %g, h = %g", time, h);
+      mwg_check(nmax < 0 || stat.nstep < nmax,
+        "error(embedded_runge_kutta): nstep reached nmax=%d @ time=%g, h=%g", stat.nstep, time, h);
+      mwg_check(0.1 * std::abs(h) > std::abs(time) * std::numeric_limits<double>::epsilon(),
+        "error(embedded_runge_kutta): loss of significance: time=%g + h=%g", time, h);
 
       if ((time + 1.01 * h - timeN) * bwd > 0.0) {
         h = timeN - time;
@@ -358,7 +365,7 @@ namespace runge_kutta {
       double const fac11 = std::pow(err, expo1);
       double const fac = kashiwa::clamp(fac11 / (std::pow(facold, beta) * safe), facc2, facc1);
       double hnew = h / fac;
-      if (err > 1.0) {
+      if (err > 1.0 && std::abs(h) > hmin) {
         h /= std::min(facc1, fac11 / safe);
         reject = true;
         last = false;
@@ -408,7 +415,10 @@ namespace runge_kutta {
 
         if (eq.is_stopping() || last) return;
 
-        if (std::abs(hnew) > hmax) hnew = bwd * hmax;
+        if (std::abs(hnew) > hmax)
+          hnew = bwd * hmax;
+        else if (std::abs(hnew) < hmin)
+          hnew = bwd * hmin;
         if (reject) hnew = bwd * std::min(std::abs(hnew), std::abs(h));
         reject = false;
 
