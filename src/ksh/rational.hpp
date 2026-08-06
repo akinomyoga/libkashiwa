@@ -88,6 +88,7 @@ namespace kashiwa {
     constexpr rational operator-() const {return {-m_num, m_den};}
 
     constexpr explicit operator bool() const {return m_num != 0;}
+    constexpr explicit operator double() const { return (double) m_num / (double) m_den; }
 
     constexpr void destructive_negate() {kashiwa::destructive_negate(m_num);}
   };

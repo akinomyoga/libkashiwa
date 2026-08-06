@@ -47,6 +47,13 @@ namespace kashiwa {
       return ret;
     }
 
+    explicit operator double() const {
+      double r = 0.0, unit = 1.0;
+      for (std::size_t i = 0; i < data.size(); i++, unit *= Modulo)
+        r += unit * data[i];
+      return r;
+    }
+
   private:
     void abs_dec() {
       for (std::size_t i = 0; i < data.size(); i++) {
