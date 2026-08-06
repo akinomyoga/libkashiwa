@@ -68,6 +68,24 @@ ifeq ($(HOSTNAME),chatoyancy)
     -L $(LIBMWG_PREFIX)/lib/$(LIBMWG_BUILD)
 endif
 
+ifeq ($(HOSTNAME),letsnote2025)
+  host:=found
+
+  OTFFT_PREFIX   := $(HOME)/opt/otfft-6.4
+  CXX := g++
+  CXXFLAGS := -Wall -std=gnu++14 -O3 -march=native
+  LDFLAGS := -Wall -std=gnu++14 -O3 -march=native
+
+  # libmwg
+  LIBMWG_PREFIX := $(HOME)/.opt/libmwg/master
+  LIBMWG_BUILD  := x86_64-cygwin-gcc-13.4.0+cxx98-debug
+  CXXFLAGS += \
+    -isystem $(LIBMWG_PREFIX)/include \
+    -isystem $(LIBMWG_PREFIX)/include/$(LIBMWG_BUILD)
+  LDFLAGS += \
+    -L $(LIBMWG_PREFIX)/lib/$(LIBMWG_BUILD)
+endif
+
 ifeq ($(host),unknown)
   CXX:=g++
   CXXFLAGS:= -Wall -std=gnu++14 -O3 -march=native
