@@ -3,9 +3,6 @@
 all:
 .PHONY: all
 
-Makefile: Makefile.pp
-	mwg_pp.awk $< > $@
-
 #------------------------------------------------------------------------------
 # Host Configurations
 
@@ -107,28 +104,25 @@ directories := $(OUTDIR) $(OBJDIR)
 
 # ksh
 
-#%m register_object
-#%%x
-$"target"_objects += $(OBJDIR)/%name%.o
--include $(OBJDIR)/%name%.d
-$(OBJDIR)/%name%.o: %name%.cpp | $(OBJDIR)/ksh
-	$(CXX) $(CXXFLAGS) -MP -MD -MF $(@:.o=.d) -c -o $@ $<
-#%%end.i
-#%end
-#%m register_binary
-##%x
-%target%.exe: $($"target"_objects)
-	$(CXX) $(LDFLAGS) -o $@ $^
-##%end.i
-#%end
+define register_object
+$(register_target)_objects += $$(OBJDIR)/$1.o
+-include $$(OBJDIR)/$1.d
+$$(OBJDIR)/$1.o: $1.cpp | $$(OBJDIR)/ksh
+	$$(CXX) $$(CXXFLAGS) -MP -MD -MF $$(@:.o=.d) -c -o $$@ $$<
+endef
 
+define register_binary
+$(register_target).exe: $$($(register_target)_objects)
+	$$(CXX) $$(LDFLAGS) -o $$@ $$^
+endef
 
 all: $(OUTDIR)/libksh.a
 directories += $(OBJDIR)/ksh
-#%[target="libksh"]
-#%x register_object.r|%name%|ksh/embedded_runge_kutta|
-#%x register_object.r|%name%|ksh/integrator|
-#%x register_object.r|%name%|ksh/linear_lu|
+
+register_target = libksh
+$(eval $(call register_object,ksh/embedded_runge_kutta))
+$(eval $(call register_object,ksh/integrator))
+$(eval $(call register_object,ksh/linear_lu))
 $(OUTDIR)/libksh.a: $(libksh_objects) | $(OUTDIR)
 	ar crs $@ $^
 
@@ -137,9 +131,9 @@ $(OUTDIR)/libksh.a: $(libksh_objects) | $(OUTDIR)
 #
 
 all: rktest.exe
-#%[target="rktest"]
-#%x register_object.r|%name%|rktest|
-#%x register_object.r|%name%|rktest_erk|
+register_target = rktest
+$(eval $(call register_object,rktest))
+$(eval $(call register_object,rktest_erk))
 rktest.exe: $(rktest_objects) $(OBJDIR)/ksh/embedded_runge_kutta.o
 	$(CXX) $(LDFLAGS) -o $@ $^
 
@@ -176,28 +170,28 @@ $(OBJDIR)/test/linear.o: test/linear.cpp | $(OBJDIR)/test
 test/linear.exe: $(OBJDIR)/test/linear.o $(OUTDIR)/libksh.a
 	$(CXX) $(check_LDFLAGS) -o $@ $^ $(check_LIBS)
 
-#%m register_test
-check: %name%
-.PHONY: %name%
-%name%: test/test_%name%.exe
-	./$<
--include $(OBJDIR)/test/test_%name%.d
-$(OBJDIR)/test/test_%name%.o: test/test_%name%.cpp | $(OBJDIR)/test
-	$(CXX) $(CXXFLAGS) -I . -MP -MD -MF $(@:.o=.d) -c -o $@ $<
-test/test_%name%.exe: $(OBJDIR)/test/test_%name%.o $(OUTDIR)/libksh.a
-	$(CXX) $(check_LDFLAGS) -o $@ $^ $(check_LIBS)
-#%end
-#%x register_test.r/%name%/integrator/
-#%x register_test.r/%name%/polynomial/
-#%x register_test.r/%name%/rational/
-#%x register_test.r/%name%/big_integer/
+define register_test
+check: $1
+.PHONY: $1
+$1: test/test_$1.exe
+	./$$<
+-include $$(OBJDIR)/test/test_$1.d
+$$(OBJDIR)/test/test_$1.o: test/test_$1.cpp | $$(OBJDIR)/test
+	$$(CXX) $$(CXXFLAGS) -I . -MP -MD -MF $$(@:.o=.d) -c -o $$@ $$<
+test/test_$1.exe: $$(OBJDIR)/test/test_$1.o $$(OUTDIR)/libksh.a
+	$$(CXX) $$(check_LDFLAGS) -o $$@ $$^ $$(check_LIBS)
+endef
+$(eval $(call register_test,integrator))
+$(eval $(call register_test,polynomial))
+$(eval $(call register_test,rational))
+$(eval $(call register_test,big_integer))
 
 experiment: multi_precision
 .PHONY: experiment
 
-#%[target="test_multi_precision"]
-#%x register_object.r|%name%|test/multi_precision|
-#%x register_binary.r|%out%|test/multi_precision|
+register_target = test_multi_precision
+$(eval $(call register_object,test/multi_precision))
+$(eval $(call register_binary,test/multi_precision))
 
 #------------------------------------------------------------------------------
 #

@@ -10,6 +10,5 @@
 
 a.out
 *.exe
-/src/Makefile
 /out
 /src/libksh.a
