@@ -38,11 +38,11 @@ namespace kashiwa {
     big_integer(): sign(0) {}
 
     template<typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
-    big_integer(I const& value) {this->operator=(value);}
+    big_integer(I const& value) { this->operator=(value); }
 
-    big_integer const& operator+() const {return *this;}
+    big_integer const& operator+() const { return *this; }
     big_integer operator-() const {
-      big_integer ret {*this};
+      big_integer ret { *this };
       ret.sign = -ret.sign;
       return ret;
     }
@@ -107,13 +107,13 @@ namespace kashiwa {
     }
 
     big_integer operator++(int) {
-      big_integer ret {*this};
+      big_integer ret { *this };
       this->operator++();
       return ret;
     }
 
     big_integer operator--(int) {
-      big_integer ret {*this};
+      big_integer ret { *this };
       this->operator--();
       return ret;
     }
@@ -150,7 +150,7 @@ namespace kashiwa {
     using enable_scalar_operator_t = nullptr_if_t<std::is_integral<T>::value>;
 
     template<typename E, typename C, C M>
-    int _sign(big_integer<E, C, M> const&  arg) {return arg.sign;}
+    int _sign(big_integer<E, C, M> const&  arg) { return arg.sign; }
     template<typename I, enable_scalar_operator_t<I> = nullptr>
     int _sign(I const&  arg) {
       if (arg > 0)
@@ -173,7 +173,7 @@ namespace kashiwa {
       return uvalue;
     }
     template<typename U, nullptr_if_t<std::is_integral<U>::value && std::is_unsigned<U>::value> = nullptr>
-    U const& _abs(U const& value) {return value;}
+    U const& _abs(U const& value) { return value; }
 
     template<typename E, typename C, C M>
     int abs_compare(big_integer<E, C, M> const& lhs, big_integer<E, C, M> const& rhs) {
@@ -229,24 +229,24 @@ namespace kashiwa {
       return rsign * abs_compare(lhs, rhs);
     }
     template<typename E, typename C, C M>
-    int compare(big_integer<E, C, M> const& lhs, big_integer<E, C, M> const& rhs) {return impl_compare(lhs, rhs);}
+    int compare(big_integer<E, C, M> const& lhs, big_integer<E, C, M> const& rhs) { return impl_compare(lhs, rhs); }
     template<typename E, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int compare(big_integer<E, C, M> const& lhs, I const& rhs) {return impl_compare(lhs, rhs);}
+    int compare(big_integer<E, C, M> const& lhs, I const& rhs) { return impl_compare(lhs, rhs); }
     template<typename E, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    int compare(I const& lhs, big_integer<E, C, M> const& rhs) {return -impl_compare(rhs, lhs);}
+    int compare(I const& lhs, big_integer<E, C, M> const& rhs) { return -impl_compare(rhs, lhs); }
 
     template<typename LHS, typename RHS, nullptr_if_t<is_valid_v<decltype(compare(std::declval<LHS>(), std::declval<RHS>()))>> = nullptr>
-    bool operator==(LHS const& lhs, RHS const& rhs) {return compare(lhs, rhs) == 0;}
+    bool operator==(LHS const& lhs, RHS const& rhs) { return compare(lhs, rhs) == 0; }
     template<typename LHS, typename RHS, nullptr_if_t<is_valid_v<decltype(compare(std::declval<LHS>(), std::declval<RHS>()))>> = nullptr>
-    bool operator!=(LHS const& lhs, RHS const& rhs) {return compare(lhs, rhs) != 0;}
+    bool operator!=(LHS const& lhs, RHS const& rhs) { return compare(lhs, rhs) != 0; }
     template<typename LHS, typename RHS, nullptr_if_t<is_valid_v<decltype(compare(std::declval<LHS>(), std::declval<RHS>()))>> = nullptr>
-    bool operator< (LHS const& lhs, RHS const& rhs) {return compare(lhs, rhs) <  0;}
+    bool operator< (LHS const& lhs, RHS const& rhs) { return compare(lhs, rhs) <  0; }
     template<typename LHS, typename RHS, nullptr_if_t<is_valid_v<decltype(compare(std::declval<LHS>(), std::declval<RHS>()))>> = nullptr>
-    bool operator> (LHS const& lhs, RHS const& rhs) {return compare(lhs, rhs) >  0;}
+    bool operator> (LHS const& lhs, RHS const& rhs) { return compare(lhs, rhs) >  0; }
     template<typename LHS, typename RHS, nullptr_if_t<is_valid_v<decltype(compare(std::declval<LHS>(), std::declval<RHS>()))>> = nullptr>
-    bool operator<=(LHS const& lhs, RHS const& rhs) {return compare(lhs, rhs) <= 0;}
+    bool operator<=(LHS const& lhs, RHS const& rhs) { return compare(lhs, rhs) <= 0; }
     template<typename LHS, typename RHS, nullptr_if_t<is_valid_v<decltype(compare(std::declval<LHS>(), std::declval<RHS>()))>> = nullptr>
-    bool operator>=(LHS const& lhs, RHS const& rhs) {return compare(lhs, rhs) >= 0;}
+    bool operator>=(LHS const& lhs, RHS const& rhs) { return compare(lhs, rhs) >= 0; }
   }
   using big_integer_detail::compare;
   using big_integer_detail::operator==;
@@ -365,7 +365,7 @@ namespace kashiwa {
               dst[j] = integer_t::element_max;
             } else {
               dst[j] = max[j] - carry;
-              if (dst == max) {highest = j; break;}
+              if (dst == max) { highest = j; break; }
               carry = 0;
             }
           }
@@ -447,13 +447,13 @@ namespace kashiwa {
     }
 
     template<typename E, typename C, C M>
-    big_integer<E, C, M>& operator+=(big_integer<E, C, M>& lhs, big_integer<E, C, M> const& rhs) {return impl_add_eq<'+'>(lhs, rhs);}
+    big_integer<E, C, M>& operator+=(big_integer<E, C, M>& lhs, big_integer<E, C, M> const& rhs) { return impl_add_eq<'+'>(lhs, rhs); }
     template<typename E, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    big_integer<E, C, M>& operator+=(big_integer<E, C, M>& lhs, I const& rhs) {return impl_add_eq<'+'>(lhs, rhs);}
+    big_integer<E, C, M>& operator+=(big_integer<E, C, M>& lhs, I const& rhs) { return impl_add_eq<'+'>(lhs, rhs); }
     template<typename E, typename C, C M>
-    big_integer<E, C, M>& operator-=(big_integer<E, C, M>& lhs, big_integer<E, C, M> const& rhs) {return impl_add_eq<'-'>(lhs, rhs);}
+    big_integer<E, C, M>& operator-=(big_integer<E, C, M>& lhs, big_integer<E, C, M> const& rhs) { return impl_add_eq<'-'>(lhs, rhs); }
     template<typename E, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
-    big_integer<E, C, M>& operator-=(big_integer<E, C, M>& lhs, I const& rhs) {return impl_add_eq<'-'>(lhs, rhs);}
+    big_integer<E, C, M>& operator-=(big_integer<E, C, M>& lhs, I const& rhs) { return impl_add_eq<'-'>(lhs, rhs); }
 
 
     template<typename E, typename C, C M, typename T, enable_generic_operator_t<big_integer<E, C, M>, T> = nullptr>
@@ -629,11 +629,11 @@ namespace kashiwa {
       return ret;
     }
     template<typename E, typename C, C M, typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
-    big_integer<E, C, M> operator*(I const& lhs, big_integer<E, C, M> const& rhs) {return rhs * lhs;}
+    big_integer<E, C, M> operator*(I const& lhs, big_integer<E, C, M> const& rhs) { return rhs * lhs; }
     template<typename E, typename C, C M>
-    big_integer<E, C, M> operator*=(big_integer<E, C, M>& lhs, big_integer<E, C, M> const& rhs) {return lhs = lhs * rhs;}
+    big_integer<E, C, M> operator*=(big_integer<E, C, M>& lhs, big_integer<E, C, M> const& rhs) { return lhs = lhs * rhs; }
     template<typename E, typename C, C M, typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
-    big_integer<E, C, M> operator*=(big_integer<E, C, M>& lhs, I const& rhs) {return lhs = lhs * rhs;}
+    big_integer<E, C, M> operator*=(big_integer<E, C, M>& lhs, I const& rhs) { return lhs = lhs * rhs; }
   }
 
   using big_integer_detail::operator*;
@@ -644,7 +644,7 @@ namespace kashiwa {
   //
   template<typename E, typename C, C M>
   big_integer<E, C, M> pow(big_integer<E, C, M> const& lhs, unsigned exponent) {
-    big_integer<E, C, M> result {1};
+    big_integer<E, C, M> result { 1 };
     if (!exponent) return result;
 
     big_integer<E, C, M> pow2 = lhs;

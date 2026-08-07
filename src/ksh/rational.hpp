@@ -12,15 +12,15 @@ namespace kashiwa {
   namespace lambda {
     template<typename T = void>
     struct identity {
-      constexpr T& operator()(T& value) const {return value;}
-      constexpr T const& operator()(T const& value) const {return value;}
+      constexpr T& operator()(T& value) const { return value; }
+      constexpr T const& operator()(T const& value) const { return value; }
     };
     template<>
     struct identity<void> {
       template<typename T>
-      constexpr T& operator()(T& value) const {return value;}
+      constexpr T& operator()(T& value) const { return value; }
       template<typename T>
-      constexpr T const& operator()(T const& value) const {return value;}
+      constexpr T const& operator()(T const& value) const { return value; }
     };
   }
 
@@ -47,7 +47,7 @@ namespace kashiwa {
   }
 
   template<typename K>
-  constexpr K lcm(K lhs, K rhs) {return (lhs / gcd(lhs, rhs)) * rhs;}
+  constexpr K lcm(K lhs, K rhs) { return (lhs / gcd(lhs, rhs)) * rhs; }
 
   struct already_canonicalized_tag {};
 
@@ -82,23 +82,23 @@ namespace kashiwa {
       nullptr_if_t<std::is_constructible<K, L>::value && std::is_constructible<K, M>::value> = nullptr>
     constexpr rational(L&& num, M&& den, already_canonicalized_tag): m_num(std::forward<L>(num)), m_den(std::forward<M>(den)) {}
 
-    constexpr K const& numerator() const {return m_num;}
-    constexpr K const& denominator() const {return m_den;}
-    constexpr rational const& operator+() const {return *this;}
-    constexpr rational operator-() const {return {-m_num, m_den};}
+    constexpr K const& numerator() const { return m_num; }
+    constexpr K const& denominator() const { return m_den; }
+    constexpr rational const& operator+() const { return *this; }
+    constexpr rational operator-() const { return {-m_num, m_den}; }
 
-    constexpr explicit operator bool() const {return m_num != 0;}
+    constexpr explicit operator bool() const { return m_num != 0; }
     constexpr explicit operator double() const { return (double) m_num / (double) m_den; }
 
-    constexpr void destructive_negate() {kashiwa::destructive_negate(m_num);}
+    constexpr void destructive_negate() { kashiwa::destructive_negate(m_num); }
   };
 
   template<typename K>
-  constexpr bool isfinite(rational<K> const& value) {return value.denominator() != 0;}
+  constexpr bool isfinite(rational<K> const& value) { return value.denominator() != 0; }
   template<typename K>
-  constexpr bool isnan(rational<K> const& value) {return value.denominator() == 0 && value.numerator() == 0;}
+  constexpr bool isnan(rational<K> const& value) { return value.denominator() == 0 && value.numerator() == 0; }
   template<typename K>
-  constexpr bool isinf(rational<K> const& value) {return value.denominator() == 0 && value.numerator() != 0;}
+  constexpr bool isinf(rational<K> const& value) { return value.denominator() == 0 && value.numerator() != 0; }
 
   //
   // rational == rational
@@ -108,7 +108,7 @@ namespace kashiwa {
     return lhs.numerator() == rhs.numerator() && lhs.denominator() == rhs.denominator();
   }
   template<typename K>
-  constexpr bool operator!=(rational<K> const& lhs, rational<K> const& rhs) {return !(lhs == rhs);}
+  constexpr bool operator!=(rational<K> const& lhs, rational<K> const& rhs) { return !(lhs == rhs); }
 
   //
   // rational == scalar
@@ -118,11 +118,11 @@ namespace kashiwa {
     return lhs.numerator() == rhs && lhs.denominator() == 1;
   }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  constexpr bool operator==(L const& lhs, rational<K> const& rhs) {return rhs == lhs;}
+  constexpr bool operator==(L const& lhs, rational<K> const& rhs) { return rhs == lhs; }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  constexpr bool operator!=(rational<K> const& lhs, L const& rhs) {return !(lhs == rhs);}
+  constexpr bool operator!=(rational<K> const& lhs, L const& rhs) { return !(lhs == rhs); }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  constexpr bool operator!=(L const& lhs, rational<K> const& rhs) {return !(rhs == lhs);}
+  constexpr bool operator!=(L const& lhs, rational<K> const& rhs) { return !(rhs == lhs); }
 
   //
   // rational + rational
@@ -136,18 +136,18 @@ namespace kashiwa {
       K const& d = rhs.denominator();
       if (c == 0 || d == 0) {
         if (c == d)
-          return {a == add(0, b)? a: 0, 0, already_canonicalized_tag()};
+          return { a == add(0, b)? a: 0, 0, already_canonicalized_tag() };
         else
           return c == 0? lhs: neg(rhs);
       }
 
       K const _gcd = gcd(c, d);
       if (_gcd == 1)
-        return {add(a * d, b * c), c * d};
+        return { add(a * d, b * c), c * d };
       else {
         K const reducedC = c / _gcd;
         K const reducedD = d / _gcd;
-        return {add(a * reducedD, b * reducedC), c * reducedD};
+        return { add(a * reducedD, b * reducedC), c * reducedD };
       }
     }
   }
@@ -160,9 +160,9 @@ namespace kashiwa {
     return rational_detail::impl_add(lhs, rhs, std::minus<K>(), std::negate<rational<K>>());
   }
   template<typename K>
-  rational<K> operator+=(rational<K>& lhs, rational<K> const& rhs) {return lhs = lhs + rhs;}
+  rational<K> operator+=(rational<K>& lhs, rational<K> const& rhs) { return lhs = lhs + rhs; }
   template<typename K>
-  rational<K> operator-=(rational<K>& lhs, rational<K> const& rhs) {return lhs = lhs - rhs;}
+  rational<K> operator-=(rational<K>& lhs, rational<K> const& rhs) { return lhs = lhs - rhs; }
 
   //
   // rational + scalar
@@ -172,28 +172,28 @@ namespace kashiwa {
     K const& n = r1.numerator();
     K const& d = r1.denominator();
     if (d == 0) return r1;
-    return {n + k2 * d, d};
+    return { n + k2 * d, d };
   }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   constexpr rational<K> operator-(rational<K> const& r1, L const& k2) {
     K const& n = r1.numerator();
     K const& d = r1.denominator();
     if (d == 0) return r1;
-    return {n - k2 * d, d};
+    return { n - k2 * d, d };
   }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  constexpr rational<K> operator+(L const& lhs, rational<K> const& rhs) {return rhs + lhs;}
+  constexpr rational<K> operator+(L const& lhs, rational<K> const& rhs) { return rhs + lhs; }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   constexpr rational<K> operator-(L const& k1, rational<K> const& r2) {
     K const& n = r2.numerator();
     K const& d = r2.denominator();
     if (d == 0) return -r2;
-    return {k1 * d - n, d};
+    return { k1 * d - n, d };
   }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  rational<K> operator+=(rational<K>& lhs, L const& rhs) {return lhs = lhs + rhs;}
+  rational<K> operator+=(rational<K>& lhs, L const& rhs) { return lhs = lhs + rhs; }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  rational<K> operator-=(rational<K>& lhs, L const& rhs) {return lhs = lhs - rhs;}
+  rational<K> operator-=(rational<K>& lhs, L const& rhs) { return lhs = lhs - rhs; }
 
   //
   // rational * rational
@@ -206,11 +206,11 @@ namespace kashiwa {
     K d = rhs.denominator();
     if (c == 0 || d == 0) {
       if (c == d)
-        return {a * b, 0, already_canonicalized_tag()}; // {nan, inf} * {nan, inf}
+        return { a * b, 0, already_canonicalized_tag() }; // {nan, inf} * {nan, inf}
       else if (a == 0 || b == 0)
-        return {0, 0, already_canonicalized_tag()}; // 0 * {nan, inf} or nonzero * nan -> nan
+        return { 0, 0, already_canonicalized_tag() }; // 0 * {nan, inf} or nonzero * nan -> nan
       else
-        return {(a > 0? 1: -1) * (b > 0? 1: -1), 0, already_canonicalized_tag()}; // nonzero * inf -> inf
+        return {(a > 0? 1: -1) * (b > 0? 1: -1), 0, already_canonicalized_tag() }; // nonzero * inf -> inf
     }
 
     K const _gcd1 = gcd(a, d);
@@ -224,49 +224,49 @@ namespace kashiwa {
       c /= _gcd2;
     }
 
-    return {a * b, c * d, already_canonicalized_tag()};
+    return { a * b, c * d, already_canonicalized_tag() };
   }
   template<typename K>
   constexpr rational<K> operator/(rational<K> const& lhs, rational<K> const& rhs) {
-    return lhs * rational<K> {rhs.denominator(), rhs.numerator()};
+    return lhs * rational<K> { rhs.denominator(), rhs.numerator() };
   }
   template<typename K>
-  rational<K> operator*=(rational<K>& lhs, rational<K> const& rhs) {return lhs = lhs * rhs;}
+  rational<K> operator*=(rational<K>& lhs, rational<K> const& rhs) { return lhs = lhs * rhs; }
   template<typename K>
-  rational<K> operator/=(rational<K>& lhs, rational<K> const& rhs) {return lhs = lhs / rhs;}
+  rational<K> operator/=(rational<K>& lhs, rational<K> const& rhs) { return lhs = lhs / rhs; }
 
   //
   // rational * scalar
   //
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   constexpr rational<K> operator*(rational<K> const& lhs, L const& rhs) {
-    rational<K> const tmp {rhs, lhs.denominator()};
-    return {lhs.numerator() * tmp.numerator(), tmp.denominator(), already_canonicalized_tag()};
+    rational<K> const tmp { rhs, lhs.denominator() };
+    return { lhs.numerator() * tmp.numerator(), tmp.denominator(), already_canonicalized_tag() };
   }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   constexpr rational<K> operator/(rational<K> const& lhs, L const& rhs) {
-    rational<K> const tmp {lhs.numerator(), rhs};
-    return {tmp.numerator(), lhs.denominator() * tmp.denominator(), already_canonicalized_tag()};
+    rational<K> const tmp { lhs.numerator(), rhs };
+    return { tmp.numerator(), lhs.denominator() * tmp.denominator(), already_canonicalized_tag() };
   }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  constexpr rational<K> operator*(L const& lhs, rational<K> const& rhs) {return rhs * lhs;}
+  constexpr rational<K> operator*(L const& lhs, rational<K> const& rhs) { return rhs * lhs; }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
   constexpr rational<K> operator/(L const& lhs, rational<K> const& rhs) {
-    rational<K> const tmp {lhs, rhs.numerator()};
-    return {tmp.numerator() * rhs.denominator(), tmp.denominator(), already_canonicalized_tag()};
+    rational<K> const tmp { lhs, rhs.numerator() };
+    return { tmp.numerator() * rhs.denominator(), tmp.denominator(), already_canonicalized_tag() };
   }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  rational<K> operator*=(rational<K>& lhs, L const& rhs) {return lhs = lhs * rhs;}
+  rational<K> operator*=(rational<K>& lhs, L const& rhs) { return lhs = lhs * rhs; }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  rational<K> operator/=(rational<K>& lhs, L const& rhs) {return lhs = lhs / rhs;}
+  rational<K> operator/=(rational<K>& lhs, L const& rhs) { return lhs = lhs / rhs; }
 
   //
   // rational < rational
   //
-  template<typename K> constexpr bool operator<(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() < 0;}
-  template<typename K> constexpr bool operator<=(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() < 0;}
-  template<typename K> constexpr bool operator>(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() > 0;}
-  template<typename K> constexpr bool operator>=(rational<K> const& lhs, rational<K> const& rhs) {return (lhs - rhs).numerator() >= 0;}
+  template<typename K> constexpr bool operator<(rational<K> const& lhs, rational<K> const& rhs) { return (lhs - rhs).numerator() < 0; }
+  template<typename K> constexpr bool operator<=(rational<K> const& lhs, rational<K> const& rhs) { return (lhs - rhs).numerator() < 0; }
+  template<typename K> constexpr bool operator>(rational<K> const& lhs, rational<K> const& rhs) { return (lhs - rhs).numerator() > 0; }
+  template<typename K> constexpr bool operator>=(rational<K> const& lhs, rational<K> const& rhs) { return (lhs - rhs).numerator() >= 0; }
 
   //
   // rational < scalar
@@ -297,13 +297,13 @@ namespace kashiwa {
     return rational_detail::impl_compare(lhs, rhs, std::greater_equal<K>(), 1);
   }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  constexpr bool operator< (L const& lhs, rational<K> const& rhs) {return rhs > lhs;}
+  constexpr bool operator< (L const& lhs, rational<K> const& rhs) { return rhs > lhs; }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  constexpr bool operator> (L const& lhs, rational<K> const& rhs) {return rhs < lhs;}
+  constexpr bool operator> (L const& lhs, rational<K> const& rhs) { return rhs < lhs; }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  constexpr bool operator<=(L const& lhs, rational<K> const& rhs) {return rhs >= lhs;}
+  constexpr bool operator<=(L const& lhs, rational<K> const& rhs) { return rhs >= lhs; }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  constexpr bool operator>=(L const& lhs, rational<K> const& rhs) {return rhs <= lhs;}
+  constexpr bool operator>=(L const& lhs, rational<K> const& rhs) { return rhs <= lhs; }
 
   //
   // ostr << rational

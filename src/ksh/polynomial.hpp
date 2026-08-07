@@ -31,7 +31,7 @@ namespace kashiwa {
       this->normalize();
     }
 
-    std::vector<K> const& data() const {return this->m_data;}
+    std::vector<K> const& data() const { return this->m_data; }
 
     K assign(K const& value) const {
       K result = 0;
@@ -62,7 +62,7 @@ namespace kashiwa {
       this->m_data.resize(i);
     }
 
-    polynomial const& operator+() const {return *this;}
+    polynomial const& operator+() const { return *this; }
 
     polynomial operator-() const {
       polynomial ret(*this);
@@ -72,7 +72,7 @@ namespace kashiwa {
   };
 
   template<typename K>
-  std::size_t deg(polynomial<K> const& poly) {return std::max(poly.data().size(), (std::size_t) 1) - 1;}
+  std::size_t deg(polynomial<K> const& poly) { return std::max(poly.data().size(), (std::size_t) 1) - 1; }
 
   //
   // polynomial == polynomial
@@ -83,7 +83,7 @@ namespace kashiwa {
       && std::equal(lhs.data().begin(), lhs.data().end(), rhs.data().begin());
   }
   template<typename K>
-  bool operator!=(polynomial<K> const& lhs, polynomial<K> const& rhs) {return !(lhs == rhs);}
+  bool operator!=(polynomial<K> const& lhs, polynomial<K> const& rhs) { return !(lhs == rhs); }
 
   //
   // polynomial == scalar
@@ -98,11 +98,11 @@ namespace kashiwa {
     }
   }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  bool operator==(L const& lhs, polynomial<K> const& rhs) {return rhs == lhs;}
+  bool operator==(L const& lhs, polynomial<K> const& rhs) { return rhs == lhs; }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  bool operator!=(polynomial<K> const& lhs, L const& rhs) {return !(lhs == rhs);}
+  bool operator!=(polynomial<K> const& lhs, L const& rhs) { return !(lhs == rhs); }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  bool operator!=(L const& lhs, polynomial<K> const& rhs) {return !(rhs == lhs);}
+  bool operator!=(L const& lhs, polynomial<K> const& rhs) { return !(rhs == lhs); }
 
   //
   // polynomial + polynomial
@@ -136,7 +136,7 @@ namespace kashiwa {
   }
   template<typename K>
   polynomial<K> operator+(polynomial<K> const& lhs, polynomial<K> const& rhs) {
-    return polynomial_detail::merge(lhs, rhs, [](K const& lhs, K const& rhs) {return lhs + rhs;});
+    return polynomial_detail::merge(lhs, rhs, [](K const& lhs, K const& rhs) { return lhs + rhs; });
   }
   template<typename K>
   polynomial<K> operator-(polynomial<K> const& lhs, polynomial<K> const& rhs) {
@@ -214,7 +214,7 @@ namespace kashiwa {
     return result;
   }
   template<typename K>
-  polynomial<K>& operator*=(polynomial<K>& lhs, polynomial<K> const& rhs) {return lhs = lhs * rhs;}
+  polynomial<K>& operator*=(polynomial<K>& lhs, polynomial<K> const& rhs) { return lhs = lhs * rhs; }
 
   //
   // polynomial * scalar
@@ -246,14 +246,14 @@ namespace kashiwa {
     return ret;
   }
   template<typename K, typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
-  polynomial<K> operator*(L const& lhs, polynomial<K> const& rhs) {return rhs * lhs;}
+  polynomial<K> operator*(L const& lhs, polynomial<K> const& rhs) { return rhs * lhs; }
 
   //
   // pow(polynomial, unsigned)
   //
   template<typename K>
   polynomial<K> pow(polynomial<K> const& lhs, unsigned exponent) {
-    polynomial<K> result {1};
+    polynomial<K> result { 1 };
     if (!exponent) return result;
 
     polynomial<K> pow2 = lhs;
