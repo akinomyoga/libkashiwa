@@ -333,6 +333,7 @@ namespace kashiwa {
         if (cmp < 0) {
           lhs.sign = -lhs.sign;
           lhs.data.resize(rhs.data.size(), (elem_t) 0);
+          dst = &lhs.data[0];
           max = &rhs.data[0];
           min = &lhs.data[0];
           maxN = rhs.data.size();
@@ -679,13 +680,18 @@ namespace kashiwa {
       if (pquo) {
         pquo->sign = lhs.sign;
         std::vector<elem_t>& data = pquo->data;
-        data.resize(lhs.data.size());
-        for (std::size_t i = lhs.data.size(); i--; ) {
-          calc_t const elem = carry * integer_t::modulo + lhs.data[i];
-          data[i] = elem / rhs;
-          carry = elem % rhs;
+        if (lhs.data.empty()) {
+          data.clear();
+        } else {
+          data.resize(lhs.data.size());
+          for (std::size_t i = lhs.data.size(); i--; ) {
+            calc_t const elem = carry * integer_t::modulo + lhs.data[i];
+            data[i] = elem / rhs;
+            carry = elem % rhs;
+          }
+          if (data.back() == 0)
+            data.pop_back();
         }
-        if (data.back() == 0) data.pop_back();
       } else {
         for (std::size_t i = lhs.data.size(); i--; )
           carry = (carry * integer_t::modulo + lhs.data[i]) % rhs;
