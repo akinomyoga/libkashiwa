@@ -7,6 +7,7 @@
 #include <ostream>
 #include <utility>
 #include "def.hpp"
+#include "arithmetic.hpp"
 namespace kashiwa {
 
   namespace lambda {
@@ -23,31 +24,6 @@ namespace kashiwa {
       constexpr T const& operator()(T const& value) const { return value; }
     };
   }
-
-  template<typename K>
-  constexpr K gcd(K lhs, K rhs) {
-    if (lhs < 0) destructive_negate(lhs);
-    if (rhs < 0) destructive_negate(rhs);
-#ifdef __clang__
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wswitch-bool"
-#endif
-    switch (lhs > rhs)
-      for (;;) {
-      case true:
-        if (rhs == 0) return lhs;
-        lhs %= rhs;
-      default:
-        if (lhs == 0) return rhs;
-        rhs %= lhs;
-      }
-#ifdef __clang__
-# pragma clang diagnostic pop
-#endif
-  }
-
-  template<typename K>
-  constexpr K lcm(K lhs, K rhs) { return (lhs / gcd(lhs, rhs)) * rhs; }
 
   struct already_canonicalized_tag {};
 
@@ -73,8 +49,8 @@ namespace kashiwa {
       m_num /= _gcd;
       m_den /= _gcd;
       if (m_den < 0) {
-        kashiwa::destructive_negate(m_num);
-        kashiwa::destructive_negate(m_den);
+        kashiwa::chneg(m_num);
+        kashiwa::chneg(m_den);
       }
     }
 
@@ -90,7 +66,7 @@ namespace kashiwa {
     constexpr explicit operator bool() const { return m_num != 0; }
     constexpr explicit operator double() const { return (double) m_num / (double) m_den; }
 
-    constexpr void destructive_negate() { kashiwa::destructive_negate(m_num); }
+    constexpr void chneg() { kashiwa::chneg(m_num); }
   };
 
   template<typename K>

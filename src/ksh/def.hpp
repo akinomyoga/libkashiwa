@@ -69,29 +69,5 @@ namespace kashiwa {
   }
   template<template<typename...> class Template, typename... Args>
   using is_instantiatable = detail::instantiater<std::true_type, Template, Args...>;
-
-  //
-  // destructive_negate
-  //
-  // 型によっては value = -value もしくは value *= -1 を効率よく行うことができる場合がある。
-  // 型毎に destructive_negate 関数でその様な操作を提供できる様にするための物。
-  // 或る型について destructive_negate を定義する場合は、
-  // kashiwa::overloads の下に多重定義を用意する。
-  //
-  namespace overloads {
-    template<typename T> using result_of_destructive_negate = decltype(std::declval<T>().destructive_negate());
-    template<typename T> using has_destructive_negate = is_instantiatable<result_of_destructive_negate, T>;
-
-    template<typename K, nullptr_if_t<!has_destructive_negate<K>::value> = nullptr>
-    constexpr void destructive_negate(K& value, adl_inducer) {value = -value;}
-    template<typename K, nullptr_if_t<has_destructive_negate<K>::value> = nullptr>
-    constexpr void destructive_negate(K& value, adl_inducer) {value.destructive_negate();}
-  }
-
-  template<typename K>
-  constexpr void destructive_negate(K& value) {
-    destructive_negate(value, overloads::adl_inducer());
-  }
-
 }
 #endif

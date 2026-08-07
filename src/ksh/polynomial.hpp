@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <ostream>
 #include "def.hpp"
+#include "arithmetic.hpp"
 namespace kashiwa {
 
   // これは1元の多項式にしか対応していない。
@@ -319,7 +320,7 @@ namespace kashiwa {
           ostr << ' ';
           if (coefficient < 0) {
             ostr << '-';
-            destructive_negate(coefficient);
+            kashiwa::chneg(coefficient);
           } else
             ostr << '+';
           ostr << ' ';

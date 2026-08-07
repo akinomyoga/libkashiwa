@@ -3,13 +3,14 @@
 #define kashiwa_biginteger_hpp
 #include <cstddef>
 #include <cstdint>
+#include <algorithm>
 #include <limits>
+#include <ostream>
 #include <type_traits>
 #include <vector>
-#include <ostream>
-#include <algorithm>
 #include <mwg/except.h>
 #include "def.hpp"
+#include "arithmetic.hpp"
 namespace kashiwa {
 
   template<
@@ -843,20 +844,19 @@ namespace kashiwa {
       divide(lhs, rhs, &lhs, (big_integer<E, C, M>*) nullptr);
       return lhs;
     }
+
+    template<typename E, typename C, C M>
+    E gcd(big_integer<E, C, M> const& lhs, E const& rhs) {
+      return kashiwa::gcd(rhs, lhs % rhs);
+    }
   }
   using big_integer_detail::operator%;
   using big_integer_detail::operator/;
   using big_integer_detail::operator%=;
   using big_integer_detail::operator/=;
+  using big_integer_detail::gcd;
 
   namespace big_integer_detail {
-
-    template<typename E>
-    constexpr E integral_pow(E base, unsigned index) {
-      E result = 1;
-      while (index--) result *= base;
-      return result;
-    }
 
     template<typename E, typename C, C M>
     std::ostream& operator<<(std::ostream& ostr, big_integer<E, C, M> const& value) {
@@ -868,7 +868,7 @@ namespace kashiwa {
       using calc_t = typename integer_t::calculation_type;
 
       constexpr int wgroup = integral_floor_log(integer_t::modulo, 10u);
-      constexpr elem_t mod10 = integral_pow((elem_t) 10, wgroup);
+      constexpr elem_t mod10 = kashiwa::ipow((elem_t) 10, wgroup);
       if (mod10 == integer_t::modulo) {
         // 元から 10^n の基数の場合には変換は不要
         std::vector<char> digits;
