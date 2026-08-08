@@ -698,6 +698,12 @@ namespace kashiwa {
             data.pop_back();
         }
       } else {
+        // When integer_t::modulo is divisable by rhs, we do not have to look
+        // at more significant elements.  We can simply look at the least
+        // significant element.
+        if (integer_t::modulo % rhs == 0)
+          return lhs.data.size() == 0 ? 0 : lhs.data[0] % rhs;
+
         for (std::size_t i = lhs.data.size(); i--; )
           carry = (carry * integer_t::modulo + lhs.data[i]) % rhs;
       }
