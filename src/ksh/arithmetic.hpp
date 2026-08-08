@@ -70,23 +70,33 @@ namespace kashiwa {
     return (lhs / gcd(lhs, rhs)) * rhs;
   }
 
-  template<typename K, typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
-  constexpr K ipow(K base, I exp) {
+  template<typename K, typename I, typename OpMulEq>
+  constexpr K ipow(K base, I exp, OpMulEq chmul) {
     // mwg_assert(exp >= 0); // This is not "constexpr".
     if (exp <= 0) return K(1);
 
-    while ((exp & 1) == 0) {
-      base *= base;
-      exp >>= 1;
+    while (exp % 2 == 0) {
+      chmul(base, base);
+      exp /= 2;
     }
 
     K ret { base };
-    while ((exp >>= 1) > 0) {
-      base *= base;
-      if (exp & 1) ret *= base;
+    while ((exp /= 2) > 0) {
+      chmul(base, base);
+      if (exp % 2) chmul(ret, base);
     }
 
     return ret;
+  }
+
+  template<typename K, typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
+  constexpr K ipow(K base, I exp) {
+    return ipow(base, exp, [] (K& u, K const& v) { u *= v; });
+  }
+
+  template<typename K, typename I>
+  constexpr K ipow_mod(K base, I exp, K const& mod) {
+    return ipow(base, exp, [&mod] (K& u, K const& v) { u *= v; u %= mod; });
   }
 
 }
