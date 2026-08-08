@@ -16,7 +16,7 @@ namespace kashiwa {
   template<
     typename ElemInt = std::uint32_t,
     typename CalcInt = std::uint64_t,
-    CalcInt modulo = (CalcInt) std::numeric_limits<ElemInt>::max() + 1 >
+    CalcInt Modulo = (CalcInt) std::numeric_limits<ElemInt>::max() + 1 >
   struct big_integer;
 
   template<typename ElemInt, typename CalcInt, CalcInt Modulo>
@@ -662,6 +662,10 @@ namespace kashiwa {
     return result;
   }
 
+  // operator/
+  //
+  //  ToDo: 負数による割り算に対応していない気がする。
+  //
   namespace big_integer_detail {
 
     template<typename E, typename C, C M>
@@ -719,6 +723,24 @@ namespace kashiwa {
     big_integer<E, C, M>& operator/=(big_integer<E, C, M>& lhs, E const& rhs) {
       divide(lhs, rhs, &lhs);
       return lhs;
+    }
+
+    // overload for int
+    template<typename E, typename C, C M, nullptr_if_t<!std::is_same<int, E>::value> = nullptr>
+    E operator%(big_integer<E, C, M> const& lhs, int rhs) {
+      return operator%(lhs, (E) rhs);
+    }
+    template<typename E, typename C, C M, nullptr_if_t<!std::is_same<int, E>::value> = nullptr>
+    big_integer<E, C, M> operator/(big_integer<E, C, M> const& lhs, int rhs) {
+      return operator/(lhs, (E) rhs);
+    }
+    template<typename E, typename C, C M, nullptr_if_t<!std::is_same<int, E>::value> = nullptr>
+    big_integer<E, C, M>& operator%=(big_integer<E, C, M>& lhs, int rhs) {
+      return operator%=(lhs, (E) rhs);
+    }
+    template<typename E, typename C, C M, nullptr_if_t<!std::is_same<int, E>::value> = nullptr>
+    big_integer<E, C, M>& operator/=(big_integer<E, C, M>& lhs, int rhs) {
+      return operator/=(lhs, (E) rhs);
     }
 
     // num - div * M^exp * factor を計算する
