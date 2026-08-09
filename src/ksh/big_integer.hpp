@@ -289,7 +289,7 @@ namespace kashiwa {
       if (carry) {
         mwg_assert(iN <= lhs.data.size());
         if (iN < lhs.data.size())
-          lhs.data[iN] = carry;
+          lhs.data[iN] += carry;
         else
           lhs.data.push_back(carry);
       }
@@ -447,7 +447,7 @@ namespace kashiwa {
         return lhs;
       }
 
-      if (lhs.sign == (Op == '-'? -rsign: rsign))
+      if (lhs.sign == (Op == '-' ? -rsign : rsign))
         abs_add(lhs, rhs);
       else
         abs_sub(lhs, rhs);
