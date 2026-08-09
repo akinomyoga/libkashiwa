@@ -43,6 +43,19 @@ namespace kashiwa {
     chneg(value, overloads::adl_inducer());
   }
 
+  template<typename K, typename M>
+  constexpr M mod(K const& x, M const& m) {
+    M ret = x % m;
+    if (ret < 0) ret += m;
+    return ret;
+  }
+
+  template<typename K, typename M>
+  void chmod(K& x, M const& m) {
+    x %= m;
+    if (x < 0) x += m;
+  }
+
   template<typename K>
   constexpr K gcd(K lhs, K rhs) {
     if (lhs < 0) chneg(lhs);
@@ -97,6 +110,35 @@ namespace kashiwa {
   template<typename K, typename I>
   constexpr K ipow_mod(K base, I exp, K const& mod) {
     return ipow(base, exp, [&mod] (K& u, K const& v) { u *= v; u %= mod; });
+  }
+
+  /// @return This function returns the inverse of the VALUE under modulo MOD.
+  /// When the return value is 0, it implies that the inverse of VALUE does not
+  /// exist.
+  template<typename K, typename M>
+  constexpr M inv_mod(K const& value, M const& mod) {
+    M y = mod, b = 0;
+    if (y < 0) kashiwa::chneg(y);
+    M x = kashiwa::mod(value, y), a = 1;
+
+    M q;
+    for (;;) {
+      if (x == 0) {
+        if (y != 1) return M(0);
+        kashiwa::chmod(b, mod);
+        return b;
+      }
+      y = kashiwa::div(y, x, q);
+      b -= q * a;
+
+      if (y == 0) {
+        if (x != 1) return M(0);
+        kashiwa::chmod(a, mod);
+        return a;
+      }
+      x = kashiwa::div(x, y, q);
+      a -= q * b;
+    }
   }
 
 }
