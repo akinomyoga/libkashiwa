@@ -36,10 +36,15 @@ namespace kashiwa {
     int sign;
     std::vector<element_type> data;
 
+  public:
     big_integer(): sign(0) {}
 
     template<typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
     big_integer(I const& value) { this->operator=(value); }
+
+    big_integer(const char* value) { this->parse(value); }
+
+    void parse(const char* value);
 
     big_integer const& operator+() const { return *this; }
     big_integer operator-() const {
@@ -494,6 +499,34 @@ namespace kashiwa {
   using big_integer_detail::operator-=;
   using big_integer_detail::operator+;
   using big_integer_detail::operator-;
+
+  template<typename E, typename C, C M>
+  void big_integer<E, C, M>::parse(const char* value) {
+    char const sgn = value[0];
+    if (*value == '+' || *value == '-') value++;
+
+    E mul = 1, add = 0;
+    for (*this = 0; *value; value++) {
+      mwg_check('0' <= *value && *value <= '9');
+
+      if (mul > element_max / 10) {
+        *this *= mul;
+        *this += add;
+        mul = 1;
+        add = 0;
+      }
+
+      mul *= 10;
+      add = 10 * add + E(*value - '0');
+    }
+
+    if (mul != 1) {
+      *this *= mul;
+      *this += add;
+    }
+
+    if (sgn == '-') sign = -sign;
+  }
 
   //
   // a * b
