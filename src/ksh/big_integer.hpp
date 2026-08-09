@@ -833,7 +833,7 @@ namespace kashiwa {
       //   以下の ※ の操作で lhs/rhs が破壊される。
       //   従って ※ より後では lhs/rhs には触れない事に注意する。
       integer_t _rem, div;
-      integer_t& rem = prem? *prem: _rem;
+      integer_t& rem = prem ? *prem : _rem;
       if (factor == 1) {
         div = rhs;
         rem = lhs;
@@ -853,12 +853,12 @@ namespace kashiwa {
       if (pquo) pquo->sign = div.sign * rem.sign;
       if (ndata[rpos] >= arhs) {
         if (pquo) {
-          pquo->data.resize(qpos + 1, 0);
+          pquo->data.assign(qpos + 1, 0);
           pquo->data[qpos] = 1;
         }
         abs_submul(rem, div, qpos, 1);
       } else {
-        if (pquo) pquo->data.resize(qpos, 0);
+        if (pquo) pquo->data.assign(qpos, 0);
       }
 
       // 残りの桁
