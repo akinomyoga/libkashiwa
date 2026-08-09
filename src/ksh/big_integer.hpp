@@ -69,7 +69,7 @@ namespace kashiwa {
           data[i]--;
           if (i == data.size() - 1 && data[i] == 0) {
             data.pop_back();
-            if (data.size() == 0) sign = 0;
+            if (data.empty()) sign = 0;
           }
           return;
         } else {
@@ -729,8 +729,10 @@ namespace kashiwa {
             data[i] = elem / rhs;
             carry = elem % rhs;
           }
-          if (data.back() == 0)
+          if (data.back() == 0) {
             data.pop_back();
+            if (data.empty()) pquo->sign = 0;
+          }
         }
       } else {
         // When integer_t::modulo is divisable by rhs, we do not have to look
