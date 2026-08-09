@@ -63,17 +63,17 @@ namespace kashiwa {
     return x % y;
   }
 
-  int div(int x, int y, int& q) {
+  inline int div(int x, int y, int& q) {
     std::div_t d = std::div(x, y);
     q = d.quot;
     return d.rem;
   }
-  long div(long x, long y, long& q) {
+  inline long div(long x, long y, long& q) {
     std::ldiv_t d = std::ldiv(x, y);
     q = d.quot;
     return d.rem;
   }
-  long long div(long long x, long long y, long long& q) {
+  inline long long div(long long x, long long y, long long& q) {
     std::lldiv_t d = std::lldiv(x, y);
     q = d.quot;
     return d.rem;
