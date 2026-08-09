@@ -884,6 +884,17 @@ namespace kashiwa {
   using big_integer_detail::operator/=;
   using big_integer_detail::gcd;
 
+  template<typename E, typename C, C M>
+  big_integer<E, C, M> div(big_integer<E, C, M> const& lhs, big_integer<E, C, M> const& rhs, big_integer<E, C, M>& q) {
+    big_integer<E, C, M> ret;
+    big_integer_detail::divide(lhs, rhs, &q, &ret);
+    return ret;
+  }
+  template<typename E, typename C, C M>
+  E div(big_integer<E, C, M> const& lhs, E const& rhs, E& q) {
+    return big_integer_detail::divide(lhs, rhs, &q);
+  }
+
   namespace big_integer_detail {
 
     template<typename E, typename C, C M>

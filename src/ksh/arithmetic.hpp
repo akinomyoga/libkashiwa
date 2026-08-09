@@ -1,6 +1,7 @@
 // -*- mode: c++ -*-
 #ifndef kashiwa_arithmetic_hpp
 #define kashiwa_arithmetic_hpp
+#include <cmath>
 #include <type_traits>
 #include <mwg/except.h>
 #include "def.hpp"
@@ -54,6 +55,28 @@ namespace kashiwa {
   void chmod(K& x, M const& m) {
     x %= m;
     if (x < 0) x += m;
+  }
+
+  template<typename K>
+  K div(K const& x, K const& y, K& q) {
+    q = x / y;
+    return x % y;
+  }
+
+  int div(int x, int y, int& q) {
+    std::div_t d = std::div(x, y);
+    q = d.quot;
+    return d.rem;
+  }
+  long div(long x, long y, long& q) {
+    std::ldiv_t d = std::ldiv(x, y);
+    q = d.quot;
+    return d.rem;
+  }
+  long long div(long long x, long long y, long long& q) {
+    std::lldiv_t d = std::lldiv(x, y);
+    q = d.quot;
+    return d.rem;
   }
 
   template<typename K>
