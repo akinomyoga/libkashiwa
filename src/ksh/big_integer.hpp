@@ -60,6 +60,8 @@ namespace kashiwa {
       return r;
     }
 
+    explicit operator bool() const { return !data.empty(); }
+
   private:
     void abs_dec() {
       for (std::size_t i = 0; i < data.size(); i++) {
