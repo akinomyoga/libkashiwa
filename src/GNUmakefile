@@ -123,6 +123,7 @@ register_target = libksh
 $(eval $(call register_object,ksh/embedded_runge_kutta))
 $(eval $(call register_object,ksh/integrator))
 $(eval $(call register_object,ksh/linear_lu))
+$(eval $(call register_object,ksh/big_integer))
 $(OUTDIR)/libksh.a: $(libksh_objects) | $(OUTDIR)
 	ar crs $@ $^
 

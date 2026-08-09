@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <limits>
+#include <map>
 #include <ostream>
 #include <type_traits>
 #include <vector>
@@ -149,6 +150,8 @@ namespace kashiwa {
       }
       return *this;
     }
+
+    static std::map<big_integer, unsigned> factorize(big_integer x);
   };
 
   namespace big_integer_detail {
