@@ -282,19 +282,22 @@ namespace kashiwa {
         lhs.data.resize(rhs.data.size(), (element_t) 0u);
 
       calc_t carry = 0;
-      std::size_t const iN = rhs.data.size();
-      for (std::size_t i = 0; i < iN; i++) {
-        calc_t const value = (calc_t) lhs.data[i] + (calc_t) rhs.data[i] + carry;
+      std::size_t i;
+      for (i = 0; i < rhs.data.size(); i++) {
+        calc_t const value = carry + lhs.data[i] + rhs.data[i];
         carry       = value / integer_t::modulo;
         lhs.data[i] = (element_t) (value % integer_t::modulo);
       }
 
+      for (; carry && i < lhs.data.size(); i++) {
+        calc_t const value = carry + lhs.data[i];
+        carry = value / integer_t::modulo;
+        lhs.data[i] = (element_t) (value % integer_t::modulo);
+      }
+
       if (carry) {
-        mwg_assert(iN <= lhs.data.size());
-        if (iN < lhs.data.size())
-          lhs.data[iN] += carry;
-        else
-          lhs.data.push_back(carry);
+        mwg_assert(i == lhs.data.size() && carry < integer_t::modulo);
+        lhs.data.push_back(carry);
       }
     }
     template<typename E, typename C, C M, typename I, enable_scalar_operator_t<I> = nullptr>
