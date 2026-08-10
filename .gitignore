@@ -12,3 +12,4 @@ a.out
 *.exe
 /out
 /src/libksh.a
+/src/config.mk

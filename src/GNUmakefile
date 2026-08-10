@@ -7,86 +7,28 @@ all:
 # Host Configurations
 
 # default configuration
+CXX := g++
+CXXFLAGS := -O3 -march=native
+LDFLAGS:= -O3 -march=native
+
 opt_isystem  := -isystem
 OTFFT_PREFIX := $(HOME)/opt/otfft-6.4
 EIGEN_PREFIX := $(HOME)/opt/Eigen-3.2.8
+LIBMWG_PREFIX := $(HOME)/.opt/libmwg/master
+LIBMWG_BUILD  := x86_64-pc-linux-gnu-gcc-7.3.1+cxx98-debug
 
-host:=unknown
+config.mk:
+	cp $@.new $@
+-include config.mk
 
-ifeq ($(HOSTNAME),padparadscha)
-  host:=found
+CXXFLAGS+= \
+  -isystem $(LIBMWG_PREFIX)/include \
+  -isystem $(LIBMWG_PREFIX)/include/$(LIBMWG_BUILD)
+LDFLAGS+= \
+  -L $(LIBMWG_PREFIX)/lib/$(LIBMWG_BUILD)
 
-  OTFFT_PREFIX   := $(HOME)/work/idt/otfft/out/bin
-  CXX:=cxx
-  CXXFLAGS:= -Wall -std=gnu++17 -O3 -march=native
-  LDFLAGS:= -Wall -std=gnu++17 -O3 -march=native
-
-  # libmwg
-  LIBMWG_PREFIX := $(HOME)/opt/libmwg-201509
-  LIBMWG_BUILD  := i686-pc-linux-gnu-gcc-6.3.1+cxx11-release
-  CXXFLAGS += \
-    -isystem $(LIBMWG_PREFIX)/include \
-    -isystem $(LIBMWG_PREFIX)/include/$(LIBMWG_BUILD)
-  LDFLAGS += \
-    -L $(LIBMWG_PREFIX)/lib/$(LIBMWG_BUILD)
-endif
-
-ifeq ($(USER)@$(HOSTNAME),murase@tkyntn.phys.s.u-tokyo.ac.jp)
-  host:=found
-
-  OTFFT_PREFIX :=$(HOME)/opt/otfft-6.4
-  CXX:=g++-5.3.0
-  CXXFLAGS:= -Wall -std=gnu++17 -O3 -march=native
-  LDFLAGS:= -Wall -std=gnu++17 -O3 -march=native
-
-  LIBMWG_PREFIX:=$(HOME)/opt/libmwg-20160527
-  CXXFLAGS+= \
-    -isystem $(LIBMWG_PREFIX)/include \
-    -isystem $(LIBMWG_PREFIX)/include/x86_64-unknown-linux-gnu-gcc-5.3.0+default
-  LDFLAGS+= \
-    -L $(LIBMWG_PREFIX)/lib/x86_64-unknown-linux-gnu-gcc-5.3.0+default
-endif
-
-ifeq ($(HOSTNAME),chatoyancy)
-  host:=found
-
-  OTFFT_PREFIX   := $(HOME)/opt/otfft-6.4
-  CXX := g++
-  CXXFLAGS := -Wall -std=gnu++17 -O3 -march=native
-  LDFLAGS := -Wall -std=gnu++17 -O3 -march=native
-
-  # libmwg
-  LIBMWG_PREFIX := $(HOME)/opt/libmwg-20170824
-  LIBMWG_BUILD  := x86_64-pc-linux-gnu-gcc-7.3.1+cxx98-debug
-  CXXFLAGS += \
-    -isystem $(LIBMWG_PREFIX)/include \
-    -isystem $(LIBMWG_PREFIX)/include/$(LIBMWG_BUILD)
-  LDFLAGS += \
-    -L $(LIBMWG_PREFIX)/lib/$(LIBMWG_BUILD)
-endif
-
-ifeq ($(HOSTNAME),letsnote2025)
-  host:=found
-
-  OTFFT_PREFIX   := $(HOME)/opt/otfft-6.4
-  CXX := g++
-  CXXFLAGS := -Wall -std=gnu++17 -O3 -march=native
-  LDFLAGS := -Wall -std=gnu++17 -O3 -march=native
-
-  # libmwg
-  LIBMWG_PREFIX := $(HOME)/.opt/libmwg/master
-  LIBMWG_BUILD  := x86_64-cygwin-gcc-13.4.0+cxx98-debug
-  CXXFLAGS += \
-    -isystem $(LIBMWG_PREFIX)/include \
-    -isystem $(LIBMWG_PREFIX)/include/$(LIBMWG_BUILD)
-  LDFLAGS += \
-    -L $(LIBMWG_PREFIX)/lib/$(LIBMWG_BUILD)
-endif
-
-ifeq ($(host),unknown)
-  CXX:=g++
-  CXXFLAGS:= -Wall -std=gnu++17 -O3 -march=native
-endif
+CXXFLAGS += -Wall -std=gnu++17
+LDFLAGS += -Wall -std=gnu++17
 
 #------------------------------------------------------------------------------
 
