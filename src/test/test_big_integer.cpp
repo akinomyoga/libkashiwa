@@ -2,10 +2,16 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <iterator>
+#include <random>
+#include <sstream>
+#include <string>
 #include <vector>
-#include <ksh/big_integer.hpp>
 #include <mwg/except.h>
+#include <ksh/big_integer.hpp>
 
 namespace early_tests {
   void test() {
@@ -103,7 +109,7 @@ namespace kashiwa {
 
 namespace factorize_tests {
 
-  void make_table() {
+  void make_table_for_squares() {
     std::vector<std::uint64_t> mod255_table((std::size_t) 4, (std::uint64_t) 0);
     std::vector<std::uint64_t> mod256_table((std::size_t) 4, (std::uint64_t) 0);
     std::vector<std::uint64_t> mod257_table((std::size_t) 5, (std::uint64_t) 0);
@@ -142,13 +148,251 @@ namespace factorize_tests {
     mwg_check(count == count_expect);
     mwg_check(sum == sum_expect);
   }
+
+}
+
+//-----------------------------------------------------------------------------
+
+namespace basic_tests {
+
+  typedef kashiwa::big_integer<> int_t;
+  const std::string literal_prefix = "0x";
+  constexpr std::size_t literal_radix = 16;
+  constexpr std::size_t elem_digits = 8;
+
+  char digit(int number) {
+    if (0 <= number && number <= 9) {
+      return number + '0';
+    } else if (10 <= number && number <= 25) {
+      return "abcdefghijklmnopqrstuvwxyz"[number - 10];
+    } else {
+      mwg_check(0, "BUG");
+    }
+  }
+
+  std::string make_literal_random(std::size_t digits, unsigned radix) {
+    if (digits == 0) return "0";
+
+    static std::mt19937 rng(1337);
+
+    std::uniform_int_distribution<int> urandf(1, radix - 1);
+    std::uniform_int_distribution<int> urand(0, radix - 1);
+
+    int_t x = (int_t::element_type) urandf(rng);
+    for (std::size_t i = 1; i < digits; ++i)
+      x = x * radix + urand(rng);
+    std::ostringstream s;
+    s << x;
+    return s.str();
+  }
+
+  // 9999...9999
+  std::string make_literal_nines(std::size_t digits, unsigned radix) {
+    std::ostringstream s;
+    s << kashiwa::ipow((int_t) radix, digits) - 1;
+    return s.str();
+  }
+
+  // 10000...0000
+  std::string make_literal_one_zeros(std::size_t digits, unsigned radix) {
+    if (digits == 0) return "0";
+    std::ostringstream s;
+    s << kashiwa::ipow((int_t) radix, digits - 1);
+    return s.str();
+  }
+
+  bool arith_save_cases(const char* filename) {
+    std::ofstream out(filename);
+    if (!out) {
+      std::cerr << "ファイルを開けませんでした。" << std::endl;
+      return false;
+    }
+
+    auto output_with_signs = [&out] (std::string const& a, const char* op, std::string const& b) {
+      out << a << " " << op << " " << b << "\n";
+      if (b != "0")
+        out << a << " " << op << " -" << b << "\n";
+      if (a != "0")
+        out << "-" << a << " " << op << " " << b << "\n";
+      if (a != "0" && b != "0")
+        out << "-" << a << " " << op << " -" << b << "\n";
+    };
+    auto output_with_signs_and_opts = [&out, &output_with_signs] (std::string const& a, std::string const& b) {
+      static const char* op_other[3] = {"+", "-", "*"};
+      static const char* op_div[2] = {"/", "%"};
+      for (const char* op: op_other) {
+        output_with_signs(a, op, b);
+        if (b != a)
+          output_with_signs(b, op, a);
+      }
+      for (const char* op: op_div) {
+        if (b != "0")
+          output_with_signs(a, op, b);
+        if (b != a && a != "0")
+          output_with_signs(b, op, a);
+      }
+    };
+
+    std::vector<std::pair<std::size_t, std::size_t>> size_pairs = {
+      {100, 100}, {100, 99}, {100, 2}, {1000, 1}, {50, 80},
+    };
+    for (const auto& pair : size_pairs) {
+      for (std::size_t i = 0; i < 100; i++) {
+        output_with_signs_and_opts(
+          make_literal_random(pair.first, literal_radix),
+          make_literal_random(pair.second, literal_radix));
+      }
+    }
+
+    std::vector<std::size_t> test_digits = {5, 10, 50, 100};
+    for (std::size_t digits: test_digits) {
+      for (std::size_t i = 0; i < 100; i++) {
+        std::string const rand1 = make_literal_random(digits, literal_radix);
+        std::string const rand2 = make_literal_random(digits, literal_radix);
+        std::string const nines = make_literal_nines(digits, literal_radix);
+        std::string const zeros = make_literal_one_zeros(digits, literal_radix);
+        output_with_signs_and_opts(rand1, rand2);
+        output_with_signs_and_opts(rand1, nines);
+        output_with_signs_and_opts(rand1, zeros);
+        output_with_signs_and_opts(rand2, nines);
+        output_with_signs_and_opts(rand2, zeros);
+        output_with_signs_and_opts(nines, zeros);
+      }
+    }
+
+    std::vector<std::size_t> border_digits = {
+      elem_digits - 1,
+      elem_digits,
+      elem_digits + 1,
+      elem_digits * 2,
+      elem_digits * 2 + 1
+    };
+    for (std::size_t len_a : border_digits) {
+      for (std::size_t len_b : border_digits) {
+        for (std::size_t i = 0; i < 100; i++) {
+          output_with_signs_and_opts(
+            make_literal_random(len_a, literal_radix),
+            make_literal_random(len_b, literal_radix));
+        }
+      }
+    }
+
+    const std::string values[7] = {
+      "0", "1", "2",
+      make_literal_nines(elem_digits, literal_radix),
+      make_literal_one_zeros(elem_digits, literal_radix),
+      make_literal_nines(elem_digits * 2, literal_radix),
+      make_literal_one_zeros(elem_digits * 2, literal_radix)};
+    for (std::size_t i = 0; i < std::size(values); i++) {
+      for (std::size_t j = i; j < std::size(values); j++)
+        output_with_signs_and_opts(values[i], values[j]);
+      for (std::size_t len: test_digits)
+        for (std::size_t j = 0; j < 100; j++)
+          output_with_signs_and_opts(values[i], make_literal_random(len, literal_radix));
+      for (std::size_t len: border_digits)
+        for (std::size_t j = 0; j < 100; j++)
+          output_with_signs_and_opts(values[i], make_literal_random(len, literal_radix));
+    }
+
+    return true;
+  }
+
+  void arith_run(const char* input_filename, const char* output_filename) {
+    std::ifstream istr(input_filename);
+    if (!istr) {
+      std::cerr << "BUG(arith_run): failed to open the file '" << input_filename << "' to read." << std::endl;
+      std::exit(3);
+    }
+
+    std::ofstream ostr(output_filename);
+    if (!ostr) {
+      std::cerr << "error(arith_run): failed to open the file '" << input_filename << "' to write." << std::endl;
+      std::exit(1);
+    }
+
+    std::string line;
+    while (std::getline(istr, line)) {
+      std::istringstream sstr(line);
+      std::string astr, op, bstr;
+      sstr >> astr >> op >> bstr;
+      int_t a(astr.c_str());
+      int_t b(bstr.c_str());
+      int_t r1, r2, r3, r4;
+      switch (op[0]) {
+      case '+':
+        {
+          r1 = a + b;
+          r2 = a; r2 += b;
+          int_t r3t = a + b; r3 = r3t;
+          int_t r4t = a; r4t += b; r4 = r4t;
+        }
+        break;
+      case '-':
+        {
+          r1 = a - b;
+          r2 = a; r2 -= b;
+          int_t r3t = a - b; r3 = r3t;
+          int_t r4t = a; r4t -= b; r4 = r4t;
+        }
+        break;
+      case '*':
+        {
+          r1 = a * b;
+          r2 = a; r2 *= b;
+          int_t r3t = a * b; r3 = r3t;
+          int_t r4t = a; r4t *= b; r4 = r4t;
+        }
+        break;
+      case '/':
+        {
+          r1 = a / b;
+          r2 = a; r2 /= b;
+          int_t r3t = a / b; r3 = r3t;
+          int_t r4t = a; r4t /= b; r4 = r4t;
+        }
+        break;
+      case '%':
+        {
+          r1 = a % b;
+          r2 = a; r2 %= b;
+          int_t r3t = a % b; r3 = r3t;
+          int_t r4t = a; r4t %= b; r4 = r4t;
+        }
+        break;
+      default:
+        mwg_assert(0, "unknwon op = '%s'", op.c_str());
+        break;
+      }
+      mwg_check(r1 == r2);
+      mwg_check(r3 == r4);
+      mwg_check(r1 == r3);
+      ostr << r1 << std::endl;
+    }
+  }
+
+  void arith_check() {
+    std::error_code ec;
+    std::filesystem::create_directories("../out/test", ec);
+    if (ec) {
+      std::cerr << "failed to create the directory ../out/test: " << ec.message() << std::endl;
+      std::exit(1);
+    }
+
+    arith_save_cases("../out/test/big_integer.input.txt");
+    std::system("BC_LINE_LENGTH=0 bc < ../out/test/big_integer.input.txt > ../out/test/big_integer.expect.txt");
+    arith_run("../out/test/big_integer.input.txt", "../out/test/big_integer.result.txt");
+    std::system("cd ../out/test; diff -bwu big_integer.{expect,result}.txt > big_integer.diff || echo \"see $PWD/big_integer.diff\"");
+    // arith_run("../out/test/big_integer.input.1.txt", "../out/test/big_integer.result.1.txt");
+  }
+
 }
 
 //-----------------------------------------------------------------------------
 
 int main() {
   early_tests::run_tests();
-  factorize_tests::make_table();
+  factorize_tests::make_table_for_squares();
   factorize_tests::check_primes_up_to();
+  basic_tests::arith_check();
   return 0;
 }
