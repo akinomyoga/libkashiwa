@@ -890,7 +890,7 @@ namespace kashiwa {
       //   残っていたら引き算する。
       if (abs_compare(rem, div) >= 0) {
         if (pquo) add_digit(*pquo, 0, 1);
-        rem -= div;
+        abs_sub(rem, div);
       }
 
       if (prem && factor > 1) rem /= (elem_t) factor;
