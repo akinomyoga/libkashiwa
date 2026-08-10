@@ -18,8 +18,8 @@ ifeq ($(HOSTNAME),padparadscha)
 
   OTFFT_PREFIX   := $(HOME)/work/idt/otfft/out/bin
   CXX:=cxx
-  CXXFLAGS:= -Wall -std=gnu++14 -O3 -march=native
-  LDFLAGS:= -Wall -std=gnu++14 -O3 -march=native
+  CXXFLAGS:= -Wall -std=gnu++17 -O3 -march=native
+  LDFLAGS:= -Wall -std=gnu++17 -O3 -march=native
 
   # libmwg
   LIBMWG_PREFIX := $(HOME)/opt/libmwg-201509
@@ -36,8 +36,8 @@ ifeq ($(USER)@$(HOSTNAME),murase@tkyntn.phys.s.u-tokyo.ac.jp)
 
   OTFFT_PREFIX :=$(HOME)/opt/otfft-6.4
   CXX:=g++-5.3.0
-  CXXFLAGS:= -Wall -std=gnu++14 -O3 -march=native
-  LDFLAGS:= -Wall -std=gnu++14 -O3 -march=native
+  CXXFLAGS:= -Wall -std=gnu++17 -O3 -march=native
+  LDFLAGS:= -Wall -std=gnu++17 -O3 -march=native
 
   LIBMWG_PREFIX:=$(HOME)/opt/libmwg-20160527
   CXXFLAGS+= \
@@ -52,8 +52,8 @@ ifeq ($(HOSTNAME),chatoyancy)
 
   OTFFT_PREFIX   := $(HOME)/opt/otfft-6.4
   CXX := g++
-  CXXFLAGS := -Wall -std=gnu++14 -O3 -march=native
-  LDFLAGS := -Wall -std=gnu++14 -O3 -march=native
+  CXXFLAGS := -Wall -std=gnu++17 -O3 -march=native
+  LDFLAGS := -Wall -std=gnu++17 -O3 -march=native
 
   # libmwg
   LIBMWG_PREFIX := $(HOME)/opt/libmwg-20170824
@@ -70,8 +70,8 @@ ifeq ($(HOSTNAME),letsnote2025)
 
   OTFFT_PREFIX   := $(HOME)/opt/otfft-6.4
   CXX := g++
-  CXXFLAGS := -Wall -std=gnu++14 -O3 -march=native
-  LDFLAGS := -Wall -std=gnu++14 -O3 -march=native
+  CXXFLAGS := -Wall -std=gnu++17 -O3 -march=native
+  LDFLAGS := -Wall -std=gnu++17 -O3 -march=native
 
   # libmwg
   LIBMWG_PREFIX := $(HOME)/.opt/libmwg/master
@@ -85,7 +85,7 @@ endif
 
 ifeq ($(host),unknown)
   CXX:=g++
-  CXXFLAGS:= -Wall -std=gnu++14 -O3 -march=native
+  CXXFLAGS:= -Wall -std=gnu++17 -O3 -march=native
 endif
 
 #------------------------------------------------------------------------------
