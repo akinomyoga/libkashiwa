@@ -702,8 +702,6 @@ namespace kashiwa {
 
   // operator/
   //
-  //  ToDo: 負数による割り算に対応していない気がする。
-  //
   namespace big_integer_detail {
 
     template<typename E, typename C, C M>
@@ -818,8 +816,14 @@ namespace kashiwa {
         if (pquo) *pquo = 0;
         return ret;
       } else if (rhs.data.size() == 1) {
+        int const lsign = lhs.sign;
         elem_t const rem = divide(lhs, rhs.data[0], pquo);
-        if (prem) *prem = rem;
+        if (pquo && rhs.sign == -1)
+          pquo->sign = -pquo->sign;
+        if (prem) {
+          *prem = rem;
+          prem->sign *= lsign;
+        }
         return rem == 0;
       }
 
@@ -828,7 +832,7 @@ namespace kashiwa {
       mwg_assert(rhssize >= 2);
       calc_t const rhs2 = rhsdata[rhssize - 1] * integer_t::modulo + rhsdata[rhssize - 2];
       calc_t const factor =
-        rhs2 == std::numeric_limits<calc_t>::max()? 1:
+        rhs2 == std::numeric_limits<calc_t>::max() ? 1 :
         (integer_t::modulo * integer_t::modulo - 1) / (rhs2 + 1);
       mwg_assert(1 <= factor && factor < integer_t::modulo);
 
