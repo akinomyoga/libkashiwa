@@ -297,9 +297,9 @@ namespace kashiwa {
   template<typename K>
   constexpr rational<K> pow(rational<K> const& value, int exponent) {
     if (exponent > 0) {
-      return { pow(value.numerator(), exponent), pow(value.denominator(), exponent), already_canonicalized_tag() };
+      return { ipow(value.numerator(), exponent), ipow(value.denominator(), exponent), already_canonicalized_tag() };
     } else if (exponent < 0) {
-      return { pow(value.denominator(), -exponent), pow(value.numerator(), -exponent), already_canonicalized_tag() };
+      return { ipow(value.denominator(), -exponent), ipow(value.numerator(), -exponent), already_canonicalized_tag() };
     } else {
       return { (K) 1, (K) 1, already_canonicalized_tag() };
     }

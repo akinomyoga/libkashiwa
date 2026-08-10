@@ -67,14 +67,14 @@ int main() {
   mwg_check(((p2 *= p1) == polynomial_t {1, 3, 3, 1}));
 
   polynomial_t p3 {1, 1};
-  mwg_check((pow(p3, 0) == polynomial_t {1}));
-  mwg_check((pow(p3, 1) == polynomial_t {1, 1}));
-  mwg_check((pow(p3, 2) == polynomial_t {1, 2, 1}));
-  mwg_check((pow(p3, 3) == polynomial_t {1, 3, 3, 1}));
-  mwg_check((pow(p3, 4) == polynomial_t {1, 4, 6, 4, 1}));
-  mwg_check((pow(p3, 5) == polynomial_t {1, 5, 10, 10, 5, 1}));
-  mwg_check((pow(p3, 6) == polynomial_t {1, 6, 15, 20, 15, 6, 1}));
-  mwg_check((pow(p3, 7) == polynomial_t {1, 7, 21, 35, 35, 21, 7, 1}));
+  mwg_check((ipow(p3, 0) == polynomial_t {1}));
+  mwg_check((ipow(p3, 1) == polynomial_t {1, 1}));
+  mwg_check((ipow(p3, 2) == polynomial_t {1, 2, 1}));
+  mwg_check((ipow(p3, 3) == polynomial_t {1, 3, 3, 1}));
+  mwg_check((ipow(p3, 4) == polynomial_t {1, 4, 6, 4, 1}));
+  mwg_check((ipow(p3, 5) == polynomial_t {1, 5, 10, 10, 5, 1}));
+  mwg_check((ipow(p3, 6) == polynomial_t {1, 6, 15, 20, 15, 6, 1}));
+  mwg_check((ipow(p3, 7) == polynomial_t {1, 7, 21, 35, 35, 21, 7, 1}));
 
   check_print(p2, "x^3 + 3 x^2 + 3 x + 1");
   check_print(polynomial_t {1, 1, 1} , "x^2 + x + 1");

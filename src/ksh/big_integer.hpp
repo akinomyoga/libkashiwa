@@ -686,21 +686,7 @@ namespace kashiwa {
   //
   template<typename E, typename C, C M>
   big_integer<E, C, M> pow(big_integer<E, C, M> const& lhs, unsigned exponent) {
-    big_integer<E, C, M> result { 1 };
-    if (!exponent) return result;
-
-    big_integer<E, C, M> pow2 = lhs;
-    for (;;) {
-      unsigned const digit = exponent & 1;
-      exponent >>= 1;
-      if (digit) {
-        result *= pow2;
-        if (!exponent) break;
-      }
-      pow2 *= pow2;
-    }
-
-    return result;
+    return ipow(lhs, exponent);
   }
 
   // operator/

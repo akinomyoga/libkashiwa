@@ -31,6 +31,7 @@ namespace kashiwa {
     polynomial(std::initializer_list<K> list): m_data(list) {
       this->normalize();
     }
+    explicit polynomial(int value): polynomial({value}) {}
 
     std::vector<K> const& data() const { return this->m_data; }
 
@@ -65,9 +66,14 @@ namespace kashiwa {
 
     polynomial const& operator+() const { return *this; }
 
+  public:
+    void chneg() {
+      for (auto& e: m_data) e *= -1;
+    }
+
     polynomial operator-() const {
       polynomial ret(*this);
-      for (auto& e: ret.m_data) e *= -1;
+      ret.chneg();
       return ret;
     }
   };
@@ -146,7 +152,6 @@ namespace kashiwa {
     K const* pL = &ldata[0];
     K const* pR = &rdata[0];
 
-    K const* p1;
     std::size_t const iN1 = ldata.size();
     std::size_t const iN2 = rdata.size();
 
@@ -253,22 +258,8 @@ namespace kashiwa {
   // pow(polynomial, unsigned)
   //
   template<typename K>
-  polynomial<K> pow(polynomial<K> const& lhs, unsigned exponent) {
-    polynomial<K> result { 1 };
-    if (!exponent) return result;
-
-    polynomial<K> pow2 = lhs;
-    for (;;) {
-      unsigned const digit = exponent & 1;
-      exponent >>= 1;
-      if (digit) {
-        result *= pow2;
-        if (!exponent) break;
-      }
-      pow2 *= pow2;
-    }
-
-    return result;
+  polynomial<K> pow(polynomial<K> lhs, unsigned exponent) {
+    return ipow(std::move(lhs), exponent);
   }
 
   template<typename K>

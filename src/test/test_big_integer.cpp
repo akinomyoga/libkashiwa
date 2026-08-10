@@ -52,14 +52,14 @@ namespace early_tests {
   // http://d.hatena.ne.jp/ku-ma-me/20080116/p1
   void test3() {
     // Note: 基数10^nで計算すると遅い (2017-02-05)
-    //auto result = pow(kashiwa::big_integer<std::uint32_t, std::uint64_t, 1000000000> {5}, 100000);
+    //auto result = ipow(kashiwa::big_integer<std::uint32_t, std::uint64_t, 1000000000> {5}, 100000);
 
     int const n = 10000;
     // int const n = 30000;
     // int const n = 100000;
     // int const n = 300000;
     // int const n = 1000000;
-    auto result = pow(kashiwa::bigint {5}, n);
+    auto result = ipow(kashiwa::bigint {5}, n);
     std::cout << "5 ** " << n << " = " << result << std::endl;
   }
 
@@ -68,17 +68,17 @@ namespace early_tests {
 
     int const n = 100;
 
-    auto a = pow(int_t{5}, n);
-    mwg_check(a / (uint32_t) 25 == pow(int_t {5}, n - 2));
+    auto a = ipow(int_t{5}, n);
+    mwg_check(a / (uint32_t) 25 == ipow(int_t {5}, n - 2));
     mwg_check(a % (uint32_t) 25 == 0);
 
     auto b = a * a;
-    mwg_check(b == pow(int_t {5}, 2 * n));
+    mwg_check(b == ipow(int_t {5}, 2 * n));
     mwg_check(b / a == a);
     mwg_check(b % a == 0);
 
-    auto uint32_mod = pow(int_t{2}, 32);
-    auto uint64_mod = pow(int_t{2}, 64);
+    auto uint32_mod = ipow(int_t{2}, 32);
+    auto uint64_mod = ipow(int_t{2}, 64);
 
     // 2017-05-18 bug: 繰り下がりで桁数が減少した時 resize していなかった
     mwg_check(uint64_mod - 1 + 1 == uint64_mod);
