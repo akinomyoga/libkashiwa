@@ -40,9 +40,14 @@ namespace kashiwa {
   template<typename T> struct identity {typedef T type;};
   template<typename T> using identity_t = typename identity<T>::type;
 
+  // For the std::nullptr_t trick [1] by kazatsuyu.
   //
-  // For std::nullptr_t trick (http://qiita.com/kazatsuyu/items/203584ef4cb8b9e52462 by kazatsuyu)
+  // This has been introduced to avoid possible aliasing of a template class or
+  // a template function, when a user specifies an extra template argument
+  // mistakenly.  Since std::nullptr_t accepts only a single value `nullptr`,
+  // no aliasing happens even if the user specifies it.
   //
+  // [1] http://qiita.com/kazatsuyu/items/203584ef4cb8b9e52462
   template<bool B> using nullptr_if_t = typename std::enable_if<B, std::nullptr_t>::type;
 
   // std::void_t (n3911, C++17) + 変種
