@@ -33,6 +33,7 @@ namespace kashiwa {
     underlying_type m_num;
     underlying_type m_den;
 
+  public:
     constexpr rational(): m_num(0), m_den(1) {}
 
     template<typename L, nullptr_if_t<std::is_convertible<L, K>::value> = nullptr>
@@ -299,9 +300,28 @@ namespace kashiwa {
     if (exponent > 0) {
       return { ipow(value.numerator(), exponent), ipow(value.denominator(), exponent), already_canonicalized_tag() };
     } else if (exponent < 0) {
-      return { ipow(value.denominator(), -exponent), ipow(value.numerator(), -exponent), already_canonicalized_tag() };
+      if (value.numerator() < 0)
+        return { ipow(-value.denominator(), -exponent), ipow(-value.numerator(), -exponent), already_canonicalized_tag() };
+      else
+        return { ipow(value.denominator(), -exponent), ipow(value.numerator(), -exponent), already_canonicalized_tag() };
     } else {
       return { (K) 1, (K) 1, already_canonicalized_tag() };
+    }
+  }
+
+  template<typename K>
+  constexpr rational<K> inv(rational<K> const& value) {
+    if (value.numerator() < 0)
+      return { -value.denominator(), -value.numerator(), already_canonicalized_tag() };
+    else
+      return { value.denominator(), value.numerator(), already_canonicalized_tag() };
+  }
+  template<typename K>
+  constexpr void chinv(rational<K>& value) {
+    std::swap(value.m_num, value.m_den);
+    if (value.m_den < 0) {
+      chneg(value.m_num);
+      chneg(value.m_den);
     }
   }
 }
