@@ -295,19 +295,21 @@ namespace kashiwa {
       return ostr << '(' << value.numerator() << '/' << value.denominator() << ')';
   }
 
-  template<typename K>
-  constexpr rational<K> pow(rational<K> const& value, int exponent) {
-    if (exponent > 0) {
-      return { ipow(value.numerator(), exponent), ipow(value.denominator(), exponent), already_canonicalized_tag() };
-    } else if (exponent < 0) {
+  template<typename K, typename I, nullptr_if_t<std::is_integral<I>::value> = nullptr>
+  constexpr rational<K> ipow(rational<K> const& value, I exp) {
+    if (exp > 0) {
+      return { ipow(value.numerator(), exp), ipow(value.denominator(), exp), already_canonicalized_tag() };
+    } else if (exp < 0) {
       if (value.numerator() < 0)
-        return { ipow(-value.denominator(), -exponent), ipow(-value.numerator(), -exponent), already_canonicalized_tag() };
+        return { ipow(-value.denominator(), -exp), ipow(-value.numerator(), -exp), already_canonicalized_tag() };
       else
-        return { ipow(value.denominator(), -exponent), ipow(value.numerator(), -exponent), already_canonicalized_tag() };
+        return { ipow(value.denominator(), -exp), ipow(value.numerator(), -exp), already_canonicalized_tag() };
     } else {
       return { (K) 1, (K) 1, already_canonicalized_tag() };
     }
   }
+  template<typename K>
+  constexpr rational<K> ipow(rational<K> const& value, int exp) { return ipow(value, exp); }
 
   template<typename K>
   constexpr rational<K> inv(rational<K> const& value) {
